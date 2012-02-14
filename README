@@ -1,0 +1,10 @@
+This CVS directory contains code for Mark Grimes' work. Email mark.grimes@bristol.ac.uk or mark.grimes@cern.ch if you have any questions. The current directories are:
+
+--------------------
+- VHbbAnalysisCode -
+--------------------
+
+Contains code for the tracker Phase1 upgrade VHbb analysis. This should be checked out into a directory called "TrkUpgradeAnalysis/VHbb" for the correct file hierarchy. For example, this should work:
+cd $CMSSW_BASE
+cvs co -D 2012-02-14 -d TrkUpgradeAnalysis/VHbb UserCode/grimes/VHbbAnalysisCode
+scram b
