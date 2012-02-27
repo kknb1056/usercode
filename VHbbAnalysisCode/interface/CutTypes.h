@@ -64,7 +64,7 @@ namespace trkupgradeanalysis
 			double cutValue_;
 		};
 
-		/** brief Only returns true if a variable is between the two values supplied in the constructor.
+		/** @brief Only returns true if a variable is between the two values supplied in the constructor.
 		 *
 		 * Note that the lower cut is "greater than" but the upper is "less than or equal to", i.e. returns
 		 * true if
@@ -83,6 +83,23 @@ namespace trkupgradeanalysis
 		private:
 			double lowerCutValue_;
 			double upperCutValue_;
+		};
+
+
+		/** @brief Dummy cut so that variables relation to other cuts can be tracked without actually cutting on them.
+		 *
+		 * Always returns true whatever value is passed to it.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 14/Feb/2012
+		 */
+		class AlwaysPasses : public trkupgradeanalysis::cuts::ICutType
+		{
+		public:
+			AlwaysPasses();
+			bool apply( double value ) const; ///< @brief Always returns true
+			std::auto_ptr<ICutType> copy() const;
+			std::string name() const;
 		};
 
 	} // end of namespace cuts

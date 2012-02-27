@@ -6,7 +6,7 @@
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbCandidate.h"
 
 trkupgradeanalysis::VHbbCandidateCutSet::VHbbCandidateCutSet() :
-	allCutsPassed_( false )
+	allCutsPassed_( false ), name_( "unset" )
 {
 	// No operation besides the initialiser list
 }
@@ -68,6 +68,13 @@ bool trkupgradeanalysis::VHbbCandidateCutSet::applyCuts( const VHbbCandidate& vh
 	return allCutsPassed_;
 }
 
+std::string trkupgradeanalysis::VHbbCandidateCutSet::name() const
+{
+	return name_;
+}
+
+
+
 
 
 trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float mass )
@@ -109,11 +116,10 @@ trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float mass )
 
 
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::SignalSelectionZee::name() const
-{
-	return "SignalSelectionZee";
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZee_mass=" << mass;
+	name_=floatToStringConversion.str();
 }
 
 
@@ -157,11 +163,10 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float mass )
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( mass-20, mass+10 ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::SignalSelectionZmumu::name() const
-{
-	return "SignalSelectionZmumu";
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZmumu_mass=" << mass;
+	name_=floatToStringConversion.str();
 }
 
 
@@ -180,11 +185,10 @@ trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut::SignalSelectio
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( mass-20, mass+10 ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut::name() const
-{
-	return "SignalSelectionZmumuWithoutAdditionalJetsCut";
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZmumuWithoutAdditionalJetsCut_mass=" << mass;
+	name_=floatToStringConversion.str();
 }
 
 
@@ -215,11 +219,10 @@ trkupgradeanalysis::SignalSelectionWen::SignalSelectionWen( float mass )
 //	result.add( new DiJetMassMaxCut( mass + 15. ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( mass+15 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::SignalSelectionWen::name() const
-{
-	return "SignalSelectionWen";
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionWen_mass=" << mass;
+	name_=floatToStringConversion.str();
 }
 
 
@@ -247,11 +250,10 @@ trkupgradeanalysis::SignalSelectionWmun::SignalSelectionWmun( float mass )
 //	result.add( new DiJetMassMaxCut( mass + 15. ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( mass+15 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::SignalSelectionWmun::name() const
-{
-	return "SignalSelectionWmun";
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionWmun_mass=" << mass;
+	name_=floatToStringConversion.str();
 }
 
 
@@ -269,11 +271,8 @@ trkupgradeanalysis::VlightRegionHWmun::VlightRegionHWmun()
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VlightRegionHWmun::name() const
-{
-	return "VlightRegionHWmun";
+	name_="VlightRegionHWmun";
 }
 
 trkupgradeanalysis::VlightRegionHWen::VlightRegionHWen()
@@ -290,11 +289,8 @@ trkupgradeanalysis::VlightRegionHWen::VlightRegionHWen()
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VlightRegionHWen::name() const
-{
-	return "VlightRegionHWen";
+	name_="VlightRegionHWen";
 }
 
 trkupgradeanalysis::VlightRegionHZmumu::VlightRegionHZmumu()
@@ -310,11 +306,8 @@ trkupgradeanalysis::VlightRegionHZmumu::VlightRegionHZmumu()
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VlightRegionHZmumu::name() const
-{
-	return "VlightRegionHZmumu";
+	name_="VlightRegionHZmumu";
 }
 
 trkupgradeanalysis::VlightRegionHZee::VlightRegionHZee()
@@ -330,11 +323,8 @@ trkupgradeanalysis::VlightRegionHZee::VlightRegionHZee()
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VlightRegionHZee::name() const
-{
-	return "VlightRegionHZee";
+	name_="VlightRegionHZee";
 }
 
 trkupgradeanalysis::TTbarRegionHWmun::TTbarRegionHWmun()
@@ -350,11 +340,8 @@ trkupgradeanalysis::TTbarRegionHWmun::TTbarRegionHWmun()
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( GreaterThan( 1 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::TTbarRegionHWmun::name() const
-{
-	return "TTbarRegionHWmun";
+	name_="TTbarRegionHWmun";
 }
 
 trkupgradeanalysis::TTbarRegionHWen::TTbarRegionHWen()
@@ -371,11 +358,8 @@ trkupgradeanalysis::TTbarRegionHWen::TTbarRegionHWen()
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( GreaterThan( 1 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::TTbarRegionHWen::name() const
-{
-	return "TTbarRegionHWen";
+	name_="TTbarRegionHWen";
 }
 
 trkupgradeanalysis::TTbarRegionHZmumu::TTbarRegionHZmumu()
@@ -390,11 +374,8 @@ trkupgradeanalysis::TTbarRegionHZmumu::TTbarRegionHZmumu()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfMETN( 0, GreaterThan( 50 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 120 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::TTbarRegionHZmumu::name() const
-{
-	return "TTbarRegionHZmumu";
+	name_="TTbarRegionHZmumu";
 }
 
 trkupgradeanalysis::TTbarRegionHZee::TTbarRegionHZee()
@@ -409,11 +390,8 @@ trkupgradeanalysis::TTbarRegionHZee::TTbarRegionHZee()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfMETN( 0, GreaterThan( 50 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 120 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::TTbarRegionHZee::name() const
-{
-	return "TTbarRegionHZee";
+	name_="TTbarRegionHZee";
 }
 
 trkupgradeanalysis::VbbRegionHWmun::VbbRegionHWmun()
@@ -432,11 +410,8 @@ trkupgradeanalysis::VbbRegionHWmun::VbbRegionHWmun()
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( Equals( 0 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VbbRegionHWmun::name() const
-{
-	return "VbbRegionHWmun";
+	name_="VbbRegionHWmun";
 }
 
 trkupgradeanalysis::VbbRegionHWen::VbbRegionHWen()
@@ -457,11 +432,8 @@ trkupgradeanalysis::VbbRegionHWen::VbbRegionHWen()
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( Equals( 0 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VbbRegionHWen::name() const
-{
-	return "VbbRegionHWen";
+	name_="VbbRegionHWen";
 }
 
 trkupgradeanalysis::VbbRegionHZmumu::VbbRegionHZmumu()
@@ -478,11 +450,8 @@ trkupgradeanalysis::VbbRegionHZmumu::VbbRegionHZmumu()
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VbbRegionHZmumu::name() const
-{
-	return "VbbRegionHZmumu";
+	name_="VbbRegionHZmumu";
 }
 
 trkupgradeanalysis::VbbRegionHZee::VbbRegionHZee()
@@ -499,9 +468,6 @@ trkupgradeanalysis::VbbRegionHZee::VbbRegionHZee()
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
-}
 
-std::string trkupgradeanalysis::VbbRegionHZee::name() const
-{
-	return "VbbRegionHZee";
+	name_="VbbRegionHZee";
 }

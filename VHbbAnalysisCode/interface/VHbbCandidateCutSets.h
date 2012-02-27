@@ -25,24 +25,24 @@ namespace trkupgradeanalysis
 
 		// Add a method to apply cuts on a VHbbCandidate
 		virtual bool applyCuts( const VHbbCandidate& vhbbCandidate );
+		virtual std::string name() const;
 	protected:
 		std::vector<trkupgradeanalysis::IBasicVHbbCandidateCut*> basicCuts_;
 		bool allCutsPassed_;
 		std::vector<bool> cutsPassed_;
+		std::string name_;
 	};
 
 	class SignalSelectionZee : public VHbbCandidateCutSet
 	{
 	public:
 		SignalSelectionZee( float mass );
-		std::string name() const;
 	};
 
 	class SignalSelectionZmumu : public VHbbCandidateCutSet
 	{
 	public:
 		SignalSelectionZmumu( float mass );
-		std::string name() const;
 	};
 
 
@@ -50,14 +50,12 @@ namespace trkupgradeanalysis
 	{
 	public:
 		SignalSelectionWen( float mass );
-		std::string name() const;
 	};
 
 	class SignalSelectionWmun : public VHbbCandidateCutSet
 	{
 	public:
 		SignalSelectionWmun( float mass );
-		std::string name() const;
 	};
 
 	/** @brief All of the cuts in SignalSelectionZmumu except for the additonal jets less than 2 cut.
@@ -69,7 +67,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		SignalSelectionZmumuWithoutAdditionalJetsCut( float mass );
-		std::string name() const;
 	};
 
 
@@ -87,7 +84,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VlightRegionHWmun();
-		std::string name() const;
 	};
 
 
@@ -95,7 +91,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VlightRegionHWen();
-		std::string name() const;
 	};
 
 
@@ -103,7 +98,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VlightRegionHZmumu();
-		std::string name() const;
 	};
 
 
@@ -111,7 +105,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VlightRegionHZee();
-		std::string name() const;
 	};
 
 
@@ -119,7 +112,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		TTbarRegionHWmun();
-		std::string name() const;
 	};
 
 
@@ -127,7 +119,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		TTbarRegionHWen();
-		std::string name() const;
 	};
 
 
@@ -135,7 +126,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		TTbarRegionHZmumu();
-		std::string name() const;
 	};
 
 
@@ -143,7 +133,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		TTbarRegionHZee();
-		std::string name() const;
 	};
 
 
@@ -151,7 +140,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VbbRegionHWmun();
-		std::string name() const;
 	};
 
 
@@ -159,7 +147,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VbbRegionHWen();
-		std::string name() const;
 	};
 
 
@@ -167,7 +154,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VbbRegionHZmumu();
-		std::string name() const;
 	};
 
 
@@ -175,7 +161,6 @@ namespace trkupgradeanalysis
 	{
 	public:
 		VbbRegionHZee();
-		std::string name() const;
 	};
 
 } // end of namespace trkupgradeanalysis

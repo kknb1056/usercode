@@ -28,6 +28,12 @@ namespace trkupgradeanalysis
 
 		TH1F* pEventString_;
 		std::map<std::string,int> stringToBinMap_;
+
+		TH1F* pNumberOfBunchCrossings_;
+		TH1F* pNumberOfInteractionsPerBunchCrossing_;
+		TH1F* pTotalInteractionsPerEvent_;
+
+		TH1F* pNumberOfPrimaryVertices_; ///< @brief Not MC related, but it's in the AuxInfo object so easier to plot it here.
 	};
 
 } // end of namespace trkupgradeanalysis

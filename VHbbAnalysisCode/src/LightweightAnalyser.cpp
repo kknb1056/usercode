@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidateCutSets.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/AdditionalJetStudyCutSets.h"
 
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbEventAuxInfo.h"
 #include "VHbbAnalysis/VHbbDataFormats/src/HbbCandidateFinderAlgo.cc" // Not entirely sure why this is included and not linked to
@@ -58,23 +59,48 @@ trkupgradeanalysis::LightweightAnalyser::LightweightAnalyser( const std::string&
 	// All of these are empty smart pointers, so I need to call reset on them
 	pOutputFile_.reset( new TFile( outputFilename.c_str(), "RECREATE" ) );
 
-	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::SignalSelectionZee(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::SignalSelectionZmumu(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::SignalSelectionWen(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::SignalSelectionWmun(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut(120)) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VlightRegionHWmun) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VlightRegionHWen) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VlightRegionHZmumu) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VlightRegionHZee) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::TTbarRegionHWmun) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::TTbarRegionHWen) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::TTbarRegionHZmumu) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::TTbarRegionHZee) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VbbRegionHWmun) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VbbRegionHWen) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VbbRegionHZmumu) );
-//	cutsToApply_.push_back( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet>(new trkupgradeanalysis::VbbRegionHZee) );
+
+	using namespace trkupgradeanalysis; // Don't really need this but I like to be explicit (ooh err..)
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZee(120)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(120)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionWen(120)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionWmun(120)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumuWithoutAdditionalJetsCut(120)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(110)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(115)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(125)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(130)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(135)) );
+
+	//
+	// These are only temporary while I'm studying the number of additional jets
+	//
+	using namespace trkupgradeanalysis::additionaljetstudy;
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide2() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide3Plot1() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide3Plot2() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide3Plot3() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide4Plot2() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide5Plot1() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide5Plot2() ) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide5Plot2AssumingTypo() ) );
+
+	//
+	// Don't need the following because I'm not studying the background estimation regions
+	//
+
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHWmun) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHWen) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHZmumu) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHZee) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHWmun) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHWen) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHZmumu) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHZee) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHWmun) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHWen) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHZmumu) );
+	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHZee) );
 }
 
 trkupgradeanalysis::LightweightAnalyser::~LightweightAnalyser()
@@ -180,11 +206,7 @@ void trkupgradeanalysis::LightweightAnalyser::processEvent( const fwlite::Event&
 	fwlite::Handle<VHbbEventAuxInfo> vhbbAuxInfoHandle;
 	vhbbAuxInfoHandle.getByLabel( event, "HbbAnalyzerNew" );
 	const VHbbEventAuxInfo* pVHbbEventAuxInfo=vhbbAuxInfoHandle.product();
-	if( pVHbbEventAuxInfo == 0 )
-	{
-		std::cerr << "Couldn't get the VHbbEventAuxInfo" << std::endl;
-		return;
-	}
+	if( pVHbbEventAuxInfo == 0 ) std::cerr << "Couldn't get the VHbbEventAuxInfo" << std::endl;
 	else
 	{
 		pPlotsForEverything_->allEventTypes_.monteCarloInfo_.fill( *pVHbbEventAuxInfo );
@@ -207,33 +229,12 @@ void trkupgradeanalysis::LightweightAnalyser::processEvent( const fwlite::Event&
 	zFinder_.run( pVHbbEvent, zCandidates );
 	wFinder_.run( pVHbbEvent, wCandidates );
 
-//	fwlite::Handle<edm::View<pat::Muon> > muonHandle;
-//	muonHandle.getByLabel( event, "muons" );
-//	const edm::View<pat::Muon>& muons=*muonHandle;
-//	std::cout << "muons.size()=" << muons.size() << std::endl;
-
 	fillAllPlotsStructure( &pPlotsForEverything_->allEventTypes_, *pVHbbEvent, zCandidates, wCandidates );
 	if( pCurrentPlotsForThisEventType!=NULL ) fillAllPlotsStructure( pCurrentPlotsForThisEventType, *pVHbbEvent, zCandidates, wCandidates );
 
-//	// This loops over all of the muons in the event and plots some things about them
-//	pCurrentPlots_->allMuons_.fill( pVHbbEvent->muInfo );
-//	pCurrentPlots_->allElectrons_.fill( pVHbbEvent->eleInfo );
-//
-//	for( std::vector<VHbbCandidate>::const_iterator iCandidate=zCandidates.begin(); iCandidate!=zCandidates.end(); ++iCandidate )
-//	{
-//		pCurrentPlots_->candidateHistogramsForAllEvents_.fill( *iCandidate );
-//
-//		// Loop over all of the cuts. If this candidate passes the cuts then fill the plots
-//		for( std::vector<CutSetPlotSet>::iterator iCutPlotSet=pCurrentPlots_->cutCollectionPlotSets_.begin();
-//				iCutPlotSet!=pCurrentPlots_->cutCollectionPlotSets_.end(); ++iCutPlotSet )
-//		{
-//			iCutPlotSet->fill( *iCandidate );
-//		}
-//	}
 
 	if( !zCandidates.empty() || !wCandidates.empty() ) ++numberOfEventsWithAtLeastOneZOrWCandidate_;
 
-//	pCurrentPlots_->pNumberOfCandidates_->Fill( zCandidates.size(), wCandidates.size() );
 }
 
 void trkupgradeanalysis::LightweightAnalyser::processFile( TFile* pInputFile )
@@ -286,6 +287,7 @@ std::string trkupgradeanalysis::LightweightAnalyser::eventTypeFromMC( const VHbb
 		eventStringStream << ") ";
 	}
 
-	return eventStringStream.str();
+	if( eventStringStream.str().empty() ) return "otherBackground";
+	else return eventStringStream.str();
 }
 

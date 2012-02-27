@@ -27,6 +27,16 @@ void trkupgradeanalysis::MCInfoPlotSet::book( TDirectory* pDirectory )
 	pEventString_=new TH1F( "mcEventType", "Event type from MC", 10, 0.5, 10.5 );
 	pEventString_->SetDirectory(pDirectory);
 
+	pNumberOfPrimaryVertices_=new TH1F( "numberOfPrimaryVertices", "Number of primary vertices", 71, -0.5, 70.5 );
+	pNumberOfPrimaryVertices_->SetDirectory(pDirectory);
+
+	pNumberOfBunchCrossings_=new TH1F( "numberOfBunchCrossings", "Number of bunch crossings", 71, -0.5, 70.5 );
+	pNumberOfInteractionsPerBunchCrossing_=new TH1F( "numberOfInteractionsPerBunchCrossing", "Number of interactions per bunch crossing", 71, -0.5, 70.5 );
+	pTotalInteractionsPerEvent_=new TH1F( "totalInteractionsPerEvent", "Total number of interactions per event", 71, -0.5, 70.5 );
+	pNumberOfBunchCrossings_->SetDirectory(pDirectory);
+	pNumberOfInteractionsPerBunchCrossing_->SetDirectory(pDirectory);
+	pTotalInteractionsPerEvent_->SetDirectory(pDirectory);
+
 	histogramHaveBeenBooked_=true;
 }
 
@@ -88,5 +98,21 @@ void trkupgradeanalysis::MCInfoPlotSet::fill( const VHbbEventAuxInfo& eventAuxIn
 	else binNumber=iBinNumber->second;
 
 	pEventString_->Fill( binNumber );
+
+	pNumberOfPrimaryVertices_->Fill( eventAuxInfo.pvInfo.nVertices );
+
+	// Loop over the pile up data
+	unsigned int totalNumberOfInteractions=0;
+	unsigned int numberOfBunchCrossings=0;
+	for( std::map<int,unsigned int>::const_iterator iBXInteractionPair=eventAuxInfo.puInfo.pus.begin(); iBXInteractionPair!=eventAuxInfo.puInfo.pus.end(); ++iBXInteractionPair )
+	{
+		const unsigned int& numberOfInteractions=iBXInteractionPair->second;
+		totalNumberOfInteractions+=numberOfInteractions;
+		pNumberOfInteractionsPerBunchCrossing_->Fill( numberOfInteractions );
+		++numberOfBunchCrossings;
+	}
+	pNumberOfBunchCrossings_->Fill( numberOfBunchCrossings );
+	pTotalInteractionsPerEvent_->Fill( totalNumberOfInteractions );
+
 }
 

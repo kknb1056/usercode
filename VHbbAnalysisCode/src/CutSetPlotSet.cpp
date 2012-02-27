@@ -41,9 +41,13 @@ void trkupgradeanalysis::CutSetPlotSet::book( TDirectory* pDirectory )
 	pCutFlow_->SetDirectory(pDirectory);
 	pCutFlow_->GetXaxis()->SetBinLabel( 1, "Input events" );
 
-	// Create a directory for the N-1 plots
-	TDirectory* pAllCandidatesDirectory=pDirectory->GetDirectory( "AllVariables" );
-	if( pAllCandidatesDirectory==NULL ) pAllCandidatesDirectory=pDirectory->mkdir( "AllVariables" );
+	// Create a directory for the variables for all candidates
+	TDirectory* pAllCandidatesDirectory=pDirectory->GetDirectory( "AllCandidates" );
+	if( pAllCandidatesDirectory==NULL ) pAllCandidatesDirectory=pDirectory->mkdir( "AllCandidates" );
+
+	// Create a directory for the variables for all candidates that pass the cuts
+	TDirectory* pPassedCandidatesDirectory=pDirectory->GetDirectory( "PassedCandidates" );
+	if( pPassedCandidatesDirectory==NULL ) pPassedCandidatesDirectory=pDirectory->mkdir( "PassedCandidates" );
 
 	// Create a directory for the N-1 plots
 	TDirectory* pNMinus1Directory=pDirectory->GetDirectory( "N-1_Plots" );
@@ -67,9 +71,15 @@ void trkupgradeanalysis::CutSetPlotSet::book( TDirectory* pDirectory )
 		pNewPlot->SetDirectory(pNMinus1Directory);
 		nMinus1Plots_.push_back( pNewPlot );
 
+		// Book the histograms for all candidates
 		pNewPlot=new TH1F( cutName.c_str(), cutName.c_str(), cutVariable.suggestedNumberOfBins(), cutVariable.suggestedLowerEdge(), cutVariable.suggestedUpperEdge() );
 		pNewPlot->SetDirectory(pAllCandidatesDirectory);
 		allCandidatesPlots_.push_back( pNewPlot );
+
+		// Book the histograms for candidates that pass all cuts
+		pNewPlot=new TH1F( cutName.c_str(), cutName.c_str(), cutVariable.suggestedNumberOfBins(), cutVariable.suggestedLowerEdge(), cutVariable.suggestedUpperEdge() );
+		pNewPlot->SetDirectory(pPassedCandidatesDirectory);
+		passedCandidatesPlots_.push_back( pNewPlot );
 	}
 
 
@@ -80,7 +90,12 @@ void trkupgradeanalysis::CutSetPlotSet::fill( const VHbbCandidate& vhbbCandidate
 {
 	if( !histogramHaveBeenBooked_ ) throw std::runtime_error( "trkupgradeanalysis::CutSetPlotSet::book() - histograms have not been booked" );
 
-	if( pCutSet_->applyCuts(vhbbCandidate) ) passedCandidateHistograms_.fill( vhbbCandidate );
+	bool candidatePassesAllCuts=false;
+	if( pCutSet_->applyCuts(vhbbCandidate) )
+	{
+		passedCandidateHistograms_.fill( vhbbCandidate );
+		candidatePassesAllCuts=true;
+	}
 
 	// Always fill the first bin so that I know how many candidates have been tested
 	pCutFlow_->Fill(0);
@@ -99,6 +114,8 @@ void trkupgradeanalysis::CutSetPlotSet::fill( const VHbbCandidate& vhbbCandidate
 		if( pCutSet_->everythingOtherThanCutNPassed(a) ) nMinus1Plots_[a]->Fill( pCutSet_->cutAt(a).cutVariable().histogrammableValue() );
 		// Always fill these plots for all of the candidates
 		allCandidatesPlots_[a]->Fill( pCutSet_->cutAt(a).cutVariable().histogrammableValue() );
+		// Only fill the passed candidates plots if all cuts were passed
+		if( candidatePassesAllCuts ) passedCandidatesPlots_[a]->Fill( pCutSet_->cutAt(a).cutVariable().histogrammableValue() );
 	}
 
 }

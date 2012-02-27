@@ -175,3 +175,27 @@ std::string trkupgradeanalysis::cuts::Within::name() const
 	nameStream << "Within" << lowerCutValue_ << "And" << upperCutValue_;
 	return nameStream.str();
 }
+
+
+
+
+
+trkupgradeanalysis::cuts::AlwaysPasses::AlwaysPasses()
+{
+	// No operation
+}
+
+bool trkupgradeanalysis::cuts::AlwaysPasses::apply( double value ) const
+{
+	return ( true );
+}
+
+std::auto_ptr<trkupgradeanalysis::cuts::ICutType> trkupgradeanalysis::cuts::AlwaysPasses::copy() const
+{
+	return std::auto_ptr<ICutType>( new AlwaysPasses(*this) );
+}
+
+std::string trkupgradeanalysis::cuts::AlwaysPasses::name() const
+{
+	return "AlwaysPasses";
+}

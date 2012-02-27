@@ -18,6 +18,7 @@ namespace trkupgradeanalysis
 	{
 	public:
 		CandidateTypeEquals( VHbbCandidate::CandidateType candidateType );
+		CandidateTypeEquals( const std::vector<VHbbCandidate::CandidateType>& candidateTypes );
 		virtual ~CandidateTypeEquals();
 
 		// The methods from BasicCut
@@ -34,7 +35,7 @@ namespace trkupgradeanalysis
 		double suggestedLowerEdge() const;
 		double suggestedUpperEdge() const;
 	private:
-		VHbbCandidate::CandidateType requiredCandidateType_;
+		std::vector<VHbbCandidate::CandidateType> requiredCandidateTypes_;
 		mutable VHbbCandidate::CandidateType lastValue_;
 	};
 
@@ -138,7 +139,7 @@ namespace trkupgradeanalysis
 	class NumberOfAdditionalJets : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable
 	{
 	public:
-		NumberOfAdditionalJets( const trkupgradeanalysis::cuts::ICutType& cut );
+		NumberOfAdditionalJets( const trkupgradeanalysis::cuts::ICutType& cut, bool applyCleaning_=true );
 		virtual ~NumberOfAdditionalJets();
 
 		// The methods from BasicCut
@@ -158,6 +159,7 @@ namespace trkupgradeanalysis
 		std::auto_ptr<trkupgradeanalysis::cuts::ICutType> pCut_;
 		mutable unsigned int lastValue_;
 		bool jetId( const VHbbEvent::SimpleJet& jet ) const;
+		bool applyCleaning_;
 	};
 
 	class NumberOfAdditionalLeptons : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable

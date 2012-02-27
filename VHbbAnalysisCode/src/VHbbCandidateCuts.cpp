@@ -5,9 +5,14 @@
 
 
 trkupgradeanalysis::CandidateTypeEquals::CandidateTypeEquals( VHbbCandidate::CandidateType candidateType )
-	: requiredCandidateType_(candidateType)
 {
-	// No operation besides the initialiser list
+	requiredCandidateTypes_.push_back(candidateType);
+}
+
+trkupgradeanalysis::CandidateTypeEquals::CandidateTypeEquals( const std::vector<VHbbCandidate::CandidateType>& candidateTypes )
+	: requiredCandidateTypes_(candidateTypes)
+{
+	// No operation besides the initialiser list.
 }
 
 trkupgradeanalysis::CandidateTypeEquals::~CandidateTypeEquals()
@@ -18,13 +23,25 @@ trkupgradeanalysis::CandidateTypeEquals::~CandidateTypeEquals()
 std::string trkupgradeanalysis::CandidateTypeEquals::name() const
 {
 	std::stringstream nameStream;
-	nameStream << "CandidateType==";
-	if( requiredCandidateType_==VHbbCandidate::Zmumu ) nameStream << "Zmumu";
-	else if( requiredCandidateType_==VHbbCandidate::Zee ) nameStream << "Zee";
-	else if( requiredCandidateType_==VHbbCandidate::Wmun ) nameStream << "Wmun";
-	else if( requiredCandidateType_==VHbbCandidate::Wen ) nameStream << "Wen";
-	else if( requiredCandidateType_==VHbbCandidate::Znn ) nameStream << "Znn";
-	else if( requiredCandidateType_==VHbbCandidate::UNKNOWN ) nameStream << "UNKNOWN";
+	nameStream << variableName() << "==";
+
+	if( requiredCandidateTypes_.size()>1 ) nameStream << "(";
+
+	for( std::vector<VHbbCandidate::CandidateType>::const_iterator iRequiredCandidateType=requiredCandidateTypes_.begin(); iRequiredCandidateType!=requiredCandidateTypes_.end(); ++iRequiredCandidateType )
+	{
+		if( *iRequiredCandidateType==VHbbCandidate::Zmumu ) nameStream << "Zmumu";
+		else if( *iRequiredCandidateType==VHbbCandidate::Zee ) nameStream << "Zee";
+		else if( *iRequiredCandidateType==VHbbCandidate::Wmun ) nameStream << "Wmun";
+		else if( *iRequiredCandidateType==VHbbCandidate::Wen ) nameStream << "Wen";
+		else if( *iRequiredCandidateType==VHbbCandidate::Znn ) nameStream << "Znn";
+		else if( *iRequiredCandidateType==VHbbCandidate::UNKNOWN ) nameStream << "UNKNOWN";
+
+		// Add an "OR" separator if there's more than one
+		if( requiredCandidateTypes_.size()>1 && iRequiredCandidateType!=requiredCandidateTypes_.begin() ) nameStream << "||";
+	}
+
+	if( requiredCandidateTypes_.size()>1 ) nameStream << ")";
+
 	return nameStream.str();
 }
 
@@ -38,7 +55,14 @@ const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::CandidateTypeE
 bool trkupgradeanalysis::CandidateTypeEquals::applyCut( const VHbbCandidate& vhbbCandidate ) const
 {
 	lastValue_=vhbbCandidate.candidateType;
-	return lastValue_==requiredCandidateType_;
+
+	for( std::vector<VHbbCandidate::CandidateType>::const_iterator iRequiredCandidateType=requiredCandidateTypes_.begin(); iRequiredCandidateType!=requiredCandidateTypes_.end(); ++iRequiredCandidateType )
+	{
+		if( *iRequiredCandidateType==lastValue_ ) return true;
+	}
+
+	// If control reaches this far than non of the entries in the vector matched
+	return false;
 }
 
 std::string trkupgradeanalysis::CandidateTypeEquals::variableName() const
@@ -254,8 +278,8 @@ double trkupgradeanalysis::PtOfVectorBoson::suggestedUpperEdge() const
 
 
 
-trkupgradeanalysis::NumberOfAdditionalJets::NumberOfAdditionalJets( const trkupgradeanalysis::cuts::ICutType& cut )
-	: pCut_( cut.copy() )
+trkupgradeanalysis::NumberOfAdditionalJets::NumberOfAdditionalJets( const trkupgradeanalysis::cuts::ICutType& cut, bool applyCleaning )
+	: pCut_( cut.copy() ), applyCleaning_(applyCleaning)
 {
 	// No operation apart from the initialiser list
 }
@@ -279,11 +303,16 @@ const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::NumberOfAdditi
 
 bool trkupgradeanalysis::NumberOfAdditionalJets::applyCut( const VHbbCandidate& vhbbCandidate ) const
 {
-	lastValue_=0;
-	for( std::vector<VHbbEvent::SimpleJet>::const_iterator iJet=vhbbCandidate.additionalJets.begin(); iJet!=vhbbCandidate.additionalJets.end(); ++iJet )
+	if( !applyCleaning_ ) lastValue_=vhbbCandidate.additionalJets.size();
+	else
 	{
-		if( jetId( *iJet )==true && fabs(iJet->p4.Eta()) < 2.5 && iJet->p4.Pt() > 20 ) ++lastValue_;
+		lastValue_=0;
+		for( std::vector<VHbbEvent::SimpleJet>::const_iterator iJet=vhbbCandidate.additionalJets.begin(); iJet!=vhbbCandidate.additionalJets.end(); ++iJet )
+		{
+			if( jetId( *iJet )==true && fabs(iJet->p4.Eta()) < 2.5 && iJet->p4.Pt() > 20 ) ++lastValue_;
+		}
 	}
+
 	return pCut_->apply( lastValue_ );
 }
 

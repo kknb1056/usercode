@@ -34,6 +34,7 @@ namespace trkupgradeanalysis
 		TH1F* pCutFlow_;
 		std::vector<TH1F*> nMinus1Plots_;
 		std::vector<TH1F*> allCandidatesPlots_;
+		std::vector<TH1F*> passedCandidatesPlots_;
 	};
 
 } // end of namespace trkupgradeanalysis
