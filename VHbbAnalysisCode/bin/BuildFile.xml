@@ -5,4 +5,5 @@
 <use name="TrkUpgradeAnalysis/VHbb"/>
 <environment>
 	<bin file="TrkUpgradeAnalyser.cpp"/>
+	<bin file="TrkUpgradeNTupleAnalyser.cpp"/>
 </environment>

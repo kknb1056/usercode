@@ -77,7 +77,7 @@ std::string trkupgradeanalysis::VHbbCandidateCutSet::name() const
 
 
 
-trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float mass )
+trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float centralMass )
 {
 	using namespace trkupgradeanalysis::cuts;
 	// These lines are from the code
@@ -87,8 +87,8 @@ trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float mass )
 	//	result.add( new DoubleBTagCut( 0.5 ) );
 	//	result.add( new SingleBTagCut( CSVT ) );
 	//	result.add( new AdditionalJetsCut( 2 ) ); // < 2
-	//	result.add( new DiJetMassMinCut( mass - 15. - 5. ) );
-	//	result.add( new DiJetMassMaxCut( mass + 15. - 5. ) );
+	//	result.add( new DiJetMassMinCut( centralMass - 15. - 5. ) );
+	//	result.add( new DiJetMassMaxCut( centralMass + 15. - 5. ) );
 	// These extra cuts are from the paper
 	//	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	//	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThanOrEqual( 105 ) ) );
@@ -110,21 +110,41 @@ trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float mass )
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
-//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( GreaterThan( mass-20 ) ) );
-//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( mass+10 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( mass-20, mass+10 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( GreaterThan( centralMass-20 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( centralMass+10 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
 
 
 	cutsPassed_.resize( basicCuts_.size() );
 
 	std::stringstream floatToStringConversion;
-	floatToStringConversion << "SignalSelectionZee_mass=" << mass;
+	floatToStringConversion << "SignalSelectionZee_centralMass=" << centralMass;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zee ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZee_massBetween" << lowerMass << "And" << upperMass;
 	name_=floatToStringConversion.str();
 }
 
 
-
-trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float mass )
+trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float centralMass )
 {
 	using namespace trkupgradeanalysis::cuts;
 
@@ -135,8 +155,8 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float mass )
 	//	result.add( new DoubleBTagCut( 0.5 ) );
 	//	result.add( new SingleBTagCut( CSVT ) );
 	//	result.add( new AdditionalJetsCut( 2 ) ); // < 2
-	//	result.add( new DiJetMassMinCut( mass - 15. - 5. ) );
-	//	result.add( new DiJetMassMaxCut( mass + 15. - 5. ) );
+	//	result.add( new DiJetMassMinCut( centralMass - 15. - 5. ) );
+	//	result.add( new DiJetMassMaxCut( centralMass + 15. - 5. ) );
 	// These lines I added from the cuts listed in the paper
 	//	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	//	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThanOrEqual( 105 ) ) );
@@ -158,17 +178,36 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float mass )
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
-//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( GreaterThan( mass-20 ) ) );
-//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( mass+10 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( mass-20, mass+10 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( GreaterThan( centralMass-20 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( centralMass+10 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
 
 	std::stringstream floatToStringConversion;
-	floatToStringConversion << "SignalSelectionZmumu_mass=" << mass;
+	floatToStringConversion << "SignalSelectionZmumu_centralMass=" << centralMass;
 	name_=floatToStringConversion.str();
 }
 
+trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZmumu_massBetween" << lowerMass << "And" << upperMass;
+	name_=floatToStringConversion.str();
+}
 
 
 trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut::SignalSelectionZmumuWithoutAdditionalJetsCut( float mass )
@@ -192,6 +231,45 @@ trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut::SignalSelectio
 }
 
 
+trkupgradeanalysis::SignalSelectionZmumuWithCSVCutsSwitched::SignalSelectionZmumuWithCSVCutsSwitched( float centralMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZmumuWithCSVCutsSwitched_centralMass=" << centralMass;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::SignalSelectionZmumuWithCSVCutsSwitched::SignalSelectionZmumuWithCSVCutsSwitched( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionZmumuWithCSVCutsSwitched_massBetween" << lowerMass << "And" << upperMass;
+	name_=floatToStringConversion.str();
+}
 
 
 

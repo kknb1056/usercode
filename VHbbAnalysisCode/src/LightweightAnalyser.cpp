@@ -71,6 +71,8 @@ trkupgradeanalysis::LightweightAnalyser::LightweightAnalyser( const std::string&
 	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(125)) );
 	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(130)) );
 	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(135)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(110-20,135+10)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumuWithCSVCutsSwitched(110-20,135+10)) );
 
 	//
 	// These are only temporary while I'm studying the number of additional jets

@@ -36,13 +36,15 @@ namespace trkupgradeanalysis
 	class SignalSelectionZee : public VHbbCandidateCutSet
 	{
 	public:
-		SignalSelectionZee( float mass );
+		SignalSelectionZee( float centralMass );
+		SignalSelectionZee( float lowerMass, float upperMass );
 	};
 
 	class SignalSelectionZmumu : public VHbbCandidateCutSet
 	{
 	public:
-		SignalSelectionZmumu( float mass );
+		SignalSelectionZmumu( float centralMass );
+		SignalSelectionZmumu( float lowerMass, float upperMass );
 	};
 
 
@@ -69,6 +71,17 @@ namespace trkupgradeanalysis
 		SignalSelectionZmumuWithoutAdditionalJetsCut( float mass );
 	};
 
+	/** @brief All of the cuts in SignalSelectionZmumu except that the order of the CSV cuts is switched.
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 27/Feb/2012
+	 */
+	class SignalSelectionZmumuWithCSVCutsSwitched : public VHbbCandidateCutSet
+	{
+	public:
+		SignalSelectionZmumuWithCSVCutsSwitched( float mass );
+		SignalSelectionZmumuWithCSVCutsSwitched( float lowerMass, float upperMass );
+	};
 
 
 
