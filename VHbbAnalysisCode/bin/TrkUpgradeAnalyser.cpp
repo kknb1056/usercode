@@ -104,6 +104,8 @@ int main( int argc, char* argv[] )
 			// Save after each file so if the program is interrupted at least I'll get
 			// some output.
 			analyser.save();
+			pInputFile->Close(); // Close the input file before moving on to the next
+			delete pInputFile;
 		}
 	}
 
