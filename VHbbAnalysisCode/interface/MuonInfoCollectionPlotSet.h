@@ -18,9 +18,14 @@ namespace trkupgradeanalysis
 	class MuonInfoCollectionPlotSet
 	{
 	public:
-		MuonInfoCollectionPlotSet();
+		/** @brief Only constructor
+		 *
+		 * createIsolationTree - set whether to record the isolation values in a TTree or not. Default
+		 * is off to save space.
+		 */
+		MuonInfoCollectionPlotSet( bool createIsolationTree=false );
 		void book( TDirectory* pDirectory );
-		void fill( const std::vector<VHbbEvent::MuonInfo>& muonCollection );
+		void fill( const std::vector<VHbbEvent::MuonInfo>& muonCollection, const VHbbEventAuxInfo* pAuxInfo=NULL );
 	private:
 		bool histogramHaveBeenBooked_;
 

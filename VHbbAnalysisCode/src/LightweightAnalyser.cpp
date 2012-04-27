@@ -154,6 +154,9 @@ void trkupgradeanalysis::LightweightAnalyser::bookHistograms( trkupgradeanalysis
 	pSubDirectory=pDirectory->mkdir( "ElectronInfos" );
 	plots.allElectrons_.book( pSubDirectory );
 
+	pSubDirectory=pDirectory->mkdir( "IsolationStudy" );
+	plots.isolationStudy_.book( pSubDirectory );
+
 	pSubDirectory=pDirectory->mkdir( "MonteCarloTruth" );
 	plots.monteCarloInfo_.book( pSubDirectory );
 
@@ -170,10 +173,12 @@ void trkupgradeanalysis::LightweightAnalyser::bookHistograms( trkupgradeanalysis
 	}
 }
 
-void trkupgradeanalysis::LightweightAnalyser::fillAllPlotsStructure( AllPlots* pPlotsToFill, const VHbbEvent& vhbbEvent, const std::vector<VHbbCandidate>& zCandidates, const std::vector<VHbbCandidate>& wCandidates )
+void trkupgradeanalysis::LightweightAnalyser::fillAllPlotsStructure( AllPlots* pPlotsToFill, const VHbbEvent& vhbbEvent, const VHbbEventAuxInfo* pVHbbEventAuxInfo, const std::vector<VHbbCandidate>& zCandidates, const std::vector<VHbbCandidate>& wCandidates )
 {
 	pPlotsToFill->allMuons_.fill( vhbbEvent.muInfo );
 	pPlotsToFill->allElectrons_.fill( vhbbEvent.eleInfo );
+	if( pVHbbEventAuxInfo ) pPlotsToFill->monteCarloInfo_.fill( *pVHbbEventAuxInfo );
+	pPlotsToFill->isolationStudy_.fill( vhbbEvent, pVHbbEventAuxInfo ); // This class checks if is null itself
 
 	for( std::vector<VHbbCandidate>::const_iterator iCandidate=zCandidates.begin(); iCandidate!=zCandidates.end(); ++iCandidate )
 	{
@@ -211,7 +216,6 @@ void trkupgradeanalysis::LightweightAnalyser::processEvent( const fwlite::Event&
 	if( pVHbbEventAuxInfo == 0 ) std::cerr << "Couldn't get the VHbbEventAuxInfo" << std::endl;
 	else
 	{
-		pPlotsForEverything_->allEventTypes_.monteCarloInfo_.fill( *pVHbbEventAuxInfo );
 		std::string eventType=eventTypeFromMC( *pVHbbEventAuxInfo );
 
 		std::map<std::string,AllPlots>::iterator iPlotsForThisEventType=pPlotsForEverything_->mcEventTypePlots_.find(eventType);
@@ -231,8 +235,8 @@ void trkupgradeanalysis::LightweightAnalyser::processEvent( const fwlite::Event&
 	zFinder_.run( pVHbbEvent, zCandidates );
 	wFinder_.run( pVHbbEvent, wCandidates );
 
-	fillAllPlotsStructure( &pPlotsForEverything_->allEventTypes_, *pVHbbEvent, zCandidates, wCandidates );
-	if( pCurrentPlotsForThisEventType!=NULL ) fillAllPlotsStructure( pCurrentPlotsForThisEventType, *pVHbbEvent, zCandidates, wCandidates );
+	fillAllPlotsStructure( &pPlotsForEverything_->allEventTypes_, *pVHbbEvent, pVHbbEventAuxInfo, zCandidates, wCandidates );
+	if( pCurrentPlotsForThisEventType!=NULL ) fillAllPlotsStructure( pCurrentPlotsForThisEventType, *pVHbbEvent, pVHbbEventAuxInfo, zCandidates, wCandidates );
 
 
 	if( !zCandidates.empty() || !wCandidates.empty() ) ++numberOfEventsWithAtLeastOneZOrWCandidate_;

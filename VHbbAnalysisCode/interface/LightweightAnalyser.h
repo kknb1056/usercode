@@ -12,6 +12,7 @@
 #include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidatePlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/MuonInfoCollectionPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/ElectronInfoCollectionPlotSet.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/IsolationStudyPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/MCInfoPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/CutSetPlotSet.h"
 
@@ -62,6 +63,7 @@ namespace trkupgradeanalysis
 			trkupgradeanalysis::VHbbCandidatePlotSet candidateHistogramsForAllEvents_;
 			trkupgradeanalysis::MuonInfoCollectionPlotSet allMuons_;
 			trkupgradeanalysis::ElectronInfoCollectionPlotSet allElectrons_;
+			trkupgradeanalysis::IsolationStudyPlotSet isolationStudy_;
 			trkupgradeanalysis::MCInfoPlotSet monteCarloInfo_;
 			std::vector<CutSetPlotSet> cutCollectionPlotSets_;
 		};
@@ -86,7 +88,7 @@ namespace trkupgradeanalysis
 
 		void bookHistograms( AllPlots& plots, const std::string& directoryName );
 		std::string eventTypeFromMC( const VHbbEventAuxInfo& eventAuxInfo );
-		void fillAllPlotsStructure( AllPlots* pPlotsToFill, const VHbbEvent& vhbbEvent, const std::vector<VHbbCandidate>& zCandidates, const std::vector<VHbbCandidate>& wCandidates );
+		void fillAllPlotsStructure( AllPlots* pPlotsToFill, const VHbbEvent& vhbbEvent, const VHbbEventAuxInfo* pVHbbEventAuxInfo, const std::vector<VHbbCandidate>& zCandidates, const std::vector<VHbbCandidate>& wCandidates );
 	};
 
 } // end of namespace trkupgradeanalysis

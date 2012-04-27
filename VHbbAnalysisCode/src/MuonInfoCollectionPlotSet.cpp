@@ -6,8 +6,8 @@
 #include <TH1F.h>
 
 
-trkupgradeanalysis::MuonInfoCollectionPlotSet::MuonInfoCollectionPlotSet()
-	: histogramHaveBeenBooked_(false)
+trkupgradeanalysis::MuonInfoCollectionPlotSet::MuonInfoCollectionPlotSet( bool createIsolationTree )
+	: histogramHaveBeenBooked_(false), muonInfoPlotSet_(createIsolationTree)
 {
 	// No operation besides the initialiser list.
 }
@@ -30,7 +30,7 @@ void trkupgradeanalysis::MuonInfoCollectionPlotSet::book( TDirectory* pDirectory
 	histogramHaveBeenBooked_=true;
 }
 
-void trkupgradeanalysis::MuonInfoCollectionPlotSet::fill( const std::vector<VHbbEvent::MuonInfo>& muonCollection )
+void trkupgradeanalysis::MuonInfoCollectionPlotSet::fill( const std::vector<VHbbEvent::MuonInfo>& muonCollection, const VHbbEventAuxInfo* pAuxInfo )
 {
 	if( !histogramHaveBeenBooked_ ) throw std::runtime_error( "trkupgradeanalysis::MuonInfoCollectionPlotSet::book() - histograms have not been booked" );
 
@@ -38,7 +38,7 @@ void trkupgradeanalysis::MuonInfoCollectionPlotSet::fill( const std::vector<VHbb
 
 	for( std::vector<VHbbEvent::MuonInfo>::const_iterator iMuon=muonCollection.begin(); iMuon!=muonCollection.end(); ++iMuon )
 	{
-		muonInfoPlotSet_.fill( *iMuon );
+		muonInfoPlotSet_.fill( *iMuon, pAuxInfo );
 	}
 
 }
