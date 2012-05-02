@@ -14,45 +14,48 @@
 
 void printUsage( const std::string& programName )
 {
-	std::cout << "Program description:" << "\n"
-			<< "\t" << "Examines btag performance files and finds the \"tight\" operating point "
-			<< "(i.e. the discriminator that would give a light mistag efficiency of 0.1%)." << "\n"
+	std::cout << "\n"
+			<< "Program description:" << "\n"
+			<< "\t" << "Examines btag performance files and finds the b, c and light tagging efficiencies for a" << "\n"
+			<< "\t" << "given CSV discriminator" << "\n"
+			<< "\t" << "Finds the closest histogram bins to the point required and then uses linear interpolation" << "\n"
+			<< "\t" << "to find the value between those two bins." << "\n"
 			<< "Usage:" << "\n"
-			<< "\t" << programName << " <btag performance filename> [<btag performance filename2> [...] ]" << std::endl;
+			<< "\t" << programName << " -d <discriminator> <btag performance filename> [<btag performance filename2> [...] ]" << "\n"
+			<< "\n"
+			<< "\t" << "-d  --discriminator           The value of the CSV discriminator to calculate" << "\n"
+			<< "\t" << "                              efficiencies for" << "\n"
+			<< "\t" << "<btag performance filename>   One or more root files with these histograms of events" << "\n"
+			<< "\t" << "                              versus discriminator:" << "\n"
+			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB" << "\n"
+			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC" << "\n"
+			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG" << "\n"
+			<< std::endl;
 }
 
 
 int main( int argc, char* argv[] )
 {
-	std::vector<std::string> inputFilenames;
-	float efficiency; // The efficency to find an operating point for. Defaults later to 0.001 for the Tight operating point of 0.1% light mistag efficiency.
-	std::string flavour; // The flavour that the efficiency is for. Defaults later to "light" for the Tight operating point of 0.1% light mistag efficiency.
+	std::vector<std::string> inputFilenames; // The list of files to examine. Set from the command line.
+	float discriminator; // The discriminator to find the efficiencies for. Set from the command line.
 
 	//
 	// Run over the command line arguments and figure out what the user wants to do
 	//
 	try
 	{
-		std::string efficiencyAsString;
+		std::string discriminatorAsString;
 
 		for( int a=1; a<argc; ++a )
 		{
 			if( std::string(argv[a])=="-h" || std::string(argv[a])=="--help" ) printUsage( argv[0] );
-			else if( std::string(argv[a])=="-e" || std::string(argv[a])=="--efficiency" )
+			else if( std::string(argv[a])=="-d" || std::string(argv[a])=="--discriminator" )
 			{
-				if( !efficiencyAsString.empty() ) throw std::runtime_error("efficiency can only be specified once with the -e option");
-				if( a+1>=argc ) throw std::runtime_error("-e requires an additional argument");
+				if( !discriminatorAsString.empty() ) throw std::runtime_error("discriminator can only be specified once with the -d option");
+				if( a+1>=argc ) throw std::runtime_error("-d requires an additional argument");
 
 				++a;
-				efficiencyAsString=argv[a];
-			}
-			else if( std::string(argv[a])=="-f" || std::string(argv[a])=="--flavour" )
-			{
-				if( !flavour.empty() ) throw std::runtime_error("flavour can only be specified once with the -f option");
-				if( a+1>=argc ) throw std::runtime_error("-f requires an additional argument");
-
-				++a;
-				flavour=argv[a];
+				discriminatorAsString=argv[a];
 			}
 			else
 			{
@@ -66,27 +69,22 @@ int main( int argc, char* argv[] )
 		//
 		if( inputFilenames.empty() ) throw std::runtime_error("No input files have been specified.");
 
-		// Make sure efficency and flavour have been set to valid values
-		if( !flavour.empty() )
+		// Make sure the discriminator has been set to a valid float
+		if( !discriminatorAsString.empty() )
 		{
-			boost::algorithm::to_lower(flavour); // Convert everything to lower case before the comparison
-			if( flavour!="b" && flavour!="c" && flavour!="light" ) throw std::runtime_error("Flavour must be set to one of \"b\", \"c\", or \"light\".");
-		}
-		else flavour="light"; // default to Tight operating point of 0.1% light mistag efficiency
-
-		if( !efficiencyAsString.empty() )
-		{
-			// Try and convert the efficiency to a float
+			// Try and convert the discriminator to a float
 			std::stringstream stringConverter;
-			stringConverter.str(efficiencyAsString);
-			stringConverter >> efficiency;
+			stringConverter.str(discriminatorAsString);
+			stringConverter >> discriminator;
 
 			// Make sure all of the string converted properly to the float
-			if( stringConverter.fail() || !stringConverter.eof() ) throw std::runtime_error("Efficiency must be set to a valid floating point number.");
+			if( stringConverter.fail() || !stringConverter.eof() ) throw std::runtime_error("Discriminator must be set to a valid floating point number.");
+
 			// Make sure the float is a valid value
-			if( !(efficiency>0.0 && efficiency<1.0) ) throw std::runtime_error("Efficiency must be set to a value between 0 and 1 exclusive.");
+			// EDIT - I'll allow any value as input for now
+			//if( !(efficiency>0.0 && efficiency<1.0) ) throw std::runtime_error("Efficiency must be set to a value between 0 and 1 exclusive.");
 		}
-		else efficiency=0.001; // default to Tight operating point of 0.1% light mistag efficiency
+		else throw std::runtime_error("The discriminator has not been specified. Specify a discriminator with the -d option.");
 
 	} // End of try block around command line parsing
 	catch( std::exception& error )
@@ -108,19 +106,21 @@ int main( int argc, char* argv[] )
 				trkupgradeanalysis::tools::TFile_auto_ptr pInputFile( *iFilename );
 				if( pInputFile==NULL ) throw std::runtime_error("Couldn't open the input file");
 
-				// Try and retrieve the required histogram I need from the file
-				std::string histogramPath;
-				if( flavour=="b" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB";
-				else if( flavour=="c" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC";
-				else if( flavour=="light" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG";
+				// Try and retrieve the required histograms I need from the file
+				TH1F* pBJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB" ) );
+				TH1F* pCJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC" ) );
+				TH1F* pLightJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG" ) );
+				if( pBJetHistogram==NULL || pCJetHistogram==NULL || pLightJetHistogram==NULL ) throw std::runtime_error("Couldn't get one of the input histograms.");
 
-				TH1F* pLightJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( histogramPath.c_str() ) );
-				if( pLightJetHistogram==NULL ) throw std::runtime_error("Couldn't get the input histogram \""+histogramPath+"\"");
+				float bJetEfficiency=trkupgradeanalysis::tools::findEfficiency( pBJetHistogram, discriminator, false );
+				float cJetEfficiency=trkupgradeanalysis::tools::findEfficiency( pCJetHistogram, discriminator, false );
+				float lightJetEfficiency=trkupgradeanalysis::tools::findEfficiency( pLightJetHistogram, discriminator, false );
 
-				float discriminator=trkupgradeanalysis::tools::findDiscriminator( pLightJetHistogram, efficiency, false );
-				std::cout << "An efficiency of " << efficiency
-						<< " can be acheived with a discriminator of " << discriminator
-						<< " for histogram " << *iFilename << ":" << histogramPath << std::endl;
+				std::cout << "Discriminator= " << discriminator
+						<< " btagEfficiency= " << bJetEfficiency
+						<< " ctagEfficiency= " << cJetEfficiency
+						<< " lighttagEfficiency= " << lightJetEfficiency
+						<< " input= " << *iFilename << std::endl;
 			}
 			catch( std::exception& exception )
 			{
