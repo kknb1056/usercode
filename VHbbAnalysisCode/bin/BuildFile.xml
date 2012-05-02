@@ -6,4 +6,5 @@
 <environment>
 	<bin file="TrkUpgradeAnalyser.cpp"/>
 	<bin file="TrkUpgradeNTupleAnalyser.cpp"/>
+	<bin file="CalculateBTagOperatingPoint.cpp"/>
 </environment>
