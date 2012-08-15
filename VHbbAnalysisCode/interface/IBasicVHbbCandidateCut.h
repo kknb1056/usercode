@@ -3,12 +3,16 @@
 
 #include "TrkUpgradeAnalysis/VHbb/interface/IBasicCut.h"
 
-#include "VHbbAnalysis/VHbbDataFormats/interface/VHbbCandidate.h"
+//#include "VHbbAnalysis/VHbbDataFormats/interface/VHbbCandidate.h"
 
 // Forward declarations
+class VHbbCandidate;
 namespace trkupgradeanalysis
 {
-	class HistogramVariable;
+	namespace tools
+	{
+		class NTupleRow;
+	}
 }
 
 namespace trkupgradeanalysis
@@ -21,6 +25,9 @@ namespace trkupgradeanalysis
 
 		/// @brief Returns true if the supplied VHbbCandidate would pass the cut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const = 0;
+
+		/// @brief Alternative method to work entries previously stored in an NTuple
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const = 0;
 	};
 
 

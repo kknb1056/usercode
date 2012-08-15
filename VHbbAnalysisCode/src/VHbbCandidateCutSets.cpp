@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidateCuts.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidateVariables.h"
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbCandidate.h"
 
 trkupgradeanalysis::VHbbCandidateCutSet::VHbbCandidateCutSet() :
@@ -16,6 +17,11 @@ trkupgradeanalysis::VHbbCandidateCutSet::~VHbbCandidateCutSet()
 	for( std::vector<trkupgradeanalysis::IBasicVHbbCandidateCut*>::iterator iCut=basicCuts_.begin(); iCut != basicCuts_.end(); ++iCut )
 	{
 		delete *iCut;
+	}
+
+	for( std::vector<trkupgradeanalysis::variables::VHbbCandidateVariable*>::iterator iAdditionalVariable=additionalVariables_.begin(); iAdditionalVariable!=additionalVariables_.end(); ++iAdditionalVariable )
+	{
+		delete *iAdditionalVariable;
 	}
 }
 
@@ -65,6 +71,33 @@ bool trkupgradeanalysis::VHbbCandidateCutSet::applyCuts( const VHbbCandidate& vh
 		if( cutPassed == false ) allCutsPassed_=false;
 	}
 
+	// Fill the additional variables
+	for( std::vector<trkupgradeanalysis::variables::VHbbCandidateVariable*>::const_iterator iVariable=additionalVariables_.begin(); iVariable!=additionalVariables_.end(); ++iVariable )
+	{
+		(*iVariable)->set( vhbbCandidate );
+	}
+
+	return allCutsPassed_;
+}
+
+bool trkupgradeanalysis::VHbbCandidateCutSet::applyCuts( const trkupgradeanalysis::tools::NTupleRow& ntupleRow )
+{
+	allCutsPassed_=true; // Start off assuming this is true then change it if not.
+	std::vector<trkupgradeanalysis::IBasicVHbbCandidateCut*>::const_iterator iCut;
+	std::vector<bool>::iterator iCutPassed;
+	for( iCut=basicCuts_.begin(), iCutPassed=cutsPassed_.begin(); iCut != basicCuts_.end() && iCutPassed != cutsPassed_.end(); ++iCut, ++iCutPassed )
+	{
+		bool cutPassed=( *iCut)->applyCut( ntupleRow );
+		*iCutPassed=cutPassed;
+		if( cutPassed == false ) allCutsPassed_=false;
+	}
+
+	// Fill the additional variables
+	for( std::vector<trkupgradeanalysis::variables::VHbbCandidateVariable*>::const_iterator iVariable=additionalVariables_.begin(); iVariable!=additionalVariables_.end(); ++iVariable )
+	{
+		(*iVariable)->set( ntupleRow );
+	}
+
 	return allCutsPassed_;
 }
 
@@ -73,9 +106,126 @@ std::string trkupgradeanalysis::VHbbCandidateCutSet::name() const
 	return name_;
 }
 
+size_t trkupgradeanalysis::VHbbCandidateCutSet::numberOfAdditionalVariables()
+{
+	return additionalVariables_.size();
+}
+
+trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::VHbbCandidateCutSet::additionalVariableAt( size_t position )
+{
+	// Use the "at" method rather than array subscripts so that an exception is thrown if it's out of bounds
+	return *additionalVariables_.at(position);
+}
 
 
 
+trkupgradeanalysis::AllVariables::AllVariables()
+{
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::MuonPixelHits(true) ); // True means check first muon
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::MuonPixelHits(false) ); // False means check second muon
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::CandidateType );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiLeptonMass );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::HiggsCandidatePt );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::VectorBosonCandidatePt );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DeltaPhiVH );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::HighestCSV );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::LowestCSV );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+
+	name_="AllVariables";
+}
+
+trkupgradeanalysis::ParameterisedZmumu::ParameterisedZmumu( float higherCSVCut, float lowerCSVCut, float lowerZMassCut, float upperZMassCut, float lowerHMassCut, float upperHMassCut, bool requireTrigger, bool requireDoubleTrigger, int numberOfAdditionalJetsCut )
+{
+	using namespace trkupgradeanalysis::cuts;
+	using namespace trkupgradeanalysis::variables;
+
+	if( requireTrigger || requireDoubleTrigger )
+	{
+		// Emulate HLT trigger requirements by requiring 3 or more pixel hits in the muons
+		if( requireDoubleTrigger ) basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( LowestMuonPixelHits(), GreaterThan( 2 ) ) );
+		else basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HighestMuonPixelHits(), GreaterThan( 2 ) ) );
+	}
+
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( CandidateType(), Equals( VHbbCandidate::Zmumu, 0.01 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DiLeptonMass(), Within( lowerZMassCut, upperZMassCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HiggsCandidatePt(), GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( VectorBosonCandidatePt(), GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HighestCSV(), GreaterThan( higherCSVCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( LowestCSV(), GreaterThan( lowerCSVCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DeltaPhiVH(), GreaterThan( 2.9 ) ) );
+
+	if( numberOfAdditionalJetsCut>=0 ) basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( NumberOfAdditionalJets(), LessThanOrEqual(numberOfAdditionalJetsCut) ) );
+	else additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+
+	if( lowerHMassCut>0 && upperHMassCut> 0 ) basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DiJetMass(), Within( lowerHMassCut, upperHMassCut ) ) );
+	else additionalVariables_.push_back( new DiJetMass );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "FullSelectionZmumu_higherCSVCut=" << higherCSVCut << "_lowerCSVCut=" << lowerCSVCut << "_lowerZMassCut=" << lowerZMassCut << "_upperZMassCut=" << upperZMassCut;
+	if( requireTrigger || requireDoubleTrigger )
+	{
+		if( requireDoubleTrigger ) floatToStringConversion << "_withDoubleTrigger";
+		else  floatToStringConversion << "_withSingleTrigger";
+	}
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::FullSelectionZmumu::FullSelectionZmumu( float higherCSVCut, float lowerCSVCut, float centralZMass, bool requireTrigger, bool requireDoubleTrigger )
+	: ParameterisedZmumu( higherCSVCut, lowerCSVCut, centralZMass-16, centralZMass+14, -1, -1, -1, requireTrigger, requireDoubleTrigger)
+{
+	// No operation besides the initialiser list
+}
+
+trkupgradeanalysis::ParameterisedZee::ParameterisedZee( float higherCSVCut, float lowerCSVCut, float lowerZMassCut, float upperZMassCut, float lowerHMassCut, float upperHMassCut, int numberOfAdditionalJetsCut )
+{
+	using namespace trkupgradeanalysis::cuts;
+	using namespace trkupgradeanalysis::variables;
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( CandidateType(), Equals( VHbbCandidate::Zee, 0.01 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DiLeptonMass(), Within( lowerZMassCut, upperZMassCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HiggsCandidatePt(), GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( VectorBosonCandidatePt(), GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HighestCSV(), GreaterThan( higherCSVCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( LowestCSV(), GreaterThan( lowerCSVCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DeltaPhiVH(), GreaterThan( 2.9 ) ) );
+
+	if( numberOfAdditionalJetsCut>=0 ) basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( NumberOfAdditionalJets(), LessThanOrEqual(numberOfAdditionalJetsCut) ) );
+	else additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+
+	if( lowerHMassCut>0 && upperHMassCut> 0 ) basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DiJetMass(), Within( lowerHMassCut, upperHMassCut ) ) );
+	else additionalVariables_.push_back( new DiJetMass );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "FullSelectionZee_higherCSVCut=" << higherCSVCut << "_lowerCSVCut=" << lowerCSVCut << "_lowerZMassCut=" << lowerZMassCut << "_upperZMassCut=" << upperZMassCut;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::FullSelectionZee::FullSelectionZee( float higherCSVCut, float lowerCSVCut, float centralZMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	using namespace trkupgradeanalysis::variables;
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( CandidateType(), Equals( VHbbCandidate::Zee, 0.01 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DiLeptonMass(), Within( centralZMass-16, centralZMass+14 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HiggsCandidatePt(), GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( VectorBosonCandidatePt(), GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( DeltaPhiVH(), GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( HighestCSV(), GreaterThan( higherCSVCut ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CutOnVariable( LowestCSV(), GreaterThan( lowerCSVCut ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new DiJetMass );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "FullSelectionZee_higherCSVCut=" << higherCSVCut << "_lowerCSVCut=" << lowerCSVCut << "_centralZMass=" << centralZMass;
+	name_=floatToStringConversion.str();
+}
 
 trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float centralMass )
 {
@@ -94,7 +244,7 @@ trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float centralMass )
 	//	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThanOrEqual( 105 ) ) );
 	//	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 0, GreaterThan( 20 ) ) );
 	//	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 1, GreaterThan( 20 ) ) );
-	//	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	//	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
 
 
 	// This first set aren't listed in the paper as separate cuts, so they must come under
@@ -108,8 +258,8 @@ trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float centralMass )
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 //	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( GreaterThan( centralMass-20 ) ) );
 //	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( centralMass+10 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
@@ -131,8 +281,8 @@ trkupgradeanalysis::SignalSelectionZee::SignalSelectionZee( float lowerMass, flo
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
 
 
@@ -162,7 +312,7 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float centralMas
 	//	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThanOrEqual( 105 ) ) );
 	//	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 0, GreaterThan( 20 ) ) );
 	//	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 1, GreaterThan( 20 ) ) );
-	//	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	//	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
 
 
 	// This first set aren't listed in the paper as separate cuts, so they must come under
@@ -176,8 +326,8 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float centralMas
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 //	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( GreaterThan( centralMass-20 ) ) );
 //	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( LessThanOrEqual( centralMass+10 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
@@ -198,8 +348,8 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float lowerMass,
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
@@ -209,6 +359,43 @@ trkupgradeanalysis::SignalSelectionZmumu::SignalSelectionZmumu( float lowerMass,
 	name_=floatToStringConversion.str();
 }
 
+trkupgradeanalysis::InitialSignalSelectionZee::InitialSignalSelectionZee()
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zee ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::HighestCSV );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::LowestCSV );
+
+	name_="InitialSignalSelectionZee";
+}
+
+trkupgradeanalysis::InitialSignalSelectionZmumu::InitialSignalSelectionZmumu()
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::HighestCSV );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::LowestCSV );
+
+	name_="InitialSignalSelectionZmumu";
+}
 
 trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut::SignalSelectionZmumuWithoutAdditionalJetsCut( float mass )
 {
@@ -220,7 +407,7 @@ trkupgradeanalysis::SignalSelectionZmumuWithoutAdditionalJetsCut::SignalSelectio
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( mass-20, mass+10 ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
@@ -240,8 +427,8 @@ trkupgradeanalysis::SignalSelectionZmumuWithCSVCutsSwitched::SignalSelectionZmum
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
@@ -260,8 +447,8 @@ trkupgradeanalysis::SignalSelectionZmumuWithCSVCutsSwitched::SignalSelectionZmum
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.5, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVH( GreaterThan( 2.9 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
 
 	cutsPassed_.resize( basicCuts_.size() );
@@ -271,6 +458,179 @@ trkupgradeanalysis::SignalSelectionZmumuWithCSVCutsSwitched::SignalSelectionZmum
 	name_=floatToStringConversion.str();
 }
 
+
+
+trkupgradeanalysis::SignalSelectionStdGeom50PUZmumu::SignalSelectionStdGeom50PUZmumu( float centralMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.717621, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.395486, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionStdGeom50PUZmumu_centralMass=" << centralMass;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::SignalSelectionStdGeom50PUZmumu::SignalSelectionStdGeom50PUZmumu( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.717621, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.395486, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionStdGeom50PUZmumu_massBetween" << lowerMass << "And" << upperMass;
+	name_=floatToStringConversion.str();
+}
+
+
+trkupgradeanalysis::SignalSelectionPhase150PUZmumu::SignalSelectionPhase150PUZmumu( float centralMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.776769, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.536104, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionPhase150PUZmumu_centralMass=" << centralMass;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::SignalSelectionPhase150PUZmumu::SignalSelectionPhase150PUZmumu( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.776769, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.536104, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionPhase150PUZmumu_massBetween" << lowerMass << "And" << upperMass;
+	name_=floatToStringConversion.str();
+}
+
+
+
+trkupgradeanalysis::SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut::SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut( float centralMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.717621, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.395486, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut_centralMass=" << centralMass;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut::SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.717621, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.395486, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut_massBetween" << lowerMass << "And" << upperMass;
+	name_=floatToStringConversion.str();
+}
+
+
+trkupgradeanalysis::SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut::SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut( float centralMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.776769, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.536104, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( centralMass-20, centralMass+10 ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut_centralMass=" << centralMass;
+	name_=floatToStringConversion.str();
+}
+
+trkupgradeanalysis::SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut::SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut( float lowerMass, float upperMass )
+{
+	using namespace trkupgradeanalysis::cuts;
+	basicCuts_.push_back( new trkupgradeanalysis::CandidateTypeEquals( VHbbCandidate::Zmumu ) );
+	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( Within( 75, 105 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.776769, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAllJetsGreaterThan( 0.536104, 2 ) );
+	basicCuts_.push_back( new trkupgradeanalysis::DeltaPhiVHCut( GreaterThan( 2.9 ) ) );
+//	basicCuts_.push_back( new trkupgradeanalysis::MassOfHiggsBoson( Within( lowerMass, upperMass ) ) );
+
+	cutsPassed_.resize( basicCuts_.size() );
+
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::NumberOfAdditionalJets );
+	additionalVariables_.push_back( new trkupgradeanalysis::variables::DiJetMass );
+
+	std::stringstream floatToStringConversion;
+	floatToStringConversion << "SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut_massBetween" << lowerMass << "And" << upperMass;
+	name_=floatToStringConversion.str();
+}
 
 
 trkupgradeanalysis::SignalSelectionWen::SignalSelectionWen( float mass )
@@ -287,7 +647,7 @@ trkupgradeanalysis::SignalSelectionWen::SignalSelectionWen( float mass )
 //	result.add( new SingleBTagCut( CSVT ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 //	result.add( new AdditionalJetsCut( 1 ) ); // < 1
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 1 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 1 ) ) );
 //	result.add( new AdditionalLeptonsCut( 1 ) ); // < 1
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalLeptons( LessThan( 1 ) ) );
 //	result.add( new METCut( 30 ) );
@@ -320,7 +680,7 @@ trkupgradeanalysis::SignalSelectionWmun::SignalSelectionWmun( float mass )
 //	result.add( new SingleBTagCut( CSVT ) );
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 //	result.add( new AdditionalJetsCut( 1 ) ); // < 1
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 1 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 1 ) ) );
 //	result.add( new AdditionalLeptonsCut( 1 ) ); // < 1
 	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalLeptons( LessThan( 1 ) ) );
 //	result.add( new DiJetMassMinCut( mass - 15. ) );
@@ -346,7 +706,7 @@ trkupgradeanalysis::VlightRegionHWmun::VlightRegionHWmun()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 1, GreaterThan( 30 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 30 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 30 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
 
@@ -364,7 +724,7 @@ trkupgradeanalysis::VlightRegionHWen::VlightRegionHWen()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 150 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 150 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 150 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
 
@@ -380,7 +740,7 @@ trkupgradeanalysis::VlightRegionHZmumu::VlightRegionHZmumu()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 1, GreaterThan( 20 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
@@ -397,7 +757,7 @@ trkupgradeanalysis::VlightRegionHZee::VlightRegionHZee()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfJetN( 1, GreaterThan( 20 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfHiggs( GreaterThan( 100 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
@@ -416,7 +776,7 @@ trkupgradeanalysis::TTbarRegionHWmun::TTbarRegionHWmun()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	// require that at least one of the first two jets (jets 0 and 1) b-tag is greater than 0.898
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( GreaterThan( 1 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( GreaterThan( 1 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
 
 	name_="TTbarRegionHWmun";
@@ -434,7 +794,7 @@ trkupgradeanalysis::TTbarRegionHWen::TTbarRegionHWen()
 	basicCuts_.push_back( new trkupgradeanalysis::PtOfVectorBoson( GreaterThan( 100 ) ) );
 	// require that at least one of the first two jets (jets 0 and 1) b-tag is greater than 0.898
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( GreaterThan( 1 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( GreaterThan( 1 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
 
 	name_="TTbarRegionHWen";
@@ -485,7 +845,7 @@ trkupgradeanalysis::VbbRegionHWmun::VbbRegionHWmun()
 	// Add V.Mt(VHbbCandidate::Wmun) < 120
 	// Add V.Mt(VHbbCandidate::Wmun) > 40
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( Equals( 0 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( Equals( 0 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
 
@@ -507,7 +867,7 @@ trkupgradeanalysis::VbbRegionHWen::VbbRegionHWen()
 	// Add V.Mt(VHbbCandidate::Wmun) > 40
 	// require that at least one of the first two jets (jets 0 and 1) b-tag is greater than 0.898
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( Equals( 0 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( Equals( 0 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::METSigma( GreaterThan( 2.5 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
 
@@ -524,7 +884,7 @@ trkupgradeanalysis::VbbRegionHZmumu::VbbRegionHZmumu()
 	// Add ( H.p4.M() < 90 ||  H.p4.M() > 145)
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	// Add TMath::Abs( Geom::deltaPhi(H.p4.Phi(), V.p4.Phi()) ) > 2.9
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );
@@ -542,7 +902,7 @@ trkupgradeanalysis::VbbRegionHZee::VbbRegionHZee()
 	// Add ( H.p4.M() < 90 ||  H.p4.M() > 145)
 	basicCuts_.push_back( new trkupgradeanalysis::CSVOfAnyJetGreaterThan( 0.898, 2 ) );
 	// Add TMath::Abs( Geom::deltaPhi(H.p4.Phi(), V.p4.Phi()) ) > 2.9
-	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJets( LessThan( 2 ) ) );
+	basicCuts_.push_back( new trkupgradeanalysis::NumberOfAdditionalJetsCut( LessThan( 2 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( GreaterThan( 75 ) ) );
 	basicCuts_.push_back( new trkupgradeanalysis::MassOfVectorBoson( LessThan( 105 ) ) );
 	cutsPassed_.resize( basicCuts_.size() );

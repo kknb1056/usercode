@@ -1,15 +1,22 @@
 #include "TrkUpgradeAnalysis/VHbb/interface/CutTypes.h"
 
 #include <sstream>
+#include <cmath> // required std::fabs
 
 trkupgradeanalysis::cuts::Equals::Equals( double cutValue )
-	: cutValue_(cutValue)
+	: cutValue_(cutValue), useTolerance_(false)
+{
+}
+
+trkupgradeanalysis::cuts::Equals::Equals( double cutValue, double tolerance )
+	: cutValue_(cutValue), useTolerance_(true), tolerance_(tolerance)
 {
 }
 
 bool trkupgradeanalysis::cuts::Equals::apply( double value ) const
 {
-	return value==cutValue_;
+	if( useTolerance_ ) return std::fabs( value-cutValue_ )<tolerance_;
+	else return value==cutValue_;
 }
 
 std::auto_ptr<trkupgradeanalysis::cuts::ICutType> trkupgradeanalysis::cuts::Equals::copy() const

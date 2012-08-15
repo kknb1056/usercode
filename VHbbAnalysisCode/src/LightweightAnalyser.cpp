@@ -4,6 +4,8 @@
 
 #include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidateCutSets.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/AdditionalJetStudyCutSets.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/tools.h" // required for trkupgradeanalysis::tools::createDirectory
+#include "FWCore/Utilities/interface/EDMException.h"
 
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbEventAuxInfo.h"
 #include "VHbbAnalysis/VHbbDataFormats/src/HbbCandidateFinderAlgo.cc" // Not entirely sure why this is included and not linked to
@@ -18,36 +20,11 @@
 
 
 const bool trkupgradeanalysis::LightweightAnalyser::verbose_=false;
-const double trkupgradeanalysis::LightweightAnalyser::jetPtThresholdZ_=20;
-const double trkupgradeanalysis::LightweightAnalyser::jetPtThresholdW_=20;
+const double trkupgradeanalysis::LightweightAnalyser::jetPtThresholdZ_=30;
+const double trkupgradeanalysis::LightweightAnalyser::jetPtThresholdW_=30;
 const bool trkupgradeanalysis::LightweightAnalyser::useHighestPtHiggsZ_=false;
 const bool trkupgradeanalysis::LightweightAnalyser::useHighestPtHiggsW_=true;
 
-namespace // Use the unnamed namespace
-{
-	TDirectory* createDirectory( const std::string& fullPath, TDirectory* pParent )
-	{
-		if( pParent==NULL ) throw std::runtime_error( "The parent directory is a Null pointer" );
-
-		TDirectory* pSubDirectory=pParent;
-		size_t currentPosition=0;
-		size_t nextSlash;
-		do
-		{
-			nextSlash=fullPath.find_first_of('/', currentPosition );
-			std::string directoryName=fullPath.substr(currentPosition,nextSlash-currentPosition);
-			currentPosition=nextSlash+1;
-
-			TDirectory* pNextSubDirectory=pSubDirectory->GetDirectory( directoryName.c_str() );
-			if( pNextSubDirectory==NULL ) pNextSubDirectory=pSubDirectory->mkdir( directoryName.c_str() );
-			if( pNextSubDirectory==NULL ) throw std::runtime_error( "Couldn't create the root directory \""+directoryName+"\"" );
-			pSubDirectory=pNextSubDirectory;
-
-		} while( nextSlash!=std::string::npos );
-
-		return pSubDirectory;
-	}
-}
 
 trkupgradeanalysis::LightweightAnalyser::LightweightAnalyser( const std::string& outputFilename )
 	: zFinder_( verbose_, jetPtThresholdZ_, useHighestPtHiggsZ_ ),
@@ -61,48 +38,13 @@ trkupgradeanalysis::LightweightAnalyser::LightweightAnalyser( const std::string&
 
 
 	using namespace trkupgradeanalysis; // Don't really need this but I like to be explicit (ooh err..)
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZee(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionWen(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionWmun(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumuWithoutAdditionalJetsCut(120)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(110)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(115)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(125)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(130)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(135)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(110-20,135+10)) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumuWithCSVCutsSwitched(110-20,135+10)) );
-
-	//
-	// These are only temporary while I'm studying the number of additional jets
-	//
-	using namespace trkupgradeanalysis::additionaljetstudy;
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide2() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide3Plot1() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide3Plot2() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide3Plot3() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide4Plot2() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide5Plot1() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide5Plot2() ) );
-	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>( new WilkenSlide5Plot2AssumingTypo() ) );
-
-	//
-	// Don't need the following because I'm not studying the background estimation regions
-	//
-
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHWmun) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHWen) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHZmumu) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VlightRegionHZee) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHWmun) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHWen) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHZmumu) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new TTbarRegionHZee) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHWmun) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHWen) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHZmumu) );
-	//cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new VbbRegionHZee) );
+//	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZee(120)) );
+//	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionZmumu(120)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new AllVariables) );
+//	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionStdGeom50PUZmumuWithoutAdditionalJetsCut(125)) );
+//	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new SignalSelectionPhase150PUZmumuWithoutAdditionalJetsCut(125)) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new InitialSignalSelectionZee) );
+	cutsToApply_.push_back( boost::shared_ptr<VHbbCandidateCutSet>(new InitialSignalSelectionZmumu) );
 }
 
 trkupgradeanalysis::LightweightAnalyser::~LightweightAnalyser()
@@ -136,7 +78,7 @@ void trkupgradeanalysis::LightweightAnalyser::save()
 void trkupgradeanalysis::LightweightAnalyser::bookHistograms( trkupgradeanalysis::LightweightAnalyser::AllPlots& plots, const std::string& directoryName )
 {
 	TDirectory* pRootDirectory=pOutputFile_->GetDirectory("/");
-	TDirectory* pDirectory=createDirectory( directoryName, pRootDirectory );
+	TDirectory* pDirectory=trkupgradeanalysis::tools::createDirectory( directoryName, pRootDirectory );
 //	TDirectory* pDirectory=pRootDirectory->GetDirectory( directoryName.c_str() );
 //	if( pDirectory==NULL ) pDirectory=pRootDirectory->mkdir( directoryName.c_str() );
 
@@ -153,6 +95,15 @@ void trkupgradeanalysis::LightweightAnalyser::bookHistograms( trkupgradeanalysis
 
 	pSubDirectory=pDirectory->mkdir( "ElectronInfos" );
 	plots.allElectrons_.book( pSubDirectory );
+
+	pSubDirectory=pDirectory->mkdir( "HiggsCandidateJets" );
+	plots.higgsCandidateJets_.book( pSubDirectory );
+
+	pSubDirectory=pDirectory->mkdir( "AdditionalJets" );
+	plots.additionalJets_.book( pSubDirectory );
+
+	pSubDirectory=pDirectory->mkdir( "SimpleJets2" );
+	plots.simpleJets2_.book( pSubDirectory );
 
 	pSubDirectory=pDirectory->mkdir( "IsolationStudy" );
 	plots.isolationStudy_.book( pSubDirectory );
@@ -175,14 +126,17 @@ void trkupgradeanalysis::LightweightAnalyser::bookHistograms( trkupgradeanalysis
 
 void trkupgradeanalysis::LightweightAnalyser::fillAllPlotsStructure( AllPlots* pPlotsToFill, const VHbbEvent& vhbbEvent, const VHbbEventAuxInfo* pVHbbEventAuxInfo, const std::vector<VHbbCandidate>& zCandidates, const std::vector<VHbbCandidate>& wCandidates )
 {
-	pPlotsToFill->allMuons_.fill( vhbbEvent.muInfo );
+	pPlotsToFill->allMuons_.fill( vhbbEvent.muInfo, pVHbbEventAuxInfo );
 	pPlotsToFill->allElectrons_.fill( vhbbEvent.eleInfo );
 	if( pVHbbEventAuxInfo ) pPlotsToFill->monteCarloInfo_.fill( *pVHbbEventAuxInfo );
 	pPlotsToFill->isolationStudy_.fill( vhbbEvent, pVHbbEventAuxInfo ); // This class checks if is null itself
+	pPlotsToFill->simpleJets2_.fill( vhbbEvent.simpleJets2, pVHbbEventAuxInfo );
 
 	for( std::vector<VHbbCandidate>::const_iterator iCandidate=zCandidates.begin(); iCandidate!=zCandidates.end(); ++iCandidate )
 	{
 		pPlotsToFill->candidateHistogramsForAllEvents_.fill( *iCandidate );
+		pPlotsToFill->higgsCandidateJets_.fill( iCandidate->H.jets, pVHbbEventAuxInfo );
+		pPlotsToFill->additionalJets_.fill( iCandidate->additionalJets, pVHbbEventAuxInfo );
 
 		// Loop over all of the cuts. If this candidate passes the cuts then fill the plots
 		for( std::vector<CutSetPlotSet>::iterator iCutPlotSet=pPlotsToFill->cutCollectionPlotSets_.begin();
@@ -232,6 +186,28 @@ void trkupgradeanalysis::LightweightAnalyser::processEvent( const fwlite::Event&
 
 	++numberOfEvents_;
 
+	bool applyMuonIsolation=false;
+	// Apply isolation to the muons. Need to modify so use a very naughty const cast
+	if( applyMuonIsolation )
+	{
+		std::vector<VHbbEvent::MuonInfo>& muonInfos=const_cast< std::vector<VHbbEvent::MuonInfo>& >( pVHbbEvent->muInfo );
+		bool allMuonsPassIsolationCut=false;
+		while( !allMuonsPassIsolationCut )
+		{
+			// I'm worried about looping using invalidated iterators, so whenever I erase an element I'll
+			// start looping from the start. Not the most efficient way but these vectors typically have
+			// at most 3 entries.
+			std::vector<VHbbEvent::MuonInfo>::iterator iMuon;
+			for( iMuon=muonInfos.begin(); iMuon!=muonInfos.end(); ++iMuon )
+			{
+				float isolation=MuonInfoPlotSet::thirdRho25CorrectedIsolation( *iMuon, pVHbbEventAuxInfo->puInfo.rho25 );
+				if( isolation>=0.15 ) break;
+			}
+			if( iMuon!=muonInfos.end() ) muonInfos.erase( iMuon );
+			else allMuonsPassIsolationCut=true;
+		}
+	}
+
 	zFinder_.run( pVHbbEvent, zCandidates );
 	wFinder_.run( pVHbbEvent, wCandidates );
 
@@ -243,14 +219,30 @@ void trkupgradeanalysis::LightweightAnalyser::processEvent( const fwlite::Event&
 
 }
 
-void trkupgradeanalysis::LightweightAnalyser::processFile( TFile* pInputFile )
+void trkupgradeanalysis::LightweightAnalyser::processFile( TFile* pInputFile, size_t numberOfEvents )
 {
 	if( pPlotsForEverything_==NULL ) changeDirectory("allEvents");
 
 	fwlite::Event event( pInputFile );
+
+	size_t eventCount=0;
 	for( event.toBegin(); !event.atEnd(); ++event )
 	{
-		processEvent( event );
+		try
+		{
+			processEvent( event );
+			++eventCount;
+		}
+		catch( edm::Exception& error )
+		{
+			std::cerr << error.what() << std::endl;
+		}
+
+		if( numberOfEvents!=0 && eventCount>=numberOfEvents )
+		{
+			std::cout << "Breaking after " << eventCount << " events" << std::endl;
+			break;
+		}
 	}
 
 	std::cout << "There were " << numberOfEventsWithAtLeastOneZOrWCandidate_ << " events with a Z or W candidate out of " << numberOfEvents_ << " events." << std::endl;

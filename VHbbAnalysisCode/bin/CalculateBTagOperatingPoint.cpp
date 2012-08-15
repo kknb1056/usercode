@@ -29,7 +29,7 @@ void printUsage( const std::string& programName )
 			<< "\t" << "                              versus discriminator:" << "\n"
 			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB" << "\n"
 			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC" << "\n"
-			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG" << "\n"
+			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUS" << "\n"
 			<< std::endl;
 }
 
@@ -109,7 +109,7 @@ int main( int argc, char* argv[] )
 				// Try and retrieve the required histograms I need from the file
 				TH1F* pBJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB" ) );
 				TH1F* pCJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC" ) );
-				TH1F* pLightJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG" ) );
+				TH1F* pLightJetHistogram=dynamic_cast<TH1F*>( pInputFile->Get( "/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUS" ) );
 				if( pBJetHistogram==NULL || pCJetHistogram==NULL || pLightJetHistogram==NULL ) throw std::runtime_error("Couldn't get one of the input histograms.");
 
 				float bJetEfficiency=trkupgradeanalysis::tools::findEfficiency( pBJetHistogram, discriminator, false );

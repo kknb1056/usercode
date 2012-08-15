@@ -1,7 +1,50 @@
 #include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidateCuts.h"
 
+#include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidateVariables.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/tools.h"
+
 // Required to work out deltaPhi
 #include "DataFormats/GeometryVector/interface/VectorUtil.h"
+
+
+
+trkupgradeanalysis::CutOnVariable::CutOnVariable( const trkupgradeanalysis::variables::VHbbCandidateVariable& variable, const trkupgradeanalysis::cuts::ICutType& cut )
+	: pCut_( cut.copy() ), pVHbbCandidateVariable_( variable.copy() )
+{
+	// No operation besides the initialiser list
+}
+
+trkupgradeanalysis::CutOnVariable::~CutOnVariable()
+{
+	// No operation
+}
+
+std::string trkupgradeanalysis::CutOnVariable::name() const
+{
+	return pVHbbCandidateVariable_->variableName()+pCut_->name();
+}
+
+const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::CutOnVariable::cutVariable() const
+{
+	return *pVHbbCandidateVariable_;
+}
+
+bool trkupgradeanalysis::CutOnVariable::applyCut( const VHbbCandidate& vhbbCandidate ) const
+{
+	pVHbbCandidateVariable_->set(vhbbCandidate);
+	return pCut_->apply( pVHbbCandidateVariable_->histogrammableValue() );
+}
+
+bool trkupgradeanalysis::CutOnVariable::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	pVHbbCandidateVariable_->set(ntupleRow);
+	return pCut_->apply( pVHbbCandidateVariable_->histogrammableValue() );
+}
+
+
+
+
+
 
 
 trkupgradeanalysis::CandidateTypeEquals::CandidateTypeEquals( VHbbCandidate::CandidateType candidateType )
@@ -65,6 +108,19 @@ bool trkupgradeanalysis::CandidateTypeEquals::applyCut( const VHbbCandidate& vhb
 	return false;
 }
 
+bool trkupgradeanalysis::CandidateTypeEquals::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=static_cast<VHbbCandidate::CandidateType>( ntupleRow.getDouble( variableName() ) );
+
+	for( std::vector<VHbbCandidate::CandidateType>::const_iterator iRequiredCandidateType=requiredCandidateTypes_.begin(); iRequiredCandidateType!=requiredCandidateTypes_.end(); ++iRequiredCandidateType )
+	{
+		if( *iRequiredCandidateType==lastValue_ ) return true;
+	}
+
+	// If control reaches this far than non of the entries in the vector matched
+	return false;
+}
+
 std::string trkupgradeanalysis::CandidateTypeEquals::variableName() const
 {
 	return "CandidateType";
@@ -107,7 +163,8 @@ trkupgradeanalysis::NumberOfJets::~NumberOfJets()
 
 std::string trkupgradeanalysis::NumberOfJets::name() const
 {
-	return variableName()+pCut_->name();}
+	return variableName()+pCut_->name();
+}
 
 const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::NumberOfJets::cutVariable() const
 {
@@ -119,6 +176,12 @@ const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::NumberOfJets::
 bool trkupgradeanalysis::NumberOfJets::applyCut( const VHbbCandidate& vhbbCandidate ) const
 {
 	lastValue_=vhbbCandidate.H.jets.size();
+	return pCut_->apply(lastValue_);
+}
+
+bool trkupgradeanalysis::NumberOfJets::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
 	return pCut_->apply(lastValue_);
 }
 
@@ -160,6 +223,12 @@ bool trkupgradeanalysis::PtOfJetN::applyCut( const VHbbCandidate& vhbbCandidate 
 	if( vhbbCandidate.H.jets.size()<jetNumber_+1 ) lastValue_=-1; // Plus one because they're numbered from zero
 	else lastValue_=const_cast<VHbbCandidate&>(vhbbCandidate).H.jets.at(jetNumber_).Pt(); // const cast needed because this method isn't declared const for some reason
 
+	return pCut_->apply(lastValue_);
+}
+
+bool trkupgradeanalysis::PtOfJetN::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
 	return pCut_->apply(lastValue_);
 }
 
@@ -209,6 +278,12 @@ bool trkupgradeanalysis::PtOfHiggs::applyCut( const VHbbCandidate& vhbbCandidate
 	return pCut_->apply( lastValue_ );
 }
 
+bool trkupgradeanalysis::PtOfHiggs::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
 std::string trkupgradeanalysis::PtOfHiggs::variableName() const { return "PtOfHiggs"; }
 double trkupgradeanalysis::PtOfHiggs::histogrammableValue() const { return lastValue_; }
 size_t trkupgradeanalysis::PtOfHiggs::suggestedNumberOfBins() const { return 60; }
@@ -248,6 +323,12 @@ bool trkupgradeanalysis::PtOfVectorBoson::applyCut( const VHbbCandidate& vhbbCan
 	return pCut_->apply( lastValue_ );
 }
 
+bool trkupgradeanalysis::PtOfVectorBoson::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
 std::string trkupgradeanalysis::PtOfVectorBoson::variableName() const
 {
 	return "PtOfVectorBoson";
@@ -278,30 +359,30 @@ double trkupgradeanalysis::PtOfVectorBoson::suggestedUpperEdge() const
 
 
 
-trkupgradeanalysis::NumberOfAdditionalJets::NumberOfAdditionalJets( const trkupgradeanalysis::cuts::ICutType& cut, bool applyCleaning )
+trkupgradeanalysis::NumberOfAdditionalJetsCut::NumberOfAdditionalJetsCut( const trkupgradeanalysis::cuts::ICutType& cut, bool applyCleaning )
 	: pCut_( cut.copy() ), applyCleaning_(applyCleaning)
 {
 	// No operation apart from the initialiser list
 }
 
-trkupgradeanalysis::NumberOfAdditionalJets::~NumberOfAdditionalJets()
+trkupgradeanalysis::NumberOfAdditionalJetsCut::~NumberOfAdditionalJetsCut()
 {
 	// No operation
 }
 
-std::string trkupgradeanalysis::NumberOfAdditionalJets::name() const
+std::string trkupgradeanalysis::NumberOfAdditionalJetsCut::name() const
 {
 	return variableName()+pCut_->name();
 }
 
-const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::NumberOfAdditionalJets::cutVariable() const
+const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::NumberOfAdditionalJetsCut::cutVariable() const
 {
 	// This class implements the HistogramVariable interface to save on the
 	// number of classes, so just return a reference to this instance.
 	return *this;
 }
 
-bool trkupgradeanalysis::NumberOfAdditionalJets::applyCut( const VHbbCandidate& vhbbCandidate ) const
+bool trkupgradeanalysis::NumberOfAdditionalJetsCut::applyCut( const VHbbCandidate& vhbbCandidate ) const
 {
 	if( !applyCleaning_ ) lastValue_=vhbbCandidate.additionalJets.size();
 	else
@@ -316,7 +397,13 @@ bool trkupgradeanalysis::NumberOfAdditionalJets::applyCut( const VHbbCandidate& 
 	return pCut_->apply( lastValue_ );
 }
 
-bool trkupgradeanalysis::NumberOfAdditionalJets::jetId( const VHbbEvent::SimpleJet& jet ) const
+bool trkupgradeanalysis::NumberOfAdditionalJetsCut::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
+bool trkupgradeanalysis::NumberOfAdditionalJetsCut::jetId( const VHbbEvent::SimpleJet& jet ) const
 {
 	if( jet.neutralHadronEFraction > 0.99 ) return false;
 	if( jet.neutralEmEFraction > 0.99 ) return false;
@@ -331,27 +418,27 @@ bool trkupgradeanalysis::NumberOfAdditionalJets::jetId( const VHbbEvent::SimpleJ
 	return true;
 }
 
-std::string trkupgradeanalysis::NumberOfAdditionalJets::variableName() const
+std::string trkupgradeanalysis::NumberOfAdditionalJetsCut::variableName() const
 {
-	return "NumberOfAdditionalJets";
+	return "NumberOfAdditionalJetsCut";
 }
 
-double trkupgradeanalysis::NumberOfAdditionalJets::histogrammableValue() const
+double trkupgradeanalysis::NumberOfAdditionalJetsCut::histogrammableValue() const
 {
 	return lastValue_;
 }
 
-size_t trkupgradeanalysis::NumberOfAdditionalJets::suggestedNumberOfBins() const
+size_t trkupgradeanalysis::NumberOfAdditionalJetsCut::suggestedNumberOfBins() const
 {
 	return 91;
 }
 
-double trkupgradeanalysis::NumberOfAdditionalJets::suggestedLowerEdge() const
+double trkupgradeanalysis::NumberOfAdditionalJetsCut::suggestedLowerEdge() const
 {
 	return -0.5;
 }
 
-double trkupgradeanalysis::NumberOfAdditionalJets::suggestedUpperEdge() const
+double trkupgradeanalysis::NumberOfAdditionalJetsCut::suggestedUpperEdge() const
 {
 	return 90.5;
 }
@@ -392,6 +479,12 @@ bool trkupgradeanalysis::NumberOfAdditionalLeptons::applyCut( const VHbbCandidat
 
 	lastValue_=vhbbCandidate.V.muons.size()+vhbbCandidate.V.electrons.size()-expectedLeptons;
 	return pCut_->apply( lastValue_ );
+}
+
+bool trkupgradeanalysis::NumberOfAdditionalLeptons::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
 }
 
 std::string trkupgradeanalysis::NumberOfAdditionalLeptons::variableName() const
@@ -457,6 +550,12 @@ bool trkupgradeanalysis::METSigma::applyCut( const VHbbCandidate& vhbbCandidate 
 	return pCut_->apply( lastValue_ );
 }
 
+bool trkupgradeanalysis::METSigma::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
 std::string trkupgradeanalysis::METSigma::variableName() const
 {
 	return "METSigma";
@@ -517,6 +616,12 @@ bool trkupgradeanalysis::PtOfElectronN::applyCut( const VHbbCandidate& vhbbCandi
 	else lastValue_=vhbbCandidate.V.electrons.at(electronNumber_).p4.Pt();
 
 	return pCut_->apply( lastValue_ );
+}
+
+bool trkupgradeanalysis::PtOfElectronN::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
 }
 
 std::string trkupgradeanalysis::PtOfElectronN::variableName() const
@@ -581,6 +686,12 @@ bool trkupgradeanalysis::MassOfVectorBoson::applyCut( const VHbbCandidate& vhbbC
 	return pCut_->apply( lastValue_ );
 }
 
+bool trkupgradeanalysis::MassOfVectorBoson::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
 std::string trkupgradeanalysis::MassOfVectorBoson::variableName() const
 {
 	return "MassOfVectorBoson";
@@ -639,6 +750,12 @@ bool trkupgradeanalysis::MassOfHiggsBoson::applyCut( const VHbbCandidate& vhbbCa
 {
 	lastValue_=vhbbCandidate.H.p4.M();
 	return pCut_->apply( lastValue_ );
+}
+
+bool trkupgradeanalysis::MassOfHiggsBoson::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
 }
 
 std::string trkupgradeanalysis::MassOfHiggsBoson::variableName() const
@@ -709,6 +826,12 @@ bool trkupgradeanalysis::CSVOfAnyJetGreaterThan::applyCut( const VHbbCandidate& 
 		if( vhbbCandidate.H.jets.at(a).csv > lastValue_ ) lastValue_=vhbbCandidate.H.jets.at(a).csv;
 	}
 
+	return lastValue_ > requiredCSV_;
+}
+
+bool trkupgradeanalysis::CSVOfAnyJetGreaterThan::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
 	return lastValue_ > requiredCSV_;
 }
 
@@ -789,6 +912,12 @@ bool trkupgradeanalysis::CSVOfAllJetsGreaterThan::applyCut( const VHbbCandidate&
 	return lastValue_ > requiredCSV_;
 }
 
+bool trkupgradeanalysis::CSVOfAllJetsGreaterThan::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return lastValue_ > requiredCSV_;
+}
+
 std::string trkupgradeanalysis::CSVOfAllJetsGreaterThan::variableName() const
 {
 	std::stringstream nameStream;
@@ -854,6 +983,12 @@ bool trkupgradeanalysis::NumberOfMETObjects::applyCut( const VHbbCandidate& vhbb
 	return pCut_->apply( lastValue_ );
 }
 
+bool trkupgradeanalysis::NumberOfMETObjects::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
 std::string trkupgradeanalysis::NumberOfMETObjects::variableName() const { return "numberOfMETObjects"; }
 double trkupgradeanalysis::NumberOfMETObjects::histogrammableValue() const { return lastValue_; }
 size_t trkupgradeanalysis::NumberOfMETObjects::suggestedNumberOfBins() const { return 6; }
@@ -903,6 +1038,12 @@ bool trkupgradeanalysis::PtOfMETN::applyCut( const VHbbCandidate& vhbbCandidate 
 	return pCut_->apply( lastValue_ );
 }
 
+bool trkupgradeanalysis::PtOfMETN::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
 std::string trkupgradeanalysis::PtOfMETN::variableName() const
 {
 	std::stringstream nameStream;
@@ -921,37 +1062,43 @@ double trkupgradeanalysis::PtOfMETN::suggestedUpperEdge() const { return 150; }
 
 
 
-trkupgradeanalysis::DeltaPhiVH::DeltaPhiVH( const trkupgradeanalysis::cuts::ICutType& cut )
+trkupgradeanalysis::DeltaPhiVHCut::DeltaPhiVHCut( const trkupgradeanalysis::cuts::ICutType& cut )
 	: pCut_( cut.copy() )
 {
 	// No operation apart from the initialiser list
 }
 
-trkupgradeanalysis::DeltaPhiVH::~DeltaPhiVH()
+trkupgradeanalysis::DeltaPhiVHCut::~DeltaPhiVHCut()
 {
 	// No operation
 }
 
-std::string trkupgradeanalysis::DeltaPhiVH::name() const
+std::string trkupgradeanalysis::DeltaPhiVHCut::name() const
 {
 	return variableName()+pCut_->name();
 }
 
-const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::DeltaPhiVH::cutVariable() const
+const trkupgradeanalysis::IHistogramVariable& trkupgradeanalysis::DeltaPhiVHCut::cutVariable() const
 {
 	// This class implements the HistogramVariable interface to save on the
 	// number of classes, so just return a reference to this instance.
 	return *this;
 }
 
-bool trkupgradeanalysis::DeltaPhiVH::applyCut( const VHbbCandidate& vhbbCandidate ) const
+bool trkupgradeanalysis::DeltaPhiVHCut::applyCut( const VHbbCandidate& vhbbCandidate ) const
 {
 	lastValue_=TMath::Abs( Geom::deltaPhi( vhbbCandidate.H.p4.Phi(), vhbbCandidate.V.p4.Phi() ) );
 	return pCut_->apply( lastValue_ );
 }
 
-std::string trkupgradeanalysis::DeltaPhiVH::variableName() const { return "DeltaPhiVH";}
-double trkupgradeanalysis::DeltaPhiVH::histogrammableValue() const { return lastValue_; }
-size_t trkupgradeanalysis::DeltaPhiVH::suggestedNumberOfBins() const { return 60; }
-double trkupgradeanalysis::DeltaPhiVH::suggestedLowerEdge() const { return 0; }
-double trkupgradeanalysis::DeltaPhiVH::suggestedUpperEdge() const { return M_PI; }
+bool trkupgradeanalysis::DeltaPhiVHCut::applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const
+{
+	lastValue_=ntupleRow.getDouble( variableName() );
+	return pCut_->apply(lastValue_);
+}
+
+std::string trkupgradeanalysis::DeltaPhiVHCut::variableName() const { return "DeltaPhiVHCut";}
+double trkupgradeanalysis::DeltaPhiVHCut::histogrammableValue() const { return lastValue_; }
+size_t trkupgradeanalysis::DeltaPhiVHCut::suggestedNumberOfBins() const { return 60; }
+double trkupgradeanalysis::DeltaPhiVHCut::suggestedLowerEdge() const { return 0; }
+double trkupgradeanalysis::DeltaPhiVHCut::suggestedUpperEdge() const { return M_PI; }

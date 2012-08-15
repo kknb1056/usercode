@@ -8,4 +8,6 @@
 	<bin file="TrkUpgradeNTupleAnalyser.cpp"/>
 	<bin file="CalculateBTagOperatingPoint.cpp"/>
 	<bin file="CalculateBTagDiscriminator.cpp"/>
+	<bin file="GenParticleInfo.cpp"/>
+	<bin file="TTreeTest.cpp"/>
 </environment>

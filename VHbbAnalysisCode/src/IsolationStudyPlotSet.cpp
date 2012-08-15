@@ -39,7 +39,7 @@ namespace // Use the unnamed namespace for things only used in this file
 }
 
 trkupgradeanalysis::IsolationStudyPlotSet::IsolationStudyPlotSet()
-	: histogramHaveBeenBooked_(false), leastIsolatedDiMuon_(true), leastDeltaBetaCorrectedIsolatedDiMuon_(true)
+	: histogramHaveBeenBooked_(false), leastIsolatedDiMuon_(false), leastDeltaBetaCorrectedIsolatedDiMuon_(false)
 {
 	// No operation besides the initialiser list.
 }
@@ -55,21 +55,12 @@ void trkupgradeanalysis::IsolationStudyPlotSet::book( TDirectory* pDirectory )
 	//
 
 
-//	pGlobalChi2_=new TH1F( "globalChi2","Global chi2", 60, 0, 20 );
-//	pGlobalChi2_->SetDirectory(pDirectory);
-
-//	pLeastIsolatedDiMuonTree_=new TTree("leastIsolatedDiMuonTree","Data about the least isolated muon in the di-muon pair");
-//	pLeastIsolatedDiMuonTree_->Branch("numberOfPrimaryVertices",&numberOfPrimaryVertices_branch_,"numberOfPrimaryVertices/I");
-//	pLeastIsolatedDiMuonTree_->Branch("chargedIsolation",&chargedIsolation_branch_,"chargedIsolation/F");
-//	pLeastIsolatedDiMuonTree_->Branch("photonIsolation",&photonIsolation_branch_,"photonIsolation/F");
-//	pLeastIsolatedDiMuonTree_->Branch("neutralIsolation",&neutralIsolation_branch_,"neutralIsolation/F");
-//	pLeastIsolatedDiMuonTree_->Branch("pileupIsolation",&pileupIsolation_branch_,"pileupIsolation/F");
-//	pLeastIsolatedDiMuonTree_->Branch("pT",&pT_branch_,"pT/F");
-//	pLeastIsolatedDiMuonTree_->SetDirectory( pDirectory );
-
 	TDirectory* pNewDirectory;
 	pNewDirectory=pDirectory->mkdir("cleanedMuons");
 	cleanedMuons_.book( pNewDirectory );
+
+	pNewDirectory=pDirectory->mkdir("cleanedElectrons");
+	cleanedElectrons_.book( pNewDirectory );
 
 	pNewDirectory=pDirectory->mkdir("highestPtDiMuon");
 	highestPtDiMuon_.book( pNewDirectory );
@@ -97,6 +88,12 @@ void trkupgradeanalysis::IsolationStudyPlotSet::fill( const VHbbEvent& event, co
 	{
 		// Clean the muons with all the criteria of the VHbb package (apart from isolation)
 		std::vector<VHbbEvent::MuonInfo> cleanedMuons=cleanMuons( event.muInfo );
+		cleanedMuons_.fill( cleanedMuons, pAuxInfo ); // Fill some plots about the cleaned muons
+
+		// Clean the muons with all the criteria of the VHbb package (apart from isolation)
+		std::vector<VHbbEvent::ElectronInfo> cleanedElectrons=cleanElectrons( event.eleInfo );
+		cleanedElectrons_.fill( cleanedElectrons, pAuxInfo ); // Fill some plots about the cleaned muons
+
 		// Then make sure they're sorted high to low by pT
 		std::sort( cleanedMuons.begin(), cleanedMuons.end(), ::SortByTransverseMomentum<VHbbEvent::MuonInfo>() );
 		// Then find two with opposite charge
@@ -106,7 +103,6 @@ void trkupgradeanalysis::IsolationStudyPlotSet::fill( const VHbbEvent& event, co
 		if( pAuxInfo ) numberOfPrimaryVertices=pAuxInfo->pvInfo.nVertices;
 		else numberOfPrimaryVertices=-1;
 
-		cleanedMuons_.fill( cleanedMuons, pAuxInfo ); // Fill some plots about the cleaned muons
 		highestPtDiMuon_.fill( diMuons.first, pAuxInfo ); // I know the collection is already sorted by pT, so the first has the highest.
 		lowestPtDiMuon_.fill( diMuons.second, pAuxInfo );
 
@@ -148,6 +144,20 @@ std::vector<VHbbEvent::MuonInfo> trkupgradeanalysis::IsolationStudyPlotSet::clea
 		    iMuon->ipDb<.2 &&
 		    fabs(iMuon->p4.Eta())<2.4 &&
 		    iMuon->p4.Pt()>20 ) returnValue.push_back(*iMuon);
+	}
+
+	return returnValue;
+}
+
+std::vector<VHbbEvent::ElectronInfo> trkupgradeanalysis::IsolationStudyPlotSet::cleanElectrons( const std::vector<VHbbEvent::ElectronInfo>& electrons )
+{
+	std::vector<VHbbEvent::ElectronInfo> returnValue;
+
+	for( std::vector<VHbbEvent::ElectronInfo>::const_iterator iElectron=electrons.begin(); iElectron!=electrons.end(); ++iElectron )
+	{
+		if( (std::fabs(iElectron->id95-7)<0.1 || std::fabs(iElectron->id95-5)<0.1) &&
+			std::fabs(iElectron->p4.Eta()) < 2.5 &&
+			iElectron->p4.Pt()>20 ) returnValue.push_back(*iElectron);
 	}
 
 	return returnValue;

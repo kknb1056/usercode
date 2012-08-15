@@ -10,6 +10,15 @@
 class TH1F;
 class TDirectory;
 class VHbbCandidate;
+class TTree;
+class TBranch;
+namespace trkupgradeanalysis
+{
+	namespace tools
+	{
+		class NTupleRow;
+	}
+}
 
 namespace trkupgradeanalysis
 {
@@ -21,9 +30,10 @@ namespace trkupgradeanalysis
 	class CutSetPlotSet
 	{
 	public:
-		CutSetPlotSet( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet> pCutSet );
+		CutSetPlotSet( boost::shared_ptr<trkupgradeanalysis::VHbbCandidateCutSet> pCutSet, bool createNTupleOfAdditionalVariables=true );
 		void book( TDirectory* pDirectory );
 		void fill( const VHbbCandidate& vhbbCandidate );
+		void fill( const trkupgradeanalysis::tools::NTupleRow& ntupleRow );
 	private:
 		bool histogramHaveBeenBooked_;
 
@@ -35,6 +45,10 @@ namespace trkupgradeanalysis
 		std::vector<TH1F*> nMinus1Plots_;
 		std::vector<TH1F*> allCandidatesPlots_;
 		std::vector<TH1F*> passedCandidatesPlots_;
+		std::vector<TH1F*> additionalVariablePlots_;
+		bool createNTupleOfAdditionalVariables_;
+		std::vector<TBranch*> additionalVariableBranches_; ///< If ntuplising, a branch for each variable
+		TTree* pAdditionalVariableTree_;
 	};
 
 } // end of namespace trkupgradeanalysis

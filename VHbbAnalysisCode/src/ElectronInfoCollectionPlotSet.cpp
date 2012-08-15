@@ -30,7 +30,7 @@ void trkupgradeanalysis::ElectronInfoCollectionPlotSet::book( TDirectory* pDirec
 	histogramHaveBeenBooked_=true;
 }
 
-void trkupgradeanalysis::ElectronInfoCollectionPlotSet::fill( const std::vector<VHbbEvent::ElectronInfo>& electronCollection )
+void trkupgradeanalysis::ElectronInfoCollectionPlotSet::fill( const std::vector<VHbbEvent::ElectronInfo>& electronCollection, const VHbbEventAuxInfo* pAuxInfo )
 {
 	if( !histogramHaveBeenBooked_ ) throw std::runtime_error( "trkupgradeanalysis::ElectronInfoCollectionPlotSet::book() - histograms have not been booked" );
 
@@ -38,7 +38,7 @@ void trkupgradeanalysis::ElectronInfoCollectionPlotSet::fill( const std::vector<
 
 	for( std::vector<VHbbEvent::ElectronInfo>::const_iterator iElectron=electronCollection.begin(); iElectron!=electronCollection.end(); ++iElectron )
 	{
-		electronInfoPlotSet_.fill( *iElectron );
+		electronInfoPlotSet_.fill( *iElectron, pAuxInfo );
 	}
 
 }

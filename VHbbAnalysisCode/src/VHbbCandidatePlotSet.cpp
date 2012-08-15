@@ -32,10 +32,10 @@ void trkupgradeanalysis::VHbbCandidatePlotSet::book( TDirectory* pDirectory )
 	pCandidateType_->GetXaxis()->SetBinLabel( VHbbCandidate::Znn+1, "Znn");
 	pCandidateType_->GetXaxis()->SetBinLabel( VHbbCandidate::UNKNOWN+1, "UNKNOWN");
 
-	pHiggsMass_=new TH1F( "higgsMass","Higgs candidate mass",75,0,250);
+	pHiggsMass_=new TH1F( "higgsMass","Higgs candidate mass",150,0,250);
 	pHiggsMass_->SetDirectory(pDirectory);
 
-	pZMass_=new TH1F( "ZMass","Z candidate mass",65,0,200);
+	pZMass_=new TH1F( "ZMass","Z candidate mass",130,0,200);
 	pZMass_->SetDirectory(pDirectory);
 
 	pNumberOfElectrons_=new TH1F( "numberOfElectrons","Number of electrons",6,-0.5,5.5);

@@ -2,6 +2,7 @@
 #define trkupgradeanalysis_ElectronInfoPlotSet_h
 
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbEvent.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/LeptonInfoPlotSet.h"
 
 // Forward declarations
 class TH1F;
@@ -19,12 +20,14 @@ namespace trkupgradeanalysis
 	public:
 		ElectronInfoPlotSet();
 		void book( TDirectory* pDirectory );
-		void fill( const VHbbEvent::ElectronInfo& electron );
+		void fill( const VHbbEvent::ElectronInfo& electron, const VHbbEventAuxInfo* pAuxInfo=NULL );
 	private:
 		bool histogramHaveBeenBooked_;
 
-		TH1F* pEta_;
-		TH1F* pPt_;
+		trkupgradeanalysis::LeptonInfoPlotSet<VHbbEvent::ElectronInfo> leptonPlotSet_; ///< Common plots used by electron and muon plotsets
+
+		// Plots specific to electrons
+		TH1F* pID95_;
 	};
 
 } // end of namespace trkupgradeanalysis

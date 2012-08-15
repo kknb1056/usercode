@@ -10,9 +10,40 @@
 
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbCandidate.h"
 
+// Forward declarations
+namespace trkupgradeanalysis
+{
+	namespace variables
+	{
+		class VHbbCandidateVariable;
+	}
+}
+
 
 namespace trkupgradeanalysis
 {
+	/** @brief Cut that takes a HistogramVariable and a CutType to create a cut
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 07/Jul/2012
+	 */
+	class CutOnVariable : public trkupgradeanalysis::IBasicVHbbCandidateCut
+	{
+	public:
+		CutOnVariable( const trkupgradeanalysis::variables::VHbbCandidateVariable& variable, const trkupgradeanalysis::cuts::ICutType& cut );
+		virtual ~CutOnVariable();
+
+		// The methods from BasicCut
+		virtual std::string name() const;
+		virtual const trkupgradeanalysis::IHistogramVariable& cutVariable() const;
+
+		// The method from BasicVHbbCandidateCut
+		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
+	private:
+		std::auto_ptr<trkupgradeanalysis::cuts::ICutType> pCut_;
+		std::auto_ptr<trkupgradeanalysis::variables::VHbbCandidateVariable> pVHbbCandidateVariable_;
+	};
 
 	class CandidateTypeEquals : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable
 	{
@@ -27,6 +58,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -51,6 +83,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -75,6 +108,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -100,6 +134,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -124,6 +159,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -136,11 +172,11 @@ namespace trkupgradeanalysis
 		mutable double lastValue_;
 	};
 
-	class NumberOfAdditionalJets : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable
+	class NumberOfAdditionalJetsCut : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable
 	{
 	public:
-		NumberOfAdditionalJets( const trkupgradeanalysis::cuts::ICutType& cut, bool applyCleaning_=true );
-		virtual ~NumberOfAdditionalJets();
+		NumberOfAdditionalJetsCut( const trkupgradeanalysis::cuts::ICutType& cut, bool applyCleaning=true );
+		virtual ~NumberOfAdditionalJetsCut();
 
 		// The methods from BasicCut
 		virtual std::string name() const;
@@ -148,6 +184,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -174,6 +211,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -198,6 +236,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -222,6 +261,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -247,6 +287,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -271,6 +312,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -311,6 +353,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -352,6 +395,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -387,6 +431,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -419,6 +464,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;
@@ -432,11 +478,11 @@ namespace trkupgradeanalysis
 		mutable double lastValue_;
 	};
 
-	class DeltaPhiVH : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable
+	class DeltaPhiVHCut : public trkupgradeanalysis::IBasicVHbbCandidateCut, public trkupgradeanalysis::IHistogramVariable
 	{
 	public:
-		DeltaPhiVH( const trkupgradeanalysis::cuts::ICutType& cut );
-		virtual ~DeltaPhiVH();
+		DeltaPhiVHCut( const trkupgradeanalysis::cuts::ICutType& cut );
+		virtual ~DeltaPhiVHCut();
 
 		// The methods from BasicCut
 		virtual std::string name() const;
@@ -444,6 +490,7 @@ namespace trkupgradeanalysis
 
 		// The method from BasicVHbbCandidateCut
 		virtual bool applyCut( const VHbbCandidate& vhbbCandidate ) const;
+		virtual bool applyCut( const trkupgradeanalysis::tools::NTupleRow& ntupleRow ) const;
 
 		// The methods from HistogramVariable I need to implement
 		std::string variableName() const;

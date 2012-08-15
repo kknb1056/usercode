@@ -7,6 +7,7 @@
 // Forward declarations
 class TH1F;
 class TDirectory;
+class VHbbEventAuxInfo;
 
 namespace trkupgradeanalysis
 {
@@ -20,7 +21,7 @@ namespace trkupgradeanalysis
 	public:
 		ElectronInfoCollectionPlotSet();
 		void book( TDirectory* pDirectory );
-		void fill( const std::vector<VHbbEvent::ElectronInfo>& electronCollection );
+		void fill( const std::vector<VHbbEvent::ElectronInfo>& electronCollection, const VHbbEventAuxInfo* pAuxInfo=NULL );
 	private:
 		bool histogramHaveBeenBooked_;
 

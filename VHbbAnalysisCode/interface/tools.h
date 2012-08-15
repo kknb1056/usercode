@@ -4,10 +4,13 @@
 #include <memory> // required for std::auto_ptr
 #include <string>
 #include <utility> // required for std::pair
+#include <map>
 
 // Forward declarations
 class TFile;
 class TH1F;
+class TTree;
+class TDirectory;
 
 namespace trkupgradeanalysis
 {
@@ -32,6 +35,27 @@ namespace trkupgradeanalysis
 			TFile_auto_ptr( const std::string& filename );
 			~TFile_auto_ptr();
 			bool operator==( const TFile* pOtherFile );
+		};
+
+
+
+		/** @brief Class to simplify getting entries from a TTree.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 07/Jul/2012
+		 */
+		class NTupleRow
+		{
+		public:
+			NTupleRow( TTree* pTree );
+			const double& getDouble( const std::string& name ) const;
+			bool nextRow();
+			void returnToStart();
+		protected:
+			std::map<std::string,double> branchAddresses_;
+			TTree* pTree_;
+			int maxCandidateNumber_;
+			int candidateNumber_;
 		};
 
 
@@ -83,6 +107,19 @@ namespace trkupgradeanalysis
 		 * @date 30/Apr/2012
 		 */
 		float findEfficiency( const TH1F* pEventsVersusDiscriminatorHistogram, const float requiredDiscriminator, const bool verbose=true );
+
+
+		/** @brief Creates a directory structure in the root TDirectory, with parent directories separated by slashes also created.
+		 *
+		 * @param[in] fullPath          The directory name to be created. Slashes will create a series of directories inside each other.
+		 * @param[in] pParent           The already existing directory to create the new directories in.
+		 * @return                      The TDirectory created.
+		 * @throw  std::runtime_error   If the pParent is NULL or one of the directories couldn't be created.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 08/Jul/2012
+		 */
+		TDirectory* createDirectory( const std::string& fullPath, TDirectory* pParent );
 
 	} // end of namespace tools
 

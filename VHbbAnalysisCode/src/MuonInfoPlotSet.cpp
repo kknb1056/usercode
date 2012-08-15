@@ -25,8 +25,11 @@ void trkupgradeanalysis::MuonInfoPlotSet::book( TDirectory* pDirectory )
 	//
 
 
-	pGlobalChi2_=new TH1F( "globalChi2","Global chi2", 60, 0, 20 );
+	pGlobalChi2_=new TH1F( "globalChi2","Global chi2", 60, 0, 6 );
 	pGlobalChi2_->SetDirectory(pDirectory);
+
+	pNumberOfValidPixel_=new TH1F( "numberOfValidPixel", "Number of valid pixel", 11, -0.5, 10.5 );
+	pNumberOfValidPixel_->SetDirectory(pDirectory);
 
 	pNumberOfPixelHits_=new TH1F( "numberOfPixelHits", "Number of pixel hits", 11, -0.5, 10.5 );
 	pNumberOfPixelHits_->SetDirectory(pDirectory);
@@ -48,6 +51,9 @@ void trkupgradeanalysis::MuonInfoPlotSet::book( TDirectory* pDirectory )
 
 	pEta_=new TH1F( "eta", "Eta", 60, -3, 3 );
 	pEta_->SetDirectory(pDirectory);
+
+	pPhi_=new TH1F( "phi", "phi", 60, -3.15, 3.15 );
+	pPhi_->SetDirectory(pDirectory);
 
 	pPt_=new TH1F( "pT", "pT", 60, 0, 250 );
 	pPt_->SetDirectory(pDirectory);
@@ -85,6 +91,18 @@ void trkupgradeanalysis::MuonInfoPlotSet::book( TDirectory* pDirectory )
 	pRho25CorrectedIsolation_=new TH1F( "rho25CorrectedIsolation", "rho25CorrectedIsolation", 120, 0, 2 );
 	pRho25CorrectedIsolation_->SetDirectory(pDirectory);
 
+	pThirdRho25CorrectedIsolation_=new TH1F( "thirdRho25CorrectedIsolation", "thirdRho25CorrectedIsolation", 120, 0, 2 );
+	pThirdRho25CorrectedIsolation_->SetDirectory(pDirectory);
+
+	pDeltaBetaCorrectedIsolationNoZeroing_=new TH1F( "deltaBetaCorrectedIsolationNoZeroing", "deltaBetaCorrectedIsolationNoZeroing", 120, -1, 1 );
+	pDeltaBetaCorrectedIsolationNoZeroing_->SetDirectory(pDirectory);
+
+	pRho25CorrectedIsolationNoZeroing_=new TH1F( "rho25CorrectedIsolationNoZeroing", "rho25CorrectedIsolationNoZeroing", 120, -1, 1 );
+	pRho25CorrectedIsolationNoZeroing_->SetDirectory(pDirectory);
+
+	pThirdRho25CorrectedIsolationNoZeroing_=new TH1F( "thirdRho25CorrectedIsolationNoZeroing", "thirdRho25CorrectedIsolationNoZeroing", 120, -1, 1 );
+	pThirdRho25CorrectedIsolationNoZeroing_->SetDirectory(pDirectory);
+
 	if( createIsolationTree_ )
 	{
 		pIsolationTree_=new TTree("isolationTree","Data about the muon isolation");
@@ -121,6 +139,7 @@ void trkupgradeanalysis::MuonInfoPlotSet::fill( const VHbbEvent::MuonInfo& muon,
 	pNumberOfMatches_->Fill( muon.nMatches );
 	pIPDB_->Fill( muon.ipDb );
 	pEta_->Fill( muon.p4.Eta() );
+	pPhi_->Fill( muon.p4.Phi() );
 	pPt_->Fill( muon.p4.Pt() );
 	pChargedIsolation_->Fill( muon.pfChaIso );
 	pPhotonIsolation_->Fill( muon.pfPhoIso );
@@ -132,7 +151,15 @@ void trkupgradeanalysis::MuonInfoPlotSet::fill( const VHbbEvent::MuonInfo& muon,
 	pRelativePileupIsolation_->Fill( muon.pfChaPUIso/muon.p4.Pt() );
 	pRelativeIsolation_->Fill( combinedRelativeIsolation(muon) );
 	pDeltaBetaCorrectedIsolation_->Fill( deltaBetaCorrectedIsolation(muon) );
-	if( pAuxInfo ) pRho25CorrectedIsolation_->Fill( rho25CorrectedIsolation(muon,rho25) ); // Don't bother filling if I couldn't get the rho25 info
+	pDeltaBetaCorrectedIsolationNoZeroing_->Fill( deltaBetaCorrectedIsolationNoZeroing(muon) );
+	if( pAuxInfo )
+	{
+		// Don't bother filling if I couldn't get the rho25 info
+		pRho25CorrectedIsolation_->Fill( rho25CorrectedIsolation(muon,rho25) );
+		pRho25CorrectedIsolationNoZeroing_->Fill( rho25CorrectedIsolationNoZeroing(muon,rho25) );
+		pThirdRho25CorrectedIsolation_->Fill( thirdRho25CorrectedIsolation(muon,rho25) );
+		pThirdRho25CorrectedIsolationNoZeroing_->Fill( thirdRho25CorrectedIsolationNoZeroing(muon,rho25) );
+	}
 
 	// If the TTree is not null then isolation data has been requested
 	if( pIsolationTree_ )
@@ -166,8 +193,43 @@ float trkupgradeanalysis::MuonInfoPlotSet::deltaBetaCorrectedIsolation( const VH
 float trkupgradeanalysis::MuonInfoPlotSet::rho25CorrectedIsolation( const VHbbEvent::MuonInfo& muon, float rho25 )
 {
 	float uncorrectedIsolation=combinedRelativeIsolation(muon);
-	float correctedIsolation=uncorrectedIsolation-(M_PI*0.4*0.4*rho25)/muon.p4.Pt();
+	float correctedIsolation=uncorrectedIsolation-(0.4*0.4*M_PI*rho25)/muon.p4.Pt();
 	if( correctedIsolation<0 ) correctedIsolation=0;
+
+	return correctedIsolation;
+}
+
+float trkupgradeanalysis::MuonInfoPlotSet::thirdRho25CorrectedIsolation( const VHbbEvent::MuonInfo& muon, float rho25 )
+{
+	float uncorrectedIsolation=combinedRelativeIsolation(muon);
+	float correctedIsolation=uncorrectedIsolation-(0.4*0.4*M_PI*rho25)/3.0/muon.p4.Pt();
+	if( correctedIsolation<0 ) correctedIsolation=0;
+
+	return correctedIsolation;
+}
+
+float trkupgradeanalysis::MuonInfoPlotSet::deltaBetaCorrectedIsolationNoZeroing( const VHbbEvent::MuonInfo& muon, float deltaBetaFactor )
+{
+	// deltaBetaFactor defaults to -0.5
+	float correctedNeutralIsolation=muon.pfPhoIso+muon.pfNeuIso+deltaBetaFactor*muon.pfChaPUIso;
+
+	return (muon.pfChaIso+correctedNeutralIsolation)/muon.p4.Pt();
+}
+
+float trkupgradeanalysis::MuonInfoPlotSet::rho25CorrectedIsolationNoZeroing( const VHbbEvent::MuonInfo& muon, float rho25 )
+{
+	float uncorrectedIsolation=combinedRelativeIsolation(muon);
+	float correctedIsolation=uncorrectedIsolation-(0.4*0.4*M_PI*rho25)/muon.p4.Pt();
+
+
+	return correctedIsolation;
+}
+
+float trkupgradeanalysis::MuonInfoPlotSet::thirdRho25CorrectedIsolationNoZeroing( const VHbbEvent::MuonInfo& muon, float rho25 )
+{
+	float uncorrectedIsolation=combinedRelativeIsolation(muon);
+	float correctedIsolation=uncorrectedIsolation-(0.4*0.4*M_PI*rho25)/3.0/muon.p4.Pt();
+
 
 	return correctedIsolation;
 }

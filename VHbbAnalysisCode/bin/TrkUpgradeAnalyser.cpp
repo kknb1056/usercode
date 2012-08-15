@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <stdexcept>
+#include <sstream>
 
 #include <TFile.h>
 #include <TSystem.h>
@@ -12,7 +13,7 @@
 
 void printUsage( const std::string& programName )
 {
-	std::cout << programName << " [-o outputFilename] [-d directoryInRootFile] inputFile1 [inputFile2 ....] [[-d directory2InRootFile] inputFile3 [inputFile4 ....]]" << "\n"
+	std::cout << programName << " [-o outputFilename] [-d directoryInRootFile] [-n numberOfEvents] inputFile1 [inputFile2 ....] [[-d directory2InRootFile] inputFile3 [inputFile4 ....]]" << "\n"
 			<< "       e.g. \"" << programName << " -o output.root -d signal/ZH PAT.edm.01.root -d background/ZZ PAT.edm.02.root PAT.edm.03.root\"" << "\n"
 			<< "            will create a file called output.root, with the data from PAT.edm.01.root in the directory signal/ZH and" << "\n"
 			<< "            the data from PAT.edm.02.root and PAT.edm.03.root in the directory background/ZZ." << "\n"
@@ -36,9 +37,14 @@ int main( int argc, char* argv[] )
 	std::string currentDirectory="";
 	std::string outputFilename;
 
+	// Optionally take the number of events to run over from the command line
+	size_t numberOfEvents;
+
 	// Run over the command line arguments and figure out what the user wants to do
 	try
 	{
+		std::string numberOfEventsAsString;
+
 		for( int a=1; a<argc; ++a )
 		{
 			if( std::string(argv[a])=="-h" ) printUsage( argv[0] );
@@ -59,12 +65,34 @@ int main( int argc, char* argv[] )
 				outputFilename=argv[a];
 				continue;
 			}
+			else if( std::string(argv[a])=="-n" )
+			{
+				if( !numberOfEventsAsString.empty() ) throw std::runtime_error("number of events can only be specified once with the -n option");
+				if( a+1>=argc ) throw std::runtime_error("-n requires an additional argument");
+
+				++a;
+				numberOfEventsAsString=argv[a];
+				continue;
+			}
 
 			// If the argument doesn't match anything tried above then treat it as an input filename
 			directoriesAndFilenames[currentDirectory].push_back( argv[a] );
 		}
 
 		if( directoriesAndFilenames.empty() ) throw std::runtime_error("No input files have been specified.");
+
+		if( !numberOfEventsAsString.empty() )
+		{
+			// Try and convert the efficiency to a float
+			std::stringstream stringConverter;
+			stringConverter.str(numberOfEventsAsString);
+			stringConverter >> numberOfEvents;
+
+			// Make sure all of the string converted properly to the float
+			if( stringConverter.fail() || !stringConverter.eof() ) throw std::runtime_error("Number of events must be set to a valid positive integer.");
+		}
+		else numberOfEvents=0; // default to 0, which is interpreted as running over all the events
+
 	}
 	catch( std::exception& error )
 	{
@@ -99,7 +127,7 @@ int main( int argc, char* argv[] )
 				continue;
 			}
 
-			analyser.processFile( pInputFile );
+			analyser.processFile( pInputFile, numberOfEvents );
 
 			// Save after each file so if the program is interrupted at least I'll get
 			// some output.

@@ -31,6 +31,10 @@ namespace trkupgradeanalysis
 		static float combinedRelativeIsolation( const VHbbEvent::MuonInfo& muon );
 		static float deltaBetaCorrectedIsolation( const VHbbEvent::MuonInfo& muon, float deltaBetaFactor=-0.5 );
 		static float rho25CorrectedIsolation( const VHbbEvent::MuonInfo& muon, float rho25 );
+		static float thirdRho25CorrectedIsolation( const VHbbEvent::MuonInfo& muon, float rho25 );
+		static float deltaBetaCorrectedIsolationNoZeroing( const VHbbEvent::MuonInfo& muon, float deltaBetaFactor=-0.5 );
+		static float rho25CorrectedIsolationNoZeroing( const VHbbEvent::MuonInfo& muon, float rho25 );
+		static float thirdRho25CorrectedIsolationNoZeroing( const VHbbEvent::MuonInfo& muon, float rho25 );
 	private:
 		bool histogramHaveBeenBooked_;
 
@@ -45,6 +49,7 @@ namespace trkupgradeanalysis
 		float pT_branch_;
 
 		TH1F* pGlobalChi2_;
+		TH1F* pNumberOfValidPixel_;
 		TH1F* pNumberOfPixelHits_;
 		TH1F* pNumberOfGlobalHits_;
 		TH1F* pNumberOfHits_;
@@ -52,6 +57,7 @@ namespace trkupgradeanalysis
 		TH1F* pNumberOfMatches_;
 		TH1F* pIPDB_;
 		TH1F* pEta_;
+		TH1F* pPhi_;
 		TH1F* pPt_;
 		TH1F* pChargedIsolation_;
 		TH1F* pPhotonIsolation_;
@@ -64,6 +70,10 @@ namespace trkupgradeanalysis
 		TH1F* pRelativeIsolation_;
 		TH1F* pDeltaBetaCorrectedIsolation_;
 		TH1F* pRho25CorrectedIsolation_;
+		TH1F* pThirdRho25CorrectedIsolation_;
+		TH1F* pDeltaBetaCorrectedIsolationNoZeroing_;
+		TH1F* pRho25CorrectedIsolationNoZeroing_;
+		TH1F* pThirdRho25CorrectedIsolationNoZeroing_;
 	};
 
 } // end of namespace trkupgradeanalysis

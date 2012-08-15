@@ -5,6 +5,8 @@
 
 #include <TFile.h>
 #include <TH1F.h>
+#include <TTree.h>
+#include <TDirectory.h>
 
 trkupgradeanalysis::tools::TFile_auto_ptr::TFile_auto_ptr( const std::string& filename )
 {
@@ -20,6 +22,58 @@ trkupgradeanalysis::tools::TFile_auto_ptr::~TFile_auto_ptr()
 bool trkupgradeanalysis::tools::TFile_auto_ptr::operator==( const TFile* pOtherFile )
 {
 	return this->get()==pOtherFile;
+}
+
+
+
+
+
+trkupgradeanalysis::tools::NTupleRow::NTupleRow( TTree* pTree )
+	: pTree_(pTree)
+{
+	TObjArray* pLeafList=pTree->GetListOfBranches();
+
+	for( int a=0; a<pLeafList->GetEntries(); ++a )
+	{
+		TBranch* pBranch=(TBranch*)(*pLeafList)[a];
+		std::string name=pBranch->GetName();
+		std::string title=pBranch->GetTitle();
+		std::string typeString=title.substr( name.size() );
+
+		if( typeString=="/D" ) branchAddresses_[name]=0; // Put an entry in the map for this name
+	}
+
+	// Now loop over the map names and set the branch addresses. I didn't want to do this earlier
+	// because there's the possibility adding new entries to the map might change the addresses.
+	for( std::map<std::string,double>::iterator iEntry=branchAddresses_.begin(); iEntry!=branchAddresses_.end(); ++iEntry )
+	{
+		pTree->SetBranchAddress( iEntry->first.c_str(), &(iEntry->second) );
+	}
+
+	maxCandidateNumber_=pTree_->GetEntries();
+	candidateNumber_=-1; // Set to minus one, so that the first call to nextCandidate() sets it to the first (0) entry
+	pTree_->GetEntry(0); // Load in the first candidate so that the memory contents isn't random. Note the first call to nextCandidate() will keep it on the 0th entry.
+}
+
+const double& trkupgradeanalysis::tools::NTupleRow::getDouble( const std::string& name ) const
+{
+	std::map<std::string,double>::const_iterator iFindResult=branchAddresses_.find(name);
+	if( iFindResult!=branchAddresses_.end() ) return iFindResult->second;
+	else throw std::runtime_error( "trkupgradeanalysis::tools::NTupleRow::getDouble(..) - TTree doesn't have a branch called "+name );
+}
+
+bool trkupgradeanalysis::tools::NTupleRow::nextRow()
+{
+	++candidateNumber_;
+	if( candidateNumber_>=maxCandidateNumber_ ) return false;
+
+	pTree_->GetEntry(candidateNumber_);
+	return true;
+}
+
+void trkupgradeanalysis::tools::NTupleRow::returnToStart()
+{
+	candidateNumber_=-1; // Set to minus one, so that the first call to nextCandidate() sets it to the first (0) entry
 }
 
 
@@ -135,3 +189,28 @@ float trkupgradeanalysis::tools::findEfficiency( const TH1F* pEventsVersusDiscri
 	throw std::runtime_error("findEfficiency was unable to find an operating point");
 
 } // end of function findEfficiency
+
+
+
+TDirectory* trkupgradeanalysis::tools::createDirectory( const std::string& fullPath, TDirectory* pParent )
+{
+	if( pParent==NULL ) throw std::runtime_error( "The parent directory is a Null pointer" );
+
+	TDirectory* pSubDirectory=pParent;
+	size_t currentPosition=0;
+	size_t nextSlash;
+	do
+	{
+		nextSlash=fullPath.find_first_of('/', currentPosition );
+		std::string directoryName=fullPath.substr(currentPosition,nextSlash-currentPosition);
+		currentPosition=nextSlash+1;
+
+		TDirectory* pNextSubDirectory=pSubDirectory->GetDirectory( directoryName.c_str() );
+		if( pNextSubDirectory==NULL ) pNextSubDirectory=pSubDirectory->mkdir( directoryName.c_str() );
+		if( pNextSubDirectory==NULL ) throw std::runtime_error( "Couldn't create the root directory \""+directoryName+"\"" );
+		pSubDirectory=pNextSubDirectory;
+
+	} while( nextSlash!=std::string::npos );
+
+	return pSubDirectory;
+}

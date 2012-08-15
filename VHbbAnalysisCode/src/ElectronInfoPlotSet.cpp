@@ -7,7 +7,7 @@
 
 
 trkupgradeanalysis::ElectronInfoPlotSet::ElectronInfoPlotSet()
-	: histogramHaveBeenBooked_(false)
+	: histogramHaveBeenBooked_(false), leptonPlotSet_(false)
 {
 	// No operation besides the initialiser list.
 }
@@ -21,22 +21,21 @@ void trkupgradeanalysis::ElectronInfoPlotSet::book( TDirectory* pDirectory )
 	// of these objects, so I don't need to (and shouldn't) delete them when I'm
 	// finished.
 	//
+	leptonPlotSet_.book(pDirectory);
 
-
-	pEta_=new TH1F( "eta", "Eta", 60, -3, 3 );
-	pEta_->SetDirectory(pDirectory);
-
-	pPt_=new TH1F( "pT", "pT", 60, 0, 250 );
-	pPt_->SetDirectory(pDirectory);
+	pID95_=new TH1F( "id95", "id95", 9, -0.5, 8.5 );
+	pID95_->SetDirectory(pDirectory);
 
 	histogramHaveBeenBooked_=true;
 }
 
-void trkupgradeanalysis::ElectronInfoPlotSet::fill( const VHbbEvent::ElectronInfo& electron )
+void trkupgradeanalysis::ElectronInfoPlotSet::fill( const VHbbEvent::ElectronInfo& electron, const VHbbEventAuxInfo* pAuxInfo )
 {
 	if( !histogramHaveBeenBooked_ ) throw std::runtime_error( "trkupgradeanalysis::ElectronInfoPlotSet::book() - histograms have not been booked" );
 
-	pEta_->Fill( electron.p4.Eta() );
-	pPt_->Fill( electron.p4.Pt() );
+	leptonPlotSet_.fill( electron, pAuxInfo );
+
+	pID95_->Fill( electron.id95 );
+
 }
 

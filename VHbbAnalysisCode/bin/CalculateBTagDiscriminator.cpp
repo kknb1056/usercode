@@ -32,7 +32,7 @@ void printUsage( const std::string& programName )
 			<< "\t" << "                              versus discriminator:" << "\n"
 			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB      (for \"-f b\")" << "\n"
 			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC      (for \"-f c\")" << "\n"
-			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG   (for \"-f light\")" << "\n"
+			<< "\t" << "    /DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUS    (for \"-f light\")" << "\n"
 			<< std::endl;
 }
 
@@ -127,7 +127,7 @@ int main( int argc, char* argv[] )
 				std::string histogramPath;
 				if( flavour=="b" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALB";
 				else if( flavour=="c" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALC";
-				else if( flavour=="light" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUSG";
+				else if( flavour=="light" ) histogramPath="/DQMData/Run 1/Btag/Run summary/CSVMVA_GLOBAL/discr_CSVMVA_GLOBALDUS";
 
 				TH1F* pPerformanceHistogram=dynamic_cast<TH1F*>( pInputFile->Get( histogramPath.c_str() ) );
 				if( pPerformanceHistogram==NULL ) throw std::runtime_error("Couldn't get the input histogram \""+histogramPath+"\"");

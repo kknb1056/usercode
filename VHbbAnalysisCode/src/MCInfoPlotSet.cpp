@@ -53,6 +53,22 @@ void trkupgradeanalysis::MCInfoPlotSet::fill( const VHbbEventAuxInfo& eventAuxIn
 	{
 		if( higgsInfo->dauid.size()==1 && std::abs(higgsInfo->dauid[0])==25 ) continue;
 
+		std::cout << "H->(";
+		for( size_t index=0; index<higgsInfo->dauid.size() && index<higgsInfo->dauFourMomentum.size(); ++index )
+		{
+			const int& daughterID=higgsInfo->dauid[index];
+			const TLorentzVector& vector=higgsInfo->dauFourMomentum[index];
+			if( index!=0 ) std::cout << ",";
+			std::cout << daughterID << " [" << vector.Pt() << "]";
+		}
+		std::cout << ") ";
+	}
+	std::cout << "\n";
+
+	for( std::vector<VHbbEventAuxInfo::ParticleMCInfo>::const_iterator higgsInfo=higgsMCInfo.begin(); higgsInfo!=higgsMCInfo.end(); ++higgsInfo )
+	{
+		if( higgsInfo->dauid.size()==1 && std::abs(higgsInfo->dauid[0])==25 ) continue;
+
 		eventStringStream << "H->(";
 		for( std::vector<int>::const_iterator daughterID=higgsInfo->dauid.begin(); daughterID!=higgsInfo->dauid.end(); ++daughterID )
 		{

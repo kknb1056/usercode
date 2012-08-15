@@ -13,11 +13,14 @@ namespace trkupgradeanalysis
 		{
 		public:
 			Equals( double cutValue );
+			Equals( double cutValue, double tolerance );
 			bool apply( double value ) const;
 			std::auto_ptr<ICutType> copy() const;
 			std::string name() const;
 		private:
 			double cutValue_;
+			bool useTolerance_;
+			double tolerance_;
 		};
 
 		class LessThan : public trkupgradeanalysis::cuts::ICutType

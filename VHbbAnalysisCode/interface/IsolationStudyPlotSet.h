@@ -8,6 +8,7 @@
 #include "VHbbAnalysis/VHbbDataFormats/interface/VHbbEvent.h"
 
 #include "TrkUpgradeAnalysis/VHbb/interface/MuonInfoCollectionPlotSet.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/ElectronInfoCollectionPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/MuonInfoPlotSet.h"
 
 // Forward declarations
@@ -39,6 +40,17 @@ namespace trkupgradeanalysis
 		 */
 		std::vector<VHbbEvent::MuonInfo> cleanMuons( const std::vector<VHbbEvent::MuonInfo>& muons );
 
+		/** @brief Applies the same cleaning as VHbb package, apart from isolation.
+		 *
+		 * Code copied almost verbatim from HbbCandidateFinderAlgo::findElectrons(...) in
+		 * VHbbAnalysis/VHbbDataFormats/src/HbbCandidateFinderAlgo.cc, but with the id95 check
+		 * changed to not care about isolation (set to 5 instead of 7). id95 is the combination
+		 * of 3 bits, one for ID, one for isolation and one for conversion rejection. Hence 7
+		 * means all 3 bits are set, i.e. the electron passed all three. Since isolation is the
+		 * second bit, 5 means all but the second bit is set.
+		 */
+		std::vector<VHbbEvent::ElectronInfo> cleanElectrons( const std::vector<VHbbEvent::ElectronInfo>& electrons );
+
 		/** @brief Returns the first muon in the collection and the next one with an opposite charge.
 		 *
 		 * The intention is that the collection should be sorted high to low by pT, so that this method
@@ -68,14 +80,8 @@ namespace trkupgradeanalysis
 		 */
 		bool firstMuonIsMoreDeltaBetaCorrectedIsolated( std::pair<VHbbEvent::MuonInfo,VHbbEvent::MuonInfo> diMuons );
 
-//		TTree* pLeastIsolatedDiMuonTree_;
-//		int numberOfPrimaryVertices_branch_; // All these are variables to hold the branch data
-//		float chargedIsolation_branch_;
-//		float photonIsolation_branch_;
-//		float neutralIsolation_branch_;
-//		float pileupIsolation_branch_;
-//		float pT_branch_;
 		trkupgradeanalysis::MuonInfoCollectionPlotSet cleanedMuons_; ///< Plots for the muons that have had cleaning applied (except isolation)
+		trkupgradeanalysis::ElectronInfoCollectionPlotSet cleanedElectrons_; ///< Plots for the electrons that have had cleaning applied (except isolation)
 		trkupgradeanalysis::MuonInfoPlotSet highestPtDiMuon_; ///< Plots for the muon in the pair with the highest pT
 		trkupgradeanalysis::MuonInfoPlotSet lowestPtDiMuon_;
 		trkupgradeanalysis::MuonInfoPlotSet mostIsolatedDiMuon_; ///< Plots for the muon in the pair that is most isolated

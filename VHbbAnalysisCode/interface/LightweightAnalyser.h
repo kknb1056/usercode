@@ -12,6 +12,7 @@
 #include "TrkUpgradeAnalysis/VHbb/interface/VHbbCandidatePlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/MuonInfoCollectionPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/ElectronInfoCollectionPlotSet.h"
+#include "TrkUpgradeAnalysis/VHbb/interface/SimpleJetCollectionPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/IsolationStudyPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/MCInfoPlotSet.h"
 #include "TrkUpgradeAnalysis/VHbb/interface/CutSetPlotSet.h"
@@ -39,7 +40,13 @@ namespace trkupgradeanalysis
 	public:
 		LightweightAnalyser( const std::string& outputFilename );
 		~LightweightAnalyser();
-		void processFile( TFile* pInputFile );
+
+		/** @brief Process the supplied TFile.
+		 *
+		 * The number of events specified by numberOfEvents is processed. If numberOfEvents is zero (default)
+		 * all events are processed.
+		 */
+		void processFile( TFile* pInputFile, size_t numberOfEvents=0 );
 		void changeDirectory( const std::string& directory );
 		void save();
 	protected:
@@ -63,6 +70,9 @@ namespace trkupgradeanalysis
 			trkupgradeanalysis::VHbbCandidatePlotSet candidateHistogramsForAllEvents_;
 			trkupgradeanalysis::MuonInfoCollectionPlotSet allMuons_;
 			trkupgradeanalysis::ElectronInfoCollectionPlotSet allElectrons_;
+			trkupgradeanalysis::SimpleJetCollectionPlotSet simpleJets2_;
+			trkupgradeanalysis::SimpleJetCollectionPlotSet higgsCandidateJets_;
+			trkupgradeanalysis::SimpleJetCollectionPlotSet additionalJets_;
 			trkupgradeanalysis::IsolationStudyPlotSet isolationStudy_;
 			trkupgradeanalysis::MCInfoPlotSet monteCarloInfo_;
 			std::vector<CutSetPlotSet> cutCollectionPlotSets_;
