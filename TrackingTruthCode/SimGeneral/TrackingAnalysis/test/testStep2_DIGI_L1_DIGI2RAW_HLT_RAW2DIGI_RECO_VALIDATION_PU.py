@@ -41,7 +41,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.392 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('valTest nevts:5'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -201,7 +201,7 @@ process.prevalidation_step.remove( process.tpSelecForFakeRate )
 process.prevalidation_step.remove( process.tpSelecForEfficiency )
 process.trackingTruthValid.src = cms.InputTag("mergedtruthNew","MergedTrackTruth")
 
-process.source.fileNames = cms.untracked.vstring('file:ZEE_step1.root')
+process.source.fileNames = cms.untracked.vstring('file:step1-ZEE.root')
 #process.source.fileNames = cms.untracked.vstring('file:singleMu_step1.root')
 process.maxEvents.input = cms.untracked.int32(-1)
 process.FEVTDEBUGoutput.outputCommands = cms.untracked.vstring( "drop *", "keep *_MEtoEDMConverter_*_*" )
