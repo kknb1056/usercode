@@ -37,7 +37,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.392 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('harvest nevts:-1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -65,8 +65,16 @@ process.dqmsave_step = cms.Path(process.DQMSaver)
 # Schedule definition
 process.schedule = cms.Schedule(process.edmtome_step,process.validationHarvesting,process.dqmsave_step)
 
+##############################################
+##
+## My changes to the output from cmsDriver
+##
+##############################################
 
+process.postProcessorTrack.subDirs.append( 'Tracking/TrackUnmerged/*' )
 process.postProcessorTrack.subDirs.append( 'Tracking/TrackNew/*' )
+process.postProcessorTrack.subDirs.append( 'Tracking/TrackNewUnmerged/*' )
 process.source.fileNames = cms.untracked.vstring('file:ZEE_slimValidation.root')
 process.trackHarvesting = cms.Path(process.postProcessorTrack)
 process.schedule = cms.Schedule(process.edmtome_step,process.trackHarvesting,process.dqmsave_step)
+
