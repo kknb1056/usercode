@@ -1,0 +1,80 @@
+#ifndef TrackingAnalysis_TrackingTruthAccumulator_h
+#define TrackingAnalysis_TrackingTruthAccumulator_h
+
+#include "SimGeneral/MixingModule/interface/DigiAccumulatorMixMod.h"
+#include "CommonTools/RecoAlgos/interface/TrackingParticleSelector.h"
+#include <memory> // required for std::auto_ptr
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticleFwd.h"
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
+
+
+// Forward declarations
+namespace edm
+{
+	class ParameterSet;
+	class EDProducer;
+	class Event;
+	class EventSetup;
+}
+class PileUpEventPrincipal;
+
+
+
+/** @brief Replacement for TrackingTruthProducer in the new pileup mixing setup.
+ * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+ * @date 11/Oct/2012
+ */
+class TrackingTruthAccumulator : public DigiAccumulatorMixMod
+{
+public:
+	explicit TrackingTruthAccumulator( const edm::ParameterSet& config, edm::EDProducer& mixMod );
+private:
+	virtual void initializeEvent( const edm::Event& event, const edm::EventSetup& setup );
+	virtual void accumulate( const edm::Event& event, const edm::EventSetup& setup );
+	virtual void accumulate( const PileUpEventPrincipal& event, const edm::EventSetup& setup );
+	virtual void finalizeEvent( edm::Event& event, const edm::EventSetup& setup );
+
+	/** @brief Both forms of accumulate() delegate to this method. */
+	template<class T> void accumulateEvent( const T& event, const edm::EventSetup& setup );
+
+	/** @brief Fills the supplied vector with pointers to the SimHits, checking for bad modules if required */
+	template<class T> void fillSimHits( std::vector<const PSimHit*>& returnValue, const T& event, const edm::EventSetup& setup );
+
+	const std::string messageCategory_; ///< The message category used to send messages to MessageLogger
+
+	/// The maximum bunch crossing to create TrackinParticles for. E.g. if set to zero only uses the signal and in time pileup.
+	const unsigned int maximumBunchCrossing_;
+	/// If bremsstrahlung merging, whether to also add the unmerged collection to the event or not.
+	bool createUnmergedCollection_;
+	bool createMergedCollection_;
+	/// Whether or not to add the full parentage of any TrackingParticle that is inserted in the collection.
+	bool addAncestors_;
+	/// Whether or not to copy the PSimHits into the TrackingParticle
+	bool copySimHits_;
+
+	bool removeDeadModules_;
+	edm::ParameterSet simHitCollectionConfig_;
+
+	bool selectorFlag_;
+	TrackingParticleSelector selector_;
+	/// Uses the same config as selector_, but can be used to drop out early since selector_ requires the TrackingParticle to be created first.
+	bool chargedOnly_;
+	/// Uses the same config as selector_, but can be used to drop out early since selector_ requires the TrackingParticle to be created first.
+	bool signalOnly_;
+
+public:
+	// These always go hand in hand, and I need to pass them around in the internal
+	// functions, so I might as well package them up in a struct.
+	struct OutputCollections
+	{
+		std::auto_ptr<TrackingParticleCollection> pTrackingParticles;
+		std::auto_ptr<TrackingVertexCollection> pTrackingVertices;
+		TrackingParticleRefProd refTrackingParticles;
+		TrackingVertexRefProd refTrackingVertexes;
+	};
+private:
+	OutputCollections unmergedOutput_;
+	OutputCollections mergedOutput_;
+};
+
+#endif // end of "#ifndef TrackingAnalysis_TrackingTruthAccumulator_h"
