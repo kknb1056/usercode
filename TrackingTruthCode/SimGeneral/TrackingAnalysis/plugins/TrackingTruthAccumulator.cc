@@ -544,9 +544,10 @@ namespace // Unnamed namespace for things only used in this file
 
 		//
 		// If there is some valid Monte Carlo for this track, take some information from that.
-		// Only do so if it is from the signal event however.
+		// Only do so if it is from the signal event however. Not sure why but that's what the
+		// old code did.
 		//
-		if( simTrack.eventId().event()==0&&simTrack.eventId().bunchCrossing()==0 ) // if this is a track in the signal event
+		if( simTrack.eventId().event()==0 && simTrack.eventId().bunchCrossing()==0 ) // if this is a track in the signal event
 		{
 			int genParticleIndex=simTrack.genpartIndex();
 			if( genParticleIndex>=0 )
@@ -556,7 +557,8 @@ namespace // Unnamed namespace for things only used in this file
 				{
 					returnValue.addGenParticle( GenParticleRef( hHepMC_, genParticleIndex ) );
 					returnValue.setStatus( pGenParticle->status() );
-					returnValue.setPdgId( pGenParticle->pdg_id() );
+					pdgId=pGenParticle->pdg_id();
+					returnValue.setPdgId( pdgId );
 				}
 			}
 		}
@@ -574,8 +576,12 @@ namespace // Unnamed namespace for things only used in this file
 	    int newLayer = 0;
 	    int oldDetector = 0;
 	    int newDetector = 0;
-		for( const auto& pSimHit : simHits_ )
+
+	    for( std::multimap<unsigned int,size_t>::const_iterator iHitIndex=trackIdToHitIndex_.lower_bound( simTrack.trackId() );
+	    		iHitIndex!=trackIdToHitIndex_.upper_bound( simTrack.trackId() );
+	    		++iHitIndex )
 		{
+			const auto& pSimHit=simHits_[ iHitIndex->second ];
 
 			// Initial condition for consistent simhit selection
 			if( init )
@@ -599,10 +605,18 @@ namespace // Unnamed namespace for things only used in this file
 
 				// Count hits using layers for glued detectors
 				// newlayer !=0 excludes Muon layers set to 0 by LayerFromDetid
-				if( (oldLayer!=newLayer||(oldLayer==newLayer&&oldDetector!=newDetector))&&newLayer!=0 ) totalSimHits++;
+				if( (oldLayer!=newLayer || (oldLayer==newLayer && oldDetector!=newDetector)) && newLayer!=0 ) totalSimHits++;
 			}
+//			else
+//			{
+//				std::cout << "-+- Failed TrackingParticle: "
+//						<< processType << "==" << pSimHit->processType() << " && "
+//						<< particleType << "==" << pSimHit->particleType() << " && "
+//						<< pdgId << "==" << pSimHit->particleType() << std::endl;
+//			}
 
 		}
+//	    std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
 		returnValue.setMatchedHit( totalSimHits );
 
 		if( false )
