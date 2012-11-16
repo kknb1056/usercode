@@ -64,7 +64,7 @@ SiStripDigitizer::SiStripDigitizer(const edm::ParameterSet& conf, edm::EDProduce
   geometryType(conf.getParameter<std::string>("GeometryType")),
   useConfFromDB(conf.getParameter<bool>("TrackerConfigurationFromDB")),
   zeroSuppression(conf.getParameter<bool>("ZeroSuppression")),
-  makeDigiSimLinks_(conf.getUntrackedParameter<bool>("makeDigiSimLinks", true))
+  makeDigiSimLinks_(conf.getUntrackedParameter<bool>("makeDigiSimLinks", false))
 { 
   const std::string alias("simSiStripDigis");
   

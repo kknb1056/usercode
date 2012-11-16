@@ -98,6 +98,10 @@ process = customizeHLTforMC(process)
 ###################################################################################
 
 
+## These next few lines turn off the old mixing behaviour. I'm comparing the two
+## TrackingTruth creation methods at the moment though, so I've left this commented
+## out for now.
+
 #process.mix.mixObjects.mixTracks.makeCrossingFrame = False
 #process.mix.mixObjects.mixVertices.makeCrossingFrame = False
 #process.mix.mixObjects.mixHepMC.makeCrossingFrame = False
@@ -113,17 +117,20 @@ process = customizeHLTforMC(process)
 #process.mix.mixObjects.mixSH.crossingFrames.remove("TrackerHitsTIDLowTof") 
 #process.mix.mixObjects.mixSH.crossingFrames.remove("TrackerHitsTOBHighTof") 
 #process.mix.mixObjects.mixSH.crossingFrames.remove("TrackerHitsTOBLowTof")
-
-#process.mergedtruth.mergedBremsstrahlung = False
-# Need to get rid of the old TrackingTruthProducer because the python
-# configs haven't been updated yet.
+#
+## Need to get rid of the old TrackingTruthProducer because the python
+## configs haven't been updated yet.
 #process.digitisation_step.remove(process.mergedtruth)
 #del(process.mergedtruth)
 
+#process.mergedtruth.mergedBremsstrahlung = False
 
 # Also need to get rid of the old StripDigiSimLink producer
 process.digitisation_step.remove(process.simSiStripDigiSimLink)
 del(process.simSiStripDigiSimLink)
+
+# Make sure creation of the sim links is on.
+process.mix.digitizers.strip.makeDigiSimLinks = cms.untracked.bool(True)
 
 # Also redefine simSiStripDigis so StripDigiSimLinkedmDetSetVector is under "mix"
 # and not "simSiStripDigiSimLink".
@@ -218,7 +225,7 @@ process.trackValidatorNewUnmerged = process.trackValidator.clone(
 process.prevalidation_step.remove( process.tpSelection )
 process.prevalidation_step.remove( process.tpSelecForFakeRate )
 process.prevalidation_step.remove( process.tpSelecForEfficiency )
-process.trackingTruthValid.src = cms.InputTag("mergedtruth","MergedTrackTruth")
+process.trackingTruthValid.src = cms.InputTag("mergedtruthNew","MergedTrackTruth")
 
 process.FEVTDEBUGoutput.outputCommands = cms.untracked.vstring( "drop *", "keep *_MEtoEDMConverter_*_*" )
 
