@@ -1,0 +1,5 @@
+<include_path PATH="../external"/>
+<use   name="FWCore/ServiceRegistry"/>
+<library   file="*.cc" name="MarksToolsMemoryCounterPlugins">
+  <flags   EDM_PLUGIN="1"/>
+</library>
