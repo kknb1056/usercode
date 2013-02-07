@@ -84,7 +84,9 @@ markstools::services::MemoryCounter::MemoryCounter( const edm::ParameterSet& par
 	else
 	{
 		std::cerr << " ***" << "\n"
-				<< " *** MemoryCounter: couldn't get the symbol in the analysing library. Are you running under marksMemoryAnalyser? MemoryCounter will not function without it." << "\n"
+				<< " *** MemoryCounter: Couldn't get the symbol in the analysing library. Execution will run as normal with no memory analysis." << "\n"
+				<< " ***                Are you running under intrusiveMemoryAnalyser? MemoryCounter will not function without it." << "\n"
+				<< " ***                N.B. MemoryCounter currently doesn't work with jemalloc so you have to use cmsRunGlibC." << "\n"
 				<< " ***" << std::endl;
 	}
 }
