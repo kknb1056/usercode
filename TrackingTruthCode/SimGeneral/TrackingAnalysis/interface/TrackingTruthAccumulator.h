@@ -34,7 +34,7 @@ private:
 	virtual void accumulate( const PileUpEventPrincipal& event, const edm::EventSetup& setup );
 	virtual void finalizeEvent( edm::Event& event, const edm::EventSetup& setup );
 
-	/** @brief Both forms of accumulate() delegate to this method. */
+	/** @brief Both forms of accumulate() delegate to this templated method. */
 	template<class T> void accumulateEvent( const T& event, const edm::EventSetup& setup );
 
 	/** @brief Fills the supplied vector with pointers to the SimHits, checking for bad modules if required */

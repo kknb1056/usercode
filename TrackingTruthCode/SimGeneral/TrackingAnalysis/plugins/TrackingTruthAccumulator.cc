@@ -1,3 +1,23 @@
+/** @file
+ * @brief Definitions of the TrackingTruthAccumulator methods.
+ *
+ * There are a lot of utility classes and methods in this file. This makes it quite long but
+ * I didn't want to confuse the directory structure with lots of extra files. My reasoning was
+ * that lots of people look at the directory contents but only the really interested ones will
+ * look in this particular file, and the utility stuff isn't used elsewhere.
+ *
+ * There are three main sections to this file, from top to bottom:
+ * 1 - Declarations of extra utility stuff not in the header file. All in the unnamed namespace.
+ * 2 - Definitions of the TrackingTruthAccumulator methods.
+ * 3 - Definitions of the utility classes and functions declared in (1).
+ *
+ * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+ * @date circa Oct/2012 to Feb/2013
+ *
+ * Changelog:
+ * 07/Feb/2013 Mark Grimes - Reorganised and added a bit more documentation. Still not enough
+ * though.
+ */
 #include "SimGeneral/TrackingAnalysis/interface/TrackingTruthAccumulator.h"
 
 #include <SimGeneral/MixingModule/interface/DigiAccumulatorMixModFactory.h>
@@ -21,8 +41,20 @@
 #include "DataFormats/SiStripDetId/interface/TIDDetId.h"
 #include "DataFormats/SiStripDetId/interface/TOBDetId.h"
 
-// Unnamed namespace for things only used in this file
-// Definitions are at the bottom of the file.
+
+
+
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//------                                                                     ------
+//------  Declarations for utility classes and functions in the unnamed      ------
+//------  namespace. The definitions are right at the bottom of the file.    ------
+//------                                                                     ------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+
 namespace
 {
 	/** @brief Class to represent tracks in the decay chain.
@@ -95,10 +127,6 @@ namespace
 		const std::vector< ::DecayChainVertex*>& rootVertices; ///< Reference maps to rootVertices_ for easy external const access.
 	};
 
-	edm::Handle<edm::HepMCProduct> getHepMC( const edm::Event& event );
-	edm::Handle<edm::HepMCProduct> getHepMC( const PileUpEventPrincipal& event );
-	int LayerFromDetid( const unsigned int & detid );
-
 	/** @brief Class to create TrackingParticle and TrackingVertex objects.
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 12/Nov/2012
@@ -142,246 +170,50 @@ namespace
 		std::vector<int> trackingVertexIndices_;
 	};
 
+
+	/** @brief Simply returns the HepMCProduct with the label "generator" from the event.
+	 * Put in a separate function because the event analysing function is templated to work with
+	 * both edm::Event and PileUpEventPrincipal, but HepMCProduct has to be retrieved in different
+	 * ways for each of those.
+	 */
+	edm::Handle<edm::HepMCProduct> getHepMC( const edm::Event& event );
+
+	/** @brief Returns the HepMCProduct with the label "generator" from the PileUpEventPrincipal.
+	 * See the note for the edm::Event overload.
+	 */
+	edm::Handle<edm::HepMCProduct> getHepMC( const PileUpEventPrincipal& event );
+
+	/** @brief Utility function copied verbatim from TrackinTruthProducer.
+	 */
+	int LayerFromDetid( const unsigned int & detid );
+
 	/** @brief Adds the supplied TrackingParticle and its parent TrackingVertex to the output collection. Checks to make sure they don't already exist first.
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 12/Nov/2012
 	 */
-	TrackingParticle* addTrackAndParentVertex( ::DecayChainTrack* pDecayTrack, const TrackingParticle& trackingParticle, ::OutputCollectionWrapper* pOutput, const ::TrackingParticleFactory& objectFactory )
-	{
-		// See if this TrackingParticle has already been created (could be if the DecayChainTracks are
-		// looped over in a funny order). If it has then there's no need to do anything.
-		TrackingParticle* pTrackingParticle=pOutput->getTrackingParticle( pDecayTrack );
-		if( pTrackingParticle==NULL )
-		{
-			// Need to make sure the production vertex has been created first
-			TrackingVertex* pProductionVertex=pOutput->getTrackingVertex( pDecayTrack->pParentVertex );
-			if( pProductionVertex==NULL )
-			{
-				// TrackingVertex doesn't exist yet, so create it.
-				pProductionVertex=pOutput->addTrackingVertex( pDecayTrack->pParentVertex, objectFactory.createTrackingVertex(pDecayTrack->pParentVertex) );
-			}
-
-
-			pTrackingParticle=pOutput->addTrackingParticle( pDecayTrack, trackingParticle );
-		}
-
-		return pTrackingParticle;
-	}
+	TrackingParticle* addTrackAndParentVertex( ::DecayChainTrack* pDecayTrack, const TrackingParticle& trackingParticle, ::OutputCollectionWrapper* pOutput, const ::TrackingParticleFactory& objectFactory );
 
 	/** @brief Creates a TrackingParticle for the supplied DecayChainTrack and adds it to the output if it passes selection. Gets called recursively if adding parents.
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 05/Nov/2012
 	 */
-	void addTrack( ::DecayChainTrack* pDecayChainTrack, const TrackingParticleSelector* pSelector, ::OutputCollectionWrapper* pUnmergedOutput, ::OutputCollectionWrapper* pMergedOutput, const ::TrackingParticleFactory& objectFactory, bool addAncestors )
-	{
-		if( pDecayChainTrack==NULL ) return; // This is required for when the addAncestors_ recursive call reaches the top of the chain
-
-		// Check to see if this particle has already been processed while traversing up the parents
-		// of another split in the decay chain. The check in the line above only stops when the top
-		// of the chain is reached, whereas this will stop when a previously traversed split is reached.
-		{ // block to limit the scope of temporary variables
-			bool alreadyProcessed=true;
-			if( pUnmergedOutput!=NULL )
-			{
-				if( pUnmergedOutput->getTrackingParticle( pDecayChainTrack )==NULL ) alreadyProcessed=false;
-			}
-			if( pMergedOutput!=NULL )
-			{
-				if( pMergedOutput->getTrackingParticle( pDecayChainTrack )==NULL ) alreadyProcessed=false;
-			}
-			if( alreadyProcessed ) return;
-		}
-
-		// Create a TrackingParticle. If a selector has been supplied apply it on the new TrackingParticle
-		// and return if it fails.
-		TrackingParticle newTrackingParticle=objectFactory.createTrackingParticle( pDecayChainTrack );
-		if( pSelector )
-		{
-			if( !(*pSelector)( newTrackingParticle ) ) return; // Return if the TrackingParticle fails selection
-		}
-
-		// Add the ancestors first (if required) so that the collection has some kind of chronological
-		// order. I don't know how important that is but other code might assume chronological order.
-		// If adding ancestors, no selection is applied. Note that I've already checked that all
-		// DecayChainTracks have a pParentVertex.
-		if( addAncestors ) addTrack( pDecayChainTrack->pParentVertex->pParentTrack, NULL, pUnmergedOutput, pMergedOutput, objectFactory, addAncestors );
-
-		// If creation of the unmerged collection has been turned off in the config this pointer
-		// will be null.
-		if( pUnmergedOutput!=NULL ) addTrackAndParentVertex( pDecayChainTrack, newTrackingParticle, pUnmergedOutput, objectFactory );
-
-		// If creation of the merged collection has been turned off in the config this pointer
-		// will be null.
-		if( pMergedOutput!=NULL )
-		{
-			::DecayChainTrack* pBremParentChainTrack=pDecayChainTrack;
-			while( pBremParentChainTrack->pMergedBremSource!=NULL ) pBremParentChainTrack=pBremParentChainTrack->pMergedBremSource;
-
-			if( pBremParentChainTrack!=pDecayChainTrack )
-			{
-				TrackingParticle* pBremParentTrackingParticle=addTrackAndParentVertex( pBremParentChainTrack, newTrackingParticle, pMergedOutput, objectFactory );
-				// The original particle in the bremsstrahlung decay chain has been
-				// created (or retrieved if it already existed), now copy in the
-				// extra information.
-				// TODO - copy extra information.
-
-				if( std::abs( newTrackingParticle.pdgId() ) == 22 )
-				{
-					// Photons are added as separate TrackingParticles, but with the production
-					// vertex changed to be the production vertex of the original electron.
-
-					// Set up a proxy, so that all requests for the parent TrackingVertex get
-					// redirected to the brem parent's TrackingVertex.
-					pMergedOutput->setProxy( pDecayChainTrack->pParentVertex, pBremParentChainTrack->pParentVertex );
-
-					// Now that pMergedOutput thinks the parent vertex is the brem parent's vertex I can
-					// call this and it will set the TrackingParticle parent vertex correctly to the brem
-					// parent vertex.
-					addTrackAndParentVertex( pDecayChainTrack, newTrackingParticle, pMergedOutput, objectFactory );
-				}
-				else if( std::abs( newTrackingParticle.pdgId() ) == 11 )
-				{
-					// Electrons have their G4 tracks and SimHits copied to the parent TrackingParticle.
-					for( const auto& trackSegment : newTrackingParticle.g4Tracks() )
-					{
-						pBremParentTrackingParticle->addG4Track( trackSegment );
-					}
-
-					for( const auto& hit : newTrackingParticle.trackPSimHit() )
-					{
-						pBremParentTrackingParticle->addPSimHit( hit );
-					}
-
-					// Set a proxy in the output collection wrapper so that any attempt to get objects for
-					// this DecayChainTrack again get redirected to the brem parent.
-					pMergedOutput->setProxy( pDecayChainTrack, pBremParentChainTrack );
-				}
-			}
-			else
-			{
-				// This is not the result of bremsstrahlung so add to the collection as normal.
-				addTrackAndParentVertex( pDecayChainTrack, newTrackingParticle, pMergedOutput, objectFactory );
-			}
-		}
-
-	}
+	void addTrack( ::DecayChainTrack* pDecayChainTrack, const TrackingParticleSelector* pSelector, ::OutputCollectionWrapper* pUnmergedOutput, ::OutputCollectionWrapper* pMergedOutput, const ::TrackingParticleFactory& objectFactory, bool addAncestors );
 
 } // end of the unnamed namespace
 
 
 
-template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event, const edm::EventSetup& setup )
-{
-	//
-	// Get the collections
-	//
-	edm::Handle<std::vector<SimTrack> > hSimTracks;
-	edm::Handle<std::vector<SimVertex> > hSimVertices;
-	event.getByLabel( edm::InputTag( "g4SimHits" ), hSimTracks );
-	event.getByLabel( edm::InputTag( "g4SimHits" ), hSimVertices );
 
-	// Also need the HepMCProduct collection.
-	// For complex templated type reasons the way of requesting it as above doesn't work, so
-	// I need to use some specialisations I've written.
-	edm::Handle<edm::HepMCProduct> hHepMC=::getHepMC( event );
-
-	// Run through the collections and work out the decay chain of each track/vertex. The
-	// information in SimTrack and SimVertex only allows traversing upwards, but this will
-	// allow traversal in both directions. This is required for things like grouping electrons
-	// that bremstrahlung as one TrackingParticle if "mergedBremsstrahlung" is set in the
-	// config file.
-	DecayChain decayChain( *hSimTracks, *hSimVertices );
-
-	// I only want to create these collections if they're actually required
-	std::auto_ptr< ::OutputCollectionWrapper> pUnmergedCollectionWrapper;
-	std::auto_ptr< ::OutputCollectionWrapper> pMergedCollectionWrapper;
-	if( createUnmergedCollection_ ) pUnmergedCollectionWrapper.reset( new ::OutputCollectionWrapper( decayChain, unmergedOutput_ ) );
-	if( createMergedCollection_ ) pMergedCollectionWrapper.reset( new ::OutputCollectionWrapper( decayChain, mergedOutput_ ) );
-
-	std::vector<const PSimHit*> simHitPointers;
-	fillSimHits( simHitPointers, event, setup );
-	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, copySimHits_ );
-
-	// While I'm testing, perform some checks.
-	// TODO - drop this call once I'm happy it works in all situations.
-//	decayChain.integrityCheck();
-
-	TrackingParticleSelector* pSelector=NULL;
-	if( selectorFlag_ ) pSelector=&selector_;
-
-	// Run over all of the SimTracks, but because I'm interested in the decay hierarchy
-	// do it through the DecayChainTrack objects. These are looped over in sequence here
-	// but they have the hierarchy information for the functions called to traverse the
-	// decay chain.
-
-	for( size_t index=0; index<decayChain.decayTracksSize; ++index )
-	{
-		::DecayChainTrack* pDecayTrack=&decayChain.decayTracks[index];
-		const SimTrack& simTrack=hSimTracks->at(pDecayTrack->simTrackIndex);
-
-
-		// Perform some quick checks to see if we can drop out early. Note that these are
-		// a subset of the cuts in the selector_ so the created TrackingParticle could still
-		// fail. The selector_ requires the full TrackingParticle to be made however, which
-		// can be computationally expensive.
-		if( chargedOnly_ && simTrack.charge()==0 ) continue;
-		if( signalOnly_ && (simTrack.eventId().bunchCrossing()==0 && simTrack.eventId().event()==0) ) continue;
-
-
-		// This function creates the TrackinParticle and adds it to the collection if it
-		// passes the selection criteria specified in the configuration. If the config
-		// specifies adding ancestors, the function is called recursively to do that.
-		::addTrack( pDecayTrack, pSelector, pUnmergedCollectionWrapper.get(), pMergedCollectionWrapper.get(), objectFactory, addAncestors_ );
-	}
-
-}
-
-
-template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const PSimHit*>& returnValue, const T& event, const edm::EventSetup& setup )
-{
-	std::vector<std::string> parameterNames=simHitCollectionConfig_.getParameterNames();
-
-	for( const auto& paramterName : parameterNames )
-	{
-		std::vector<std::string> collectionNames=simHitCollectionConfig_.getParameter<std::vector<std::string> >(paramterName);
-		for( const auto& collectionName : collectionNames )
-		{
-			edm::Handle< std::vector<PSimHit> > hSimHits;
-			event.getByLabel( edm::InputTag( "g4SimHits", collectionName ), hSimHits );
-
-			// TODO - implement removing the dead modules
-			for( const auto& simHit : *hSimHits )
-			{
-				returnValue.push_back( &simHit );
-			}
-		}
-	}
-}
-
-void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup const& setup )
-{
-//	std::cout << "--------- finalizeEvent" << std::endl;
-
-	if( createUnmergedCollection_ )
-	{
-		std::cout << "Adding " << unmergedOutput_.pTrackingParticles->size() << " TrackingParticles and " << unmergedOutput_.pTrackingVertices->size()
-				<< " TrackingVertexs to the event." << std::endl;
-
-		event.put( unmergedOutput_.pTrackingParticles );
-		event.put( unmergedOutput_.pTrackingVertices );
-	}
-
-	if( createMergedCollection_ )
-	{
-		std::cout << "Adding " << mergedOutput_.pTrackingParticles->size() << " merged TrackingParticles and " << mergedOutput_.pTrackingVertices->size()
-				<< " merged TrackingVertexs to the event." << std::endl;
-
-		event.put( mergedOutput_.pTrackingParticles, "MergedTrackTruth" );
-		event.put( mergedOutput_.pTrackingVertices, "MergedTrackTruth" );
-	}
-
-	std::cout<<"finalizeEvent finished"<<std::endl;
-}
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//------                                                                     ------
+//------  Definitions for the TrackingTruthAccumulator methods               ------
+//------  are below.                                                         ------
+//------                                                                     ------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
 
 TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & config, edm::EDProducer& mixMod ) :
 		messageCategory_("TrackingTruthAccumulator"),
@@ -394,8 +226,6 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 		removeDeadModules_( config.getParameter<bool>("removeDeadModules") ),
 		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") )
 {
-	std::cout<<"--------- constructor"<<std::endl;
-
 	//
 	// Make sure at least one of the merged and unmerged collections have been set
 	// to be created.
@@ -455,7 +285,6 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 
 void TrackingTruthAccumulator::initializeEvent( edm::Event const& event, edm::EventSetup const& setup )
 {
-	std::cout<<"--------- initializeEvent"<<std::endl;
 	if( createUnmergedCollection_ )
 	{
 		unmergedOutput_.pTrackingParticles.reset( new TrackingParticleCollection );
@@ -489,6 +318,131 @@ void TrackingTruthAccumulator::accumulate( PileUpEventPrincipal const& event, ed
 	}
 	else edm::LogInfo(messageCategory_) << "Skipping pileup event for bunch crossing " << event.bunchCrossing();
 }
+
+void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup const& setup )
+{
+
+	if( createUnmergedCollection_ )
+	{
+		std::cout << "Adding " << unmergedOutput_.pTrackingParticles->size() << " TrackingParticles and " << unmergedOutput_.pTrackingVertices->size()
+				<< " TrackingVertexs to the event." << std::endl;
+
+		event.put( unmergedOutput_.pTrackingParticles );
+		event.put( unmergedOutput_.pTrackingVertices );
+	}
+
+	if( createMergedCollection_ )
+	{
+		std::cout << "Adding " << mergedOutput_.pTrackingParticles->size() << " merged TrackingParticles and " << mergedOutput_.pTrackingVertices->size()
+				<< " merged TrackingVertexs to the event." << std::endl;
+
+		event.put( mergedOutput_.pTrackingParticles, "MergedTrackTruth" );
+		event.put( mergedOutput_.pTrackingVertices, "MergedTrackTruth" );
+	}
+
+	std::cout<<"finalizeEvent finished"<<std::endl;
+}
+
+template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event, const edm::EventSetup& setup )
+{
+	//
+	// Get the collections
+	//
+	edm::Handle<std::vector<SimTrack> > hSimTracks;
+	edm::Handle<std::vector<SimVertex> > hSimVertices;
+	event.getByLabel( edm::InputTag( "g4SimHits" ), hSimTracks );
+	event.getByLabel( edm::InputTag( "g4SimHits" ), hSimVertices );
+
+	// Also need the HepMCProduct collection.
+	// For complex templated type reasons the way of requesting it as above doesn't work, so
+	// I need to use some specialisations I've written.
+	edm::Handle<edm::HepMCProduct> hHepMC=::getHepMC( event );
+
+	// Run through the collections and work out the decay chain of each track/vertex. The
+	// information in SimTrack and SimVertex only allows traversing upwards, but this will
+	// allow traversal in both directions. This is required for things like grouping electrons
+	// that bremstrahlung as one TrackingParticle if "mergedBremsstrahlung" is set in the
+	// config file.
+	DecayChain decayChain( *hSimTracks, *hSimVertices );
+
+	// I only want to create these collections if they're actually required
+	std::auto_ptr< ::OutputCollectionWrapper> pUnmergedCollectionWrapper;
+	std::auto_ptr< ::OutputCollectionWrapper> pMergedCollectionWrapper;
+	if( createUnmergedCollection_ ) pUnmergedCollectionWrapper.reset( new ::OutputCollectionWrapper( decayChain, unmergedOutput_ ) );
+	if( createMergedCollection_ ) pMergedCollectionWrapper.reset( new ::OutputCollectionWrapper( decayChain, mergedOutput_ ) );
+
+	std::vector<const PSimHit*> simHitPointers;
+	fillSimHits( simHitPointers, event, setup );
+	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, copySimHits_ );
+
+	// While I'm testing, perform some checks.
+	// TODO - drop this call once I'm happy it works in all situations.
+	//decayChain.integrityCheck();
+
+	TrackingParticleSelector* pSelector=NULL;
+	if( selectorFlag_ ) pSelector=&selector_;
+
+	// Run over all of the SimTracks, but because I'm interested in the decay hierarchy
+	// do it through the DecayChainTrack objects. These are looped over in sequence here
+	// but they have the hierarchy information for the functions called to traverse the
+	// decay chain.
+
+	for( size_t index=0; index<decayChain.decayTracksSize; ++index )
+	{
+		::DecayChainTrack* pDecayTrack=&decayChain.decayTracks[index];
+		const SimTrack& simTrack=hSimTracks->at(pDecayTrack->simTrackIndex);
+
+
+		// Perform some quick checks to see if we can drop out early. Note that these are
+		// a subset of the cuts in the selector_ so the created TrackingParticle could still
+		// fail. The selector_ requires the full TrackingParticle to be made however, which
+		// can be computationally expensive.
+		if( chargedOnly_ && simTrack.charge()==0 ) continue;
+		if( signalOnly_ && (simTrack.eventId().bunchCrossing()==0 && simTrack.eventId().event()==0) ) continue;
+
+
+		// This function creates the TrackinParticle and adds it to the collection if it
+		// passes the selection criteria specified in the configuration. If the config
+		// specifies adding ancestors, the function is called recursively to do that.
+		::addTrack( pDecayTrack, pSelector, pUnmergedCollectionWrapper.get(), pMergedCollectionWrapper.get(), objectFactory, addAncestors_ );
+	}
+
+}
+
+template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const PSimHit*>& returnValue, const T& event, const edm::EventSetup& setup )
+{
+	std::vector<std::string> parameterNames=simHitCollectionConfig_.getParameterNames();
+
+	for( const auto& paramterName : parameterNames )
+	{
+		std::vector<std::string> collectionNames=simHitCollectionConfig_.getParameter<std::vector<std::string> >(paramterName);
+		for( const auto& collectionName : collectionNames )
+		{
+			edm::Handle< std::vector<PSimHit> > hSimHits;
+			event.getByLabel( edm::InputTag( "g4SimHits", collectionName ), hSimHits );
+
+			// TODO - implement removing the dead modules
+			for( const auto& simHit : *hSimHits )
+			{
+				returnValue.push_back( &simHit );
+			}
+		}
+	}
+}
+
+
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//------                                                                     ------
+//------  End of the definitions for the TrackingTruthAccumulator methods.   ------
+//------  Definitions for the functions and classes declared in the unnamed  ------
+//------  namespace are below. Documentation for those is above, where       ------
+//------  they're declared.                                                  ------
+//------                                                                     ------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
 
 
 namespace // Unnamed namespace for things only used in this file
@@ -612,16 +566,16 @@ namespace // Unnamed namespace for things only used in this file
 				// newlayer !=0 excludes Muon layers set to 0 by LayerFromDetid
 				if( (oldLayer!=newLayer || (oldLayer==newLayer && oldDetector!=newDetector)) && newLayer!=0 ) totalSimHits++;
 			}
-//			else
-//			{
-//				std::cout << "-+- Failed TrackingParticle: "
-//						<< processType << "==" << pSimHit->processType() << " && "
-//						<< particleType << "==" << pSimHit->particleType() << " && "
-//						<< pdgId << "==" << pSimHit->particleType() << std::endl;
-//			}
+			//else
+			//{
+			//	std::cout << "-+- Failed TrackingParticle: "
+			//			<< processType << "==" << pSimHit->processType() << " && "
+			//			<< particleType << "==" << pSimHit->particleType() << " && "
+			//			<< pdgId << "==" << pSimHit->particleType() << std::endl;
+			//}
 
 		}
-//	    std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
+	    //std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
 		returnValue.setMatchedHit( totalSimHits );
 
 		if( false )
@@ -636,7 +590,7 @@ namespace // Unnamed namespace for things only used in this file
 			returnValue.setMatchedHit( 1 );
 		}
 
-//		std::cout << "------Created TrackingParticle with PDG ID " << returnValue.pdgId() << std::endl;
+		//std::cout << "------Created TrackingParticle with PDG ID " << returnValue.pdgId() << std::endl;
 		return returnValue;
 	}
 
@@ -1042,6 +996,123 @@ namespace // Unnamed namespace for things only used in this file
 
 		return layerNumber;
 	}
+
+	TrackingParticle* addTrackAndParentVertex( ::DecayChainTrack* pDecayTrack, const TrackingParticle& trackingParticle, ::OutputCollectionWrapper* pOutput, const ::TrackingParticleFactory& objectFactory )
+	{
+		// See if this TrackingParticle has already been created (could be if the DecayChainTracks are
+		// looped over in a funny order). If it has then there's no need to do anything.
+		TrackingParticle* pTrackingParticle=pOutput->getTrackingParticle( pDecayTrack );
+		if( pTrackingParticle==NULL )
+		{
+			// Need to make sure the production vertex has been created first
+			TrackingVertex* pProductionVertex=pOutput->getTrackingVertex( pDecayTrack->pParentVertex );
+			if( pProductionVertex==NULL )
+			{
+				// TrackingVertex doesn't exist yet, so create it.
+				pProductionVertex=pOutput->addTrackingVertex( pDecayTrack->pParentVertex, objectFactory.createTrackingVertex(pDecayTrack->pParentVertex) );
+			}
+
+
+			pTrackingParticle=pOutput->addTrackingParticle( pDecayTrack, trackingParticle );
+		}
+
+		return pTrackingParticle;
+	}
+
+	void addTrack( ::DecayChainTrack* pDecayChainTrack, const TrackingParticleSelector* pSelector, ::OutputCollectionWrapper* pUnmergedOutput, ::OutputCollectionWrapper* pMergedOutput, const ::TrackingParticleFactory& objectFactory, bool addAncestors )
+	{
+		if( pDecayChainTrack==NULL ) return; // This is required for when the addAncestors_ recursive call reaches the top of the chain
+
+		// Check to see if this particle has already been processed while traversing up the parents
+		// of another split in the decay chain. The check in the line above only stops when the top
+		// of the chain is reached, whereas this will stop when a previously traversed split is reached.
+		{ // block to limit the scope of temporary variables
+			bool alreadyProcessed=true;
+			if( pUnmergedOutput!=NULL )
+			{
+				if( pUnmergedOutput->getTrackingParticle( pDecayChainTrack )==NULL ) alreadyProcessed=false;
+			}
+			if( pMergedOutput!=NULL )
+			{
+				if( pMergedOutput->getTrackingParticle( pDecayChainTrack )==NULL ) alreadyProcessed=false;
+			}
+			if( alreadyProcessed ) return;
+		}
+
+		// Create a TrackingParticle. If a selector has been supplied apply it on the new TrackingParticle
+		// and return if it fails.
+		TrackingParticle newTrackingParticle=objectFactory.createTrackingParticle( pDecayChainTrack );
+		if( pSelector )
+		{
+			if( !(*pSelector)( newTrackingParticle ) ) return; // Return if the TrackingParticle fails selection
+		}
+
+		// Add the ancestors first (if required) so that the collection has some kind of chronological
+		// order. I don't know how important that is but other code might assume chronological order.
+		// If adding ancestors, no selection is applied. Note that I've already checked that all
+		// DecayChainTracks have a pParentVertex.
+		if( addAncestors ) addTrack( pDecayChainTrack->pParentVertex->pParentTrack, NULL, pUnmergedOutput, pMergedOutput, objectFactory, addAncestors );
+
+		// If creation of the unmerged collection has been turned off in the config this pointer
+		// will be null.
+		if( pUnmergedOutput!=NULL ) addTrackAndParentVertex( pDecayChainTrack, newTrackingParticle, pUnmergedOutput, objectFactory );
+
+		// If creation of the merged collection has been turned off in the config this pointer
+		// will be null.
+		if( pMergedOutput!=NULL )
+		{
+			::DecayChainTrack* pBremParentChainTrack=pDecayChainTrack;
+			while( pBremParentChainTrack->pMergedBremSource!=NULL ) pBremParentChainTrack=pBremParentChainTrack->pMergedBremSource;
+
+			if( pBremParentChainTrack!=pDecayChainTrack )
+			{
+				TrackingParticle* pBremParentTrackingParticle=addTrackAndParentVertex( pBremParentChainTrack, newTrackingParticle, pMergedOutput, objectFactory );
+				// The original particle in the bremsstrahlung decay chain has been
+				// created (or retrieved if it already existed), now copy in the
+				// extra information.
+				// TODO - copy extra information.
+
+				if( std::abs( newTrackingParticle.pdgId() ) == 22 )
+				{
+					// Photons are added as separate TrackingParticles, but with the production
+					// vertex changed to be the production vertex of the original electron.
+
+					// Set up a proxy, so that all requests for the parent TrackingVertex get
+					// redirected to the brem parent's TrackingVertex.
+					pMergedOutput->setProxy( pDecayChainTrack->pParentVertex, pBremParentChainTrack->pParentVertex );
+
+					// Now that pMergedOutput thinks the parent vertex is the brem parent's vertex I can
+					// call this and it will set the TrackingParticle parent vertex correctly to the brem
+					// parent vertex.
+					addTrackAndParentVertex( pDecayChainTrack, newTrackingParticle, pMergedOutput, objectFactory );
+				}
+				else if( std::abs( newTrackingParticle.pdgId() ) == 11 )
+				{
+					// Electrons have their G4 tracks and SimHits copied to the parent TrackingParticle.
+					for( const auto& trackSegment : newTrackingParticle.g4Tracks() )
+					{
+						pBremParentTrackingParticle->addG4Track( trackSegment );
+					}
+
+					for( const auto& hit : newTrackingParticle.trackPSimHit() )
+					{
+						pBremParentTrackingParticle->addPSimHit( hit );
+					}
+
+					// Set a proxy in the output collection wrapper so that any attempt to get objects for
+					// this DecayChainTrack again get redirected to the brem parent.
+					pMergedOutput->setProxy( pDecayChainTrack, pBremParentChainTrack );
+				}
+			}
+			else
+			{
+				// This is not the result of bremsstrahlung so add to the collection as normal.
+				addTrackAndParentVertex( pDecayChainTrack, newTrackingParticle, pMergedOutput, objectFactory );
+			}
+		} // end of "if( pMergedOutput!=NULL )", i.e. end of "if bremsstrahlung merging is turned on"
+
+	} // end of addTrack function
+
 
 } // end of the unnamed namespace
 
