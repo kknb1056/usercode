@@ -385,7 +385,8 @@ void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup
 
 TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & config, edm::EDProducer& mixMod ) :
 		messageCategory_("TrackingTruthAccumulator"),
-		maximumBunchCrossing_( config.getParameter<unsigned int>("maximumBunchCrossing") ),
+		maximumPreviousBunchCrossing_( config.getParameter<unsigned int>("maximumPreviousBunchCrossing") ),
+		maximumSubsequentBunchCrossing_( config.getParameter<unsigned int>("maximumSubsequentBunchCrossing") ),
 		createUnmergedCollection_( config.getParameter<bool>("createUnmergedCollection") ),
 		createMergedCollection_(config.getParameter<bool>("createMergedBremsstrahlung") ),
 		addAncestors_( config.getParameter<bool>("alwaysAddAncestors") ),
@@ -481,7 +482,11 @@ void TrackingTruthAccumulator::accumulate( edm::Event const& event, edm::EventSe
 void TrackingTruthAccumulator::accumulate( PileUpEventPrincipal const& event, edm::EventSetup const& setup )
 {
 	// If this bunch crossing is outside the user configured limit, don't do anything.
-	if( std::abs( event.bunchCrossing() )<=maximumBunchCrossing_ ) accumulateEvent( event, setup );
+	if( event.bunchCrossing()>=-static_cast<int>(maximumPreviousBunchCrossing_) && event.bunchCrossing()<=static_cast<int>(maximumSubsequentBunchCrossing_) )
+	{
+		//edm::LogInfo(messageCategory_) << "Analysing pileup event for bunch crossing " << event.bunchCrossing();
+		accumulateEvent( event, setup );
+	}
 	else edm::LogInfo(messageCategory_) << "Skipping pileup event for bunch crossing " << event.bunchCrossing();
 }
 

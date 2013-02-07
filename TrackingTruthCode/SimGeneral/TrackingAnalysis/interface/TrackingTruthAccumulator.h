@@ -42,8 +42,12 @@ private:
 
 	const std::string messageCategory_; ///< The message category used to send messages to MessageLogger
 
-	/// The maximum bunch crossing to create TrackinParticles for. E.g. if set to zero only uses the signal and in time pileup.
-	const unsigned int maximumBunchCrossing_;
+	/** The maximum bunch crossing BEFORE the signal crossing to create TrackinParticles for. Use positive values. If set to zero no
+	 * previous bunches are added and only in-time, signal and after bunches (defined by maximumSubsequentBunchCrossing_) are used.*/
+	const unsigned int maximumPreviousBunchCrossing_;
+	/** The maximum bunch crossing AFTER the signal crossing to create TrackinParticles for. E.g. if set to zero only
+	 * uses the signal and in time pileup (and previous bunches defined by the maximumPreviousBunchCrossing_ parameter). */
+	const unsigned int maximumSubsequentBunchCrossing_;
 	/// If bremsstrahlung merging, whether to also add the unmerged collection to the event or not.
 	bool createUnmergedCollection_;
 	bool createMergedCollection_;
