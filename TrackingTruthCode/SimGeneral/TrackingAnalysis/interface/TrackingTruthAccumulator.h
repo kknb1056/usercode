@@ -42,6 +42,10 @@ private:
 
 	const std::string messageCategory_; ///< The message category used to send messages to MessageLogger
 
+	const double volumeRadius_;
+	const double volumeZ_;
+	const bool ignoreTracksOutsideVolume_;
+
 	/** The maximum bunch crossing BEFORE the signal crossing to create TrackinParticles for. Use positive values. If set to zero no
 	 * previous bunches are added and only in-time, signal and after bunches (defined by maximumSubsequentBunchCrossing_) are used.*/
 	const unsigned int maximumPreviousBunchCrossing_;
@@ -49,14 +53,16 @@ private:
 	 * uses the signal and in time pileup (and previous bunches defined by the maximumPreviousBunchCrossing_ parameter). */
 	const unsigned int maximumSubsequentBunchCrossing_;
 	/// If bremsstrahlung merging, whether to also add the unmerged collection to the event or not.
-	bool createUnmergedCollection_;
-	bool createMergedCollection_;
+	const bool createUnmergedCollection_;
+	const bool createMergedCollection_;
 	/// Whether or not to add the full parentage of any TrackingParticle that is inserted in the collection.
-	bool addAncestors_;
-	/// Whether or not to copy the PSimHits into the TrackingParticle
-	bool copySimHits_;
+	const bool addAncestors_;
+	/// Whether or not to copy the PSimHits into the TrackingParticle.
+	const bool copySimHits_;
 
-	bool removeDeadModules_;
+	/// As of 11/Feb/2013 this option hasn't been implemented yet.
+	const bool removeDeadModules_;
+	const std::string simHitLabel_;
 	edm::ParameterSet simHitCollectionConfig_;
 
 	bool selectorFlag_;

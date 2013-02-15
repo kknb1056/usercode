@@ -1,7 +1,7 @@
 /** @file
  * @brief Definitions of the TrackingTruthAccumulator methods.
  *
- * There are a lot of utility classes and methods in this file. This makes it quite long but
+ * There are a lot of utility classes and functions in this file. This makes it quite long but
  * I didn't want to confuse the directory structure with lots of extra files. My reasoning was
  * that lots of people look at the directory contents but only the really interested ones will
  * look in this particular file, and the utility stuff isn't used elsewhere.
@@ -134,14 +134,17 @@ namespace
 	class TrackingParticleFactory
 	{
 	public:
-		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits );
+		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits, double volumeRadius, double volumeZ );
 		TrackingParticle createTrackingParticle( const DecayChainTrack* pTrack ) const;
 		TrackingVertex createTrackingVertex( const DecayChainVertex* pVertex ) const;
+		bool vectorIsInsideVolume( const math::XYZTLorentzVectorD& vector ) const;
 	private:
 		const ::DecayChain& decayChain_;
 		const edm::Handle<edm::HepMCProduct>& hHepMC_;
 		const std::vector<const PSimHit*>& simHits_;
 		bool copySimHits_; ///< Whether each TrackingParticle should have a copy of its hits or not
+		const double volumeRadius_;
+		const double volumeZ_;
 		std::multimap<unsigned int, size_t> trackIdToHitIndex_; ///< A multimap linking SimTrack::trackId() to the hit index in pSimHits_
 	};
 
@@ -217,6 +220,9 @@ namespace
 
 TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & config, edm::EDProducer& mixMod ) :
 		messageCategory_("TrackingTruthAccumulator"),
+	    volumeRadius_( config.getParameter<double>("volumeRadius") ),
+	    volumeZ_( config.getParameter<double>("volumeZ") ),
+	    ignoreTracksOutsideVolume_( config.getParameter<bool>("ignoreTracksOutsideVolume") ),
 		maximumPreviousBunchCrossing_( config.getParameter<unsigned int>("maximumPreviousBunchCrossing") ),
 		maximumSubsequentBunchCrossing_( config.getParameter<unsigned int>("maximumSubsequentBunchCrossing") ),
 		createUnmergedCollection_( config.getParameter<bool>("createUnmergedCollection") ),
@@ -224,6 +230,7 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 		addAncestors_( config.getParameter<bool>("alwaysAddAncestors") ),
 		copySimHits_( config.getParameter<bool>("copySimHits") ),
 		removeDeadModules_( config.getParameter<bool>("removeDeadModules") ),
+		simHitLabel_( config.getParameter<std::string>("simHitLabel") ),
 		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") )
 {
 	//
@@ -373,7 +380,7 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 
 	std::vector<const PSimHit*> simHitPointers;
 	fillSimHits( simHitPointers, event, setup );
-	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, copySimHits_ );
+	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, copySimHits_, volumeRadius_, volumeZ_ );
 
 	// While I'm testing, perform some checks.
 	// TODO - drop this call once I'm happy it works in all situations.
@@ -400,6 +407,17 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 		if( chargedOnly_ && simTrack.charge()==0 ) continue;
 		if( signalOnly_ && (simTrack.eventId().bunchCrossing()==0 && simTrack.eventId().event()==0) ) continue;
 
+		// Also perform a check to see if the production vertex is inside the tracker volume (if required).
+		if( ignoreTracksOutsideVolume_ )
+		{
+			const SimVertex& simVertex=hSimVertices->at( pDecayTrack->pParentVertex->simVertexIndex );
+			if( !objectFactory.vectorIsInsideVolume( simVertex.position() ) )
+			{
+//				std::cout << "Vertex " << simVertex.position() << " is outside detector volume" << std::endl;
+				continue;
+			}
+		}
+
 
 		// This function creates the TrackinParticle and adds it to the collection if it
 		// passes the selection criteria specified in the configuration. If the config
@@ -419,7 +437,7 @@ template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const 
 		for( const auto& collectionName : collectionNames )
 		{
 			edm::Handle< std::vector<PSimHit> > hSimHits;
-			event.getByLabel( edm::InputTag( "g4SimHits", collectionName ), hSimHits );
+			event.getByLabel( edm::InputTag( simHitLabel_, collectionName ), hSimHits );
 
 			// TODO - implement removing the dead modules
 			for( const auto& simHit : *hSimHits )
@@ -468,8 +486,14 @@ namespace // Unnamed namespace for things only used in this file
 		return returnValue;
 	}
 
-	TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits )
-		: decayChain_(decayChain), hHepMC_(hHepMC), simHits_(simHits), copySimHits_(copySimHits)
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
+	//----   TrackingParticleFactory methods   ----------------------------------------
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
+
+	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits, double volumeRadius, double volumeZ )
+		: decayChain_(decayChain), hHepMC_(hHepMC), simHits_(simHits), copySimHits_(copySimHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
 	{
 		// Need to create a multimap to get from a SimTrackId to all of the hits in it. The SimTrackId
 		// is an unsigned int.
@@ -597,9 +621,25 @@ namespace // Unnamed namespace for things only used in this file
 	TrackingVertex TrackingParticleFactory::createTrackingVertex( const ::DecayChainVertex* pChainVertex ) const
 	{
 		const SimVertex& simVertex=decayChain_.getSimVertex( pChainVertex );
-		TrackingVertex returnValue( simVertex.position(), true, EncodedTruthId( simVertex.eventId(), 0 ) );
+
+		bool isInVolume=this->vectorIsInsideVolume( simVertex.position() );
+
+		// TODO - Still need to set the truth ID properly. I'm not sure what to set
+		// the second parameter of the EncodedTruthId constructor to.
+		TrackingVertex returnValue( simVertex.position(), isInVolume, EncodedTruthId( simVertex.eventId(), 0 ) );
 		return returnValue;
 	}
+
+	bool ::TrackingParticleFactory::vectorIsInsideVolume( const math::XYZTLorentzVectorD& vector ) const
+	{
+		return ( vector.Pt()<volumeRadius_ && vector.z()<volumeZ_ );
+	}
+
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
+	//----   DecayChain methods   -----------------------------------------------------
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
 
 	::DecayChain::DecayChain( const std::vector<SimTrack>& trackCollection, const std::vector<SimVertex>& vertexCollection )
 		: decayTracksSize( trackCollection.size() ),
@@ -681,7 +721,7 @@ namespace // Unnamed namespace for things only used in this file
 
 	} // end of ::DecayChain constructor
 
-	// Function documentation is with the declaration above.
+	// Function documentation is with the declaration above. This function is only used for testing.
 	void ::DecayChain::integrityCheck()
 	{
 		//
@@ -803,7 +843,14 @@ namespace // Unnamed namespace for things only used in this file
 		}
 	} // end of ::DecayChain::findBrem()
 
-	OutputCollectionWrapper::OutputCollectionWrapper( const DecayChain& decayChain, TrackingTruthAccumulator::OutputCollections& outputCollections )
+
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
+	//----   OutputCollectionWrapper methods   ----------------------------------------
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
+
+	::OutputCollectionWrapper::OutputCollectionWrapper( const ::DecayChain& decayChain, TrackingTruthAccumulator::OutputCollections& outputCollections )
 		: output_(outputCollections),
 		  trackingParticleIndices_(decayChain.decayTracksSize,-1),
 		  trackingVertexIndices_(decayChain.decayVerticesSize,-1)
@@ -811,7 +858,7 @@ namespace // Unnamed namespace for things only used in this file
 		// No operation besides the initialiser list
 	}
 
-	TrackingParticle* OutputCollectionWrapper::addTrackingParticle( const ::DecayChainTrack* pDecayTrack, const TrackingParticle& trackingParticle )
+	TrackingParticle* ::OutputCollectionWrapper::addTrackingParticle( const ::DecayChainTrack* pDecayTrack, const TrackingParticle& trackingParticle )
 	{
 		if( trackingParticleIndices_[pDecayTrack->simTrackIndex]!=-1 ) throw std::runtime_error( "OutputCollectionWrapper::addTrackingParticle - trying to add a particle twice" );
 
@@ -828,7 +875,7 @@ namespace // Unnamed namespace for things only used in this file
 		return &output_.pTrackingParticles->back();
 	}
 
-	TrackingVertex* OutputCollectionWrapper::addTrackingVertex( const ::DecayChainVertex* pDecayVertex, const TrackingVertex& trackingVertex )
+	TrackingVertex* ::OutputCollectionWrapper::addTrackingVertex( const ::DecayChainVertex* pDecayVertex, const TrackingVertex& trackingVertex )
 	{
 		if( trackingVertexIndices_[pDecayVertex->simVertexIndex]!=-1 ) throw std::runtime_error( "OutputCollectionWrapper::addTrackingVertex - trying to add a vertex twice" );
 
@@ -841,14 +888,14 @@ namespace // Unnamed namespace for things only used in this file
 		return &output_.pTrackingVertices->back();
 	}
 
-	TrackingParticle* OutputCollectionWrapper::getTrackingParticle( const ::DecayChainTrack* pDecayTrack )
+	TrackingParticle* ::OutputCollectionWrapper::getTrackingParticle( const ::DecayChainTrack* pDecayTrack )
 	{
 		const int index=trackingParticleIndices_[pDecayTrack->simTrackIndex];
 		if( index==-1 ) return NULL;
 		else return &(*output_.pTrackingParticles)[index];
 	}
 
-	TrackingVertex* OutputCollectionWrapper::getTrackingVertex( const ::DecayChainVertex* pDecayVertex )
+	TrackingVertex* ::OutputCollectionWrapper::getTrackingVertex( const ::DecayChainVertex* pDecayVertex )
 	{
 		const int index=trackingVertexIndices_[pDecayVertex->simVertexIndex];
 		if( index==-1 ) return NULL;
@@ -869,7 +916,7 @@ namespace // Unnamed namespace for things only used in this file
 		else return TrackingVertexRef( output_.refTrackingVertexes, index );
 	}
 
-	void OutputCollectionWrapper::setProxy( const ::DecayChainTrack* pOriginalTrack, const ::DecayChainTrack* pProxyTrack )
+	void ::OutputCollectionWrapper::setProxy( const ::DecayChainTrack* pOriginalTrack, const ::DecayChainTrack* pProxyTrack )
 	{
 		int& index=trackingParticleIndices_[pOriginalTrack->simTrackIndex];
 		if( index!=-1 ) throw std::runtime_error( "OutputCollectionWrapper::setProxy() was called for a TrackingParticle that has already been created" );
@@ -877,7 +924,7 @@ namespace // Unnamed namespace for things only used in this file
 		index=trackingParticleIndices_[pProxyTrack->simTrackIndex];
 	}
 
-	void OutputCollectionWrapper::setProxy( const ::DecayChainVertex* pOriginalVertex, const ::DecayChainVertex* pProxyVertex )
+	void ::OutputCollectionWrapper::setProxy( const ::DecayChainVertex* pOriginalVertex, const ::DecayChainVertex* pProxyVertex )
 	{
 		int& index=trackingVertexIndices_[pOriginalVertex->simVertexIndex];
 		const int newIndex=trackingVertexIndices_[pProxyVertex->simVertexIndex];
@@ -888,7 +935,7 @@ namespace // Unnamed namespace for things only used in this file
 		index=newIndex;
 	}
 
-	void OutputCollectionWrapper::associateToExistingObjects( const ::DecayChainVertex* pChainVertex )
+	void ::OutputCollectionWrapper::associateToExistingObjects( const ::DecayChainVertex* pChainVertex )
 	{
 		// First make sure the DecayChainVertex supplied has been turned into a TrackingVertex
 		TrackingVertex* pTrackingVertex=getTrackingVertex( pChainVertex );
@@ -919,7 +966,7 @@ namespace // Unnamed namespace for things only used in this file
 		//
 	}
 
-	void OutputCollectionWrapper::associateToExistingObjects( const ::DecayChainTrack* pChainTrack )
+	void ::OutputCollectionWrapper::associateToExistingObjects( const ::DecayChainTrack* pChainTrack )
 	{
 		//
 		// First make sure this DecayChainTrack has been turned into a TrackingParticle
@@ -952,6 +999,14 @@ namespace // Unnamed namespace for things only used in this file
 			}
 		}
 	}
+
+
+
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
+	//----   Functions in the unnamed namespace   -------------------------------------
+	//---------------------------------------------------------------------------------
+	//---------------------------------------------------------------------------------
 
 	int LayerFromDetid( const unsigned int & detid )
 	{
