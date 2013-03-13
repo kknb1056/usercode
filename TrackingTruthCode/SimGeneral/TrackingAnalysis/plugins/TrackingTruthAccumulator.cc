@@ -357,8 +357,8 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 	//
 	edm::Handle<std::vector<SimTrack> > hSimTracks;
 	edm::Handle<std::vector<SimVertex> > hSimVertices;
-	event.getByLabel( edm::InputTag( "g4SimHits" ), hSimTracks );
-	event.getByLabel( edm::InputTag( "g4SimHits" ), hSimVertices );
+	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimTracks );
+	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimVertices );
 
 	// Also need the HepMCProduct collection.
 	// For complex templated type reasons the way of requesting it as above doesn't work, so
@@ -368,7 +368,7 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 	// Run through the collections and work out the decay chain of each track/vertex. The
 	// information in SimTrack and SimVertex only allows traversing upwards, but this will
 	// allow traversal in both directions. This is required for things like grouping electrons
-	// that bremstrahlung as one TrackingParticle if "mergedBremsstrahlung" is set in the
+	// that bremsstrahlung as one TrackingParticle if "mergedBremsstrahlung" is set in the
 	// config file.
 	DecayChain decayChain( *hSimTracks, *hSimVertices );
 
