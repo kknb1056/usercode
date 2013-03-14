@@ -4,8 +4,8 @@
  *
  * \author Yanyan Gao, FNAL
  *
- *  $Date: 2011/10/27 12:52:48 $
- *  $Revision: 1.3 $
+ *  $Date: 2013/03/13 15:18:56 $
+ *  $Revision: 1.1 $
  *
  */
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
@@ -93,6 +93,8 @@ public:
       double radius(9999);
       bool found(0);
       
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
       const std::vector<PSimHit> & simHits = tp.trackPSimHit(DetId::Tracker);
       for(std::vector<PSimHit>::const_iterator it=simHits.begin(); it!=simHits.end(); ++it){
 	const GeomDet* tmpDet  = tracker->idToDet( DetId(it->detUnitId()) ) ;
@@ -107,6 +109,11 @@ public:
 	  finalGP = gp;
 	}
       }
+#else
+      // Naive code to try and make things work with basic functionality...
+      found=true;
+      radius=0;
+#endif
       if(!found) return 0;
       else
 	{

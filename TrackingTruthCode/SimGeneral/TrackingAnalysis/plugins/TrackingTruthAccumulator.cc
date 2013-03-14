@@ -17,6 +17,8 @@
  * Changelog:
  * 07/Feb/2013 Mark Grimes - Reorganised and added a bit more documentation. Still not enough
  * though.
+ * 12/Mar/2012 (branch NewTrackingParticle only) Mark Grimes - Updated TrackingParticle creation
+ * to fit in with Subir Sarkar's re-implementation of TrackingParticle.
  */
 #include "SimGeneral/TrackingAnalysis/interface/TrackingTruthAccumulator.h"
 
@@ -30,6 +32,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
@@ -134,7 +137,7 @@ namespace
 	class TrackingParticleFactory
 	{
 	public:
-		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits, double volumeRadius, double volumeZ );
+		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ );
 		TrackingParticle createTrackingParticle( const DecayChainTrack* pTrack ) const;
 		TrackingVertex createTrackingVertex( const DecayChainVertex* pVertex ) const;
 		bool vectorIsInsideVolume( const math::XYZTLorentzVectorD& vector ) const;
@@ -142,7 +145,6 @@ namespace
 		const ::DecayChain& decayChain_;
 		const edm::Handle<edm::HepMCProduct>& hHepMC_;
 		const std::vector<const PSimHit*>& simHits_;
-		bool copySimHits_; ///< Whether each TrackingParticle should have a copy of its hits or not
 		const double volumeRadius_;
 		const double volumeZ_;
 		std::multimap<unsigned int, size_t> trackIdToHitIndex_; ///< A multimap linking SimTrack::trackId() to the hit index in pSimHits_
@@ -228,7 +230,6 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 		createUnmergedCollection_( config.getParameter<bool>("createUnmergedCollection") ),
 		createMergedCollection_(config.getParameter<bool>("createMergedBremsstrahlung") ),
 		addAncestors_( config.getParameter<bool>("alwaysAddAncestors") ),
-		copySimHits_( config.getParameter<bool>("copySimHits") ),
 		removeDeadModules_( config.getParameter<bool>("removeDeadModules") ),
 		simHitLabel_( config.getParameter<std::string>("simHitLabel") ),
 		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") )
@@ -380,7 +381,7 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 
 	std::vector<const PSimHit*> simHitPointers;
 	fillSimHits( simHitPointers, event, setup );
-	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, copySimHits_, volumeRadius_, volumeZ_ );
+	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, volumeRadius_, volumeZ_ );
 
 	// While I'm testing, perform some checks.
 	// TODO - drop this call once I'm happy it works in all situations.
@@ -492,8 +493,8 @@ namespace // Unnamed namespace for things only used in this file
 	//---------------------------------------------------------------------------------
 	//---------------------------------------------------------------------------------
 
-	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits, double volumeRadius, double volumeZ )
-		: decayChain_(decayChain), hHepMC_(hHepMC), simHits_(simHits), copySimHits_(copySimHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
+	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ )
+		: decayChain_(decayChain), hHepMC_(hHepMC), simHits_(simHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
 	{
 		// Need to create a multimap to get from a SimTrackId to all of the hits in it. The SimTrackId
 		// is an unsigned int.
@@ -517,13 +518,9 @@ namespace // Unnamed namespace for things only used in this file
 
 		int pdgId=simTrack.type();
 
-		TrackingParticle returnValue( (char)simTrack.charge(),
-		                              simTrack.momentum(),
-		                              Vector( position.x(), position.y(), position.z() ),
-		                              position.t(),
-		                              pdgId,
-		                              -99, // set to default, will be changed further down the routine if it should be different
-		                              simTrack.eventId() );
+		TrackingParticle returnValue;
+		// N.B. The sim track is added a few lines below, the parent and decay vertices are added in
+		// another function later on.
 
 		//
 		// If there is some valid Monte Carlo for this track, take some information from that.
@@ -536,13 +533,7 @@ namespace // Unnamed namespace for things only used in this file
 			if( genParticleIndex>=0 )
 			{
 				const HepMC::GenParticle* pGenParticle=hHepMC_->GetEvent()->barcode_to_particle( genParticleIndex );
-				if( pGenParticle!=NULL )
-				{
-					returnValue.addGenParticle( GenParticleRef( hHepMC_, genParticleIndex ) );
-					returnValue.setStatus( pGenParticle->status() );
-					pdgId=pGenParticle->pdg_id();
-					returnValue.setPdgId( pdgId );
-				}
+//				if( pGenParticle!=NULL ) returnValue.addGenParticle( reco::GenParticleRef( *hHepMC_, genParticleIndex ) );
 			}
 		}
 
@@ -577,8 +568,6 @@ namespace // Unnamed namespace for things only used in this file
 			// Check for delta and interaction products discards
 			if( processType==pSimHit->processType() && particleType==pSimHit->particleType() && pdgId==pSimHit->particleType() )
 			{
-				if( copySimHits_ ) returnValue.addPSimHit( *pSimHit );
-
 				unsigned int detectorIdIndex=pSimHit->detUnitId();
 				DetId detectorId=DetId( detectorIdIndex );
 				oldLayer=newLayer;
@@ -601,18 +590,6 @@ namespace // Unnamed namespace for things only used in this file
 		}
 	    //std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
 		returnValue.setMatchedHit( totalSimHits );
-
-		if( false )
-		{
-			// The reco::Track associators have a cut on TrackingParticles with no sim hits. They
-			// don't actually use them for the association though. As a short term work around I'll
-			// just add a single uninitialised PSimHit to every TrackingParticle.
-			// All parameters are just arbitrary filler except the DetId, which needs to be part of
-			// tracker (any part). Otherwise the reco associators will ignore the hit,
-			PSimHit dummyHit( Local3DPoint(), Local3DPoint(), 0, 0, 0, 0, DetId(DetId::Tracker,0).rawId(), 0, 0, 0 ); // The only important part is "DetId::Tracker"
-			returnValue.addPSimHit( dummyHit );
-			returnValue.setMatchedHit( 1 );
-		}
 
 		//std::cout << "------Created TrackingParticle with PDG ID " << returnValue.pdgId() << std::endl;
 		return returnValue;
@@ -1147,11 +1124,6 @@ namespace // Unnamed namespace for things only used in this file
 					for( const auto& trackSegment : newTrackingParticle.g4Tracks() )
 					{
 						pBremParentTrackingParticle->addG4Track( trackSegment );
-					}
-
-					for( const auto& hit : newTrackingParticle.trackPSimHit() )
-					{
-						pBremParentTrackingParticle->addPSimHit( hit );
 					}
 
 					// Set a proxy in the output collection wrapper so that any attempt to get objects for
