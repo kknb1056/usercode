@@ -137,13 +137,13 @@ namespace
 	class TrackingParticleFactory
 	{
 	public:
-		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ );
+		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ );
 		TrackingParticle createTrackingParticle( const DecayChainTrack* pTrack ) const;
 		TrackingVertex createTrackingVertex( const DecayChainVertex* pVertex ) const;
 		bool vectorIsInsideVolume( const math::XYZTLorentzVectorD& vector ) const;
 	private:
 		const ::DecayChain& decayChain_;
-		const edm::Handle<edm::HepMCProduct>& hHepMC_;
+		const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles_;
 		const std::vector<const PSimHit*>& simHits_;
 		const double volumeRadius_;
 		const double volumeZ_;
@@ -174,19 +174,6 @@ namespace
 		std::vector<int> trackingParticleIndices_;
 		std::vector<int> trackingVertexIndices_;
 	};
-
-
-	/** @brief Simply returns the HepMCProduct with the label "generator" from the event.
-	 * Put in a separate function because the event analysing function is templated to work with
-	 * both edm::Event and PileUpEventPrincipal, but HepMCProduct has to be retrieved in different
-	 * ways for each of those.
-	 */
-	edm::Handle<edm::HepMCProduct> getHepMC( const edm::Event& event );
-
-	/** @brief Returns the HepMCProduct with the label "generator" from the PileUpEventPrincipal.
-	 * See the note for the edm::Event overload.
-	 */
-	edm::Handle<edm::HepMCProduct> getHepMC( const PileUpEventPrincipal& event );
 
 	/** @brief Utility function copied verbatim from TrackinTruthProducer.
 	 */
@@ -232,7 +219,8 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 		addAncestors_( config.getParameter<bool>("alwaysAddAncestors") ),
 		removeDeadModules_( config.getParameter<bool>("removeDeadModules") ),
 		simHitLabel_( config.getParameter<std::string>("simHitLabel") ),
-		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") )
+		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") ),
+		genParticleLabel_( config.getParameter<edm::InputTag>("genParticleCollection") )
 {
 	//
 	// Make sure at least one of the merged and unmerged collections have been set
@@ -358,13 +346,10 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 	//
 	edm::Handle<std::vector<SimTrack> > hSimTracks;
 	edm::Handle<std::vector<SimVertex> > hSimVertices;
+	edm::Handle< std::vector<reco::GenParticle> > hGenParticles;
 	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimTracks );
 	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimVertices );
-
-	// Also need the HepMCProduct collection.
-	// For complex templated type reasons the way of requesting it as above doesn't work, so
-	// I need to use some specialisations I've written.
-	edm::Handle<edm::HepMCProduct> hHepMC=::getHepMC( event );
+	event.getByLabel( genParticleLabel_, hGenParticles );
 
 	// Run through the collections and work out the decay chain of each track/vertex. The
 	// information in SimTrack and SimVertex only allows traversing upwards, but this will
@@ -381,7 +366,7 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 
 	std::vector<const PSimHit*> simHitPointers;
 	fillSimHits( simHitPointers, event, setup );
-	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, volumeRadius_, volumeZ_ );
+	TrackingParticleFactory objectFactory( decayChain, hGenParticles, simHitPointers, volumeRadius_, volumeZ_ );
 
 	// While I'm testing, perform some checks.
 	// TODO - drop this call once I'm happy it works in all situations.
@@ -466,35 +451,14 @@ template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const 
 
 namespace // Unnamed namespace for things only used in this file
 {
-	edm::Handle<edm::HepMCProduct> getHepMC( const edm::Event& event )
-	{
-		// This is just the standard way of getting things from an event. This code is only
-		// in a separate function because it doesn't work in the other case (i.e. for PileUpEventPrincipal).
-		edm::Handle<edm::HepMCProduct>returnValue;
-		event.getByLabel( edm::InputTag( "generator" ), returnValue );
-		return returnValue;
-	}
-
-	edm::Handle<edm::HepMCProduct> getHepMC( const PileUpEventPrincipal& event )
-	{
-		// The getByLabel method in PileUpEventPrincipal doesn't work to get HepMCProduct because
-		// it's written assuming it has the normal typedefs for a STL container, which it doesn't.
-		edm::InputTag inputTag( "generator" );
-		edm::BasicHandle hepMCBasicHandle=event.principal().getByLabel( edm::TypeID( typeid(edm::HepMCProduct) ), inputTag.label(), inputTag.instance(), inputTag.process(), inputTag.cachedOffset(), inputTag.fillCount() );
-		edm::Handle<edm::HepMCProduct>returnValue;
-		edm::convert_handle( hepMCBasicHandle, returnValue );
-
-		return returnValue;
-	}
-
 	//---------------------------------------------------------------------------------
 	//---------------------------------------------------------------------------------
 	//----   TrackingParticleFactory methods   ----------------------------------------
 	//---------------------------------------------------------------------------------
 	//---------------------------------------------------------------------------------
 
-	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ )
-		: decayChain_(decayChain), hHepMC_(hHepMC), simHits_(simHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
+	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ )
+		: decayChain_(decayChain), hGenParticles_(hGenParticles), simHits_(simHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
 	{
 		// Need to create a multimap to get from a SimTrackId to all of the hits in it. The SimTrackId
 		// is an unsigned int.
@@ -506,12 +470,11 @@ namespace // Unnamed namespace for things only used in this file
 
 	TrackingParticle TrackingParticleFactory::createTrackingParticle( const ::DecayChainTrack* pChainTrack ) const
 	{
-		const SimTrack& simTrack=decayChain_.getSimTrack( pChainTrack );
-		const SimVertex& parentSimVertex=decayChain_.getSimVertex( pChainTrack->pParentVertex );
-
-		typedef edm::Ref<edm::HepMCProduct,HepMC::GenParticle> GenParticleRef;
 		typedef math::XYZTLorentzVectorD LorentzVector;
 		typedef math::XYZPoint Vector;
+
+		const SimTrack& simTrack=decayChain_.getSimTrack( pChainTrack );
+		const SimVertex& parentSimVertex=decayChain_.getSimVertex( pChainTrack->pParentVertex );
 
 		LorentzVector position( 0, 0, 0, 0 );
 		if( !simTrack.noVertex() ) position=parentSimVertex.position();
@@ -530,11 +493,7 @@ namespace // Unnamed namespace for things only used in this file
 		if( simTrack.eventId().event()==0 && simTrack.eventId().bunchCrossing()==0 ) // if this is a track in the signal event
 		{
 			int genParticleIndex=simTrack.genpartIndex();
-			if( genParticleIndex>=0 )
-			{
-				const HepMC::GenParticle* pGenParticle=hHepMC_->GetEvent()->barcode_to_particle( genParticleIndex );
-//				if( pGenParticle!=NULL ) returnValue.addGenParticle( reco::GenParticleRef( *hHepMC_, genParticleIndex ) );
-			}
+			if( genParticleIndex>=0 ) returnValue.addGenParticle( reco::GenParticleRef( hGenParticles_, genParticleIndex ) );
 		}
 
 		returnValue.addG4Track( simTrack );
@@ -1124,6 +1083,12 @@ namespace // Unnamed namespace for things only used in this file
 					for( const auto& trackSegment : newTrackingParticle.g4Tracks() )
 					{
 						pBremParentTrackingParticle->addG4Track( trackSegment );
+					}
+
+					// Also copy the generator particle references
+					for( const auto& genParticleRef : newTrackingParticle.genParticles() )
+					{
+						pBremParentTrackingParticle->addGenParticle( genParticleRef );
 					}
 
 					// Set a proxy in the output collection wrapper so that any attempt to get objects for

@@ -63,6 +63,7 @@ private:
 	const bool removeDeadModules_;
 	const std::string simHitLabel_;
 	edm::ParameterSet simHitCollectionConfig_;
+	edm::InputTag genParticleLabel_;
 
 	bool selectorFlag_;
 	TrackingParticleSelector selector_;
