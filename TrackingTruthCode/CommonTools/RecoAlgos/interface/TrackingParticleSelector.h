@@ -4,8 +4,8 @@
  *
  * \author Giuseppe Cerati, INFN
  *
- *  $Date: 2013/03/13 15:19:00 $
- *  $Revision: 1.1 $
+ *  $Date: 2013/03/15 13:24:05 $
+ *  $Revision: 1.6 $
  *
  */
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
@@ -37,15 +37,11 @@ public:
       if (!signal) {
 	stable = false; // we are not interested into PU particles among the stable ones
       } else {
-#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
-#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
 	for( TrackingParticle::genp_iterator j = tp.genParticle_begin(); j != tp.genParticle_end(); ++ j ) {
-          const HepMC::GenParticle * p = j->get();
-	  if (!p || p->status() != 1) {
+	  if (j->get()==0 || j->get()->status() != 1) {
 	    stable = 0; break;
 	  }
 	}
-#endif
        // test for remaining unstabled due to lack of genparticle pointer
        if(stable == 1 && tp.status() == -99 && 
           (fabs(tp.pdgId()) != 11 && fabs(tp.pdgId()) != 13 && fabs(tp.pdgId()) != 211 &&
