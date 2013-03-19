@@ -17,8 +17,8 @@ class ParametersDefinerForTP {
  public:
   ParametersDefinerForTP(){};
 
-  virtual ParticleBase::Vector momentum(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const;
-  virtual ParticleBase::Point vertex(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const;
+  virtual TrackingParticle::Vector momentum(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const;
+  virtual TrackingParticle::Point vertex(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const;
 
 };
 

@@ -9,8 +9,7 @@ QuickTrackAssociatorByHits::QuickTrackAssociatorByHits( const edm::ParameterSet&
 	  qualitySimToReco_( config.getParameter<double>( "Quality_SimToReco" ) ),
 	  puritySimToReco_( config.getParameter<double>( "Purity_SimToReco" ) ),
 	  cutRecoToSim_( config.getParameter<double>( "Cut_RecoToSim" ) ),
-	  threeHitTracksAreSpecial_( config.getParameter<bool> ( "ThreeHitTracksAreSpecial" ) ),
-	  requireStoredHits_( config.getParameter<bool> ( "requireStoredHits" ) )
+	  threeHitTracksAreSpecial_( config.getParameter<bool> ( "ThreeHitTracksAreSpecial" ) )
 {
 	//
 	// Check whether the denominator when working out the percentage of shared hits should
@@ -64,7 +63,6 @@ QuickTrackAssociatorByHits::QuickTrackAssociatorByHits( const QuickTrackAssociat
 	  cutRecoToSim_(otherAssociator.cutRecoToSim_),
 	  threeHitTracksAreSpecial_(otherAssociator.threeHitTracksAreSpecial_),
 	  simToRecoDenominator_(otherAssociator.simToRecoDenominator_),
-	  requireStoredHits_(otherAssociator.requireStoredHits_),
 	  pTrackCollectionHandle_(otherAssociator.pTrackCollectionHandle_),
 	  pTrackCollection_(otherAssociator.pTrackCollection_),
 	  pTrackingParticleCollectionHandle_(otherAssociator.pTrackingParticleCollectionHandle_),
@@ -100,7 +98,6 @@ QuickTrackAssociatorByHits& QuickTrackAssociatorByHits::operator=( const QuickTr
 	cutRecoToSim_=otherAssociator.cutRecoToSim_;
 	threeHitTracksAreSpecial_=otherAssociator.threeHitTracksAreSpecial_;
 	simToRecoDenominator_=otherAssociator.simToRecoDenominator_;
-	requireStoredHits_=otherAssociator.requireStoredHits_;
 	pTrackCollectionHandle_=otherAssociator.pTrackCollectionHandle_;
 	pTrackCollection_=otherAssociator.pTrackCollection_;
 	pTrackingParticleCollectionHandle_=otherAssociator.pTrackingParticleCollectionHandle_;
@@ -250,7 +247,12 @@ reco::SimToRecoCollection QuickTrackAssociatorByHits::associateSimToRecoImplemen
 				// various things.  I'm not sure what these checks are for but they depend on the UseGrouping and UseSplitting settings.
 				// This associator works as though both UseGrouping and UseSplitting were set to true, i.e. just counts the number of
 				// hits in the tracker.
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
 				numberOfSimulatedHits=trackingParticleRef->trackPSimHit(DetId::Tracker).size();
+#else
+				numberOfSimulatedHits=trackingParticleRef->matchedHit(); // I really don't think this is the same as the defined out line above
+#endif
 			}
 
 			double purity=static_cast<double>(numberOfSharedHits)/static_cast<double>(numberOfValidTrackHits);
@@ -293,7 +295,7 @@ std::vector< std::pair<edm::Ref<TrackingParticleCollection>,size_t> > QuickTrack
 		else pTrackingParticle=&(*pTrackingParticleCollectionHandle_->product())[i];
 
 		// Ignore TrackingParticles with no hits
-		if( requireStoredHits_ && pTrackingParticle->trackPSimHit().empty() ) continue;
+		if( pTrackingParticle->matchedHit()==0 ) continue;
 
 		size_t numberOfAssociatedHits=0;
 		// Loop over all of the sim track identifiers and see if any of them are part of this TrackingParticle. If they are, add

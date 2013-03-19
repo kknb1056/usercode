@@ -11,7 +11,7 @@
 #include <FWCore/Framework/interface/ESHandle.h>
 class TrajectoryStateClosestToBeamLineBuilder;
 
-ParticleBase::Vector
+TrackingParticle::Vector
 ParametersDefinerForTP::momentum(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const{
   // to add a new implementation for cosmic. For the moment, it is just as for the base class:
 
@@ -23,7 +23,7 @@ ParametersDefinerForTP::momentum(const edm::Event& iEvent, const edm::EventSetup
   edm::Handle<reco::BeamSpot> bs;
   iEvent.getByLabel(InputTag("offlineBeamSpot"),bs);
 
-  ParticleBase::Vector momentum(0, 0, 0); 
+  TrackingParticle::Vector momentum(0, 0, 0);
 
   FreeTrajectoryState ftsAtProduction(GlobalPoint(tp.vertex().x(),tp.vertex().y(),tp.vertex().z()),
 				      GlobalVector(tp.momentum().x(),tp.momentum().y(),tp.momentum().z()),
@@ -34,12 +34,12 @@ ParametersDefinerForTP::momentum(const edm::Event& iEvent, const edm::EventSetup
   TrajectoryStateClosestToBeamLine tsAtClosestApproach = tscblBuilder(ftsAtProduction,*bs);//as in TrackProducerAlgorithm
   if(tsAtClosestApproach.isValid()){
     GlobalVector p = tsAtClosestApproach.trackStateAtPCA().momentum();
-    momentum = ParticleBase::Vector(p.x(), p.y(), p.z());
+    momentum = TrackingParticle::Vector(p.x(), p.y(), p.z());
   }
   return momentum;
 }
 
-ParticleBase::Point ParametersDefinerForTP::vertex(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const{
+TrackingParticle::Point ParametersDefinerForTP::vertex(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const{
   // to add a new implementation for cosmic. For the moment, it is just as for the base class:
   using namespace edm;
 
@@ -49,7 +49,7 @@ ParticleBase::Point ParametersDefinerForTP::vertex(const edm::Event& iEvent, con
   edm::Handle<reco::BeamSpot> bs;
   iEvent.getByLabel(InputTag("offlineBeamSpot"),bs);
 
-  ParticleBase::Point vertex(0, 0, 0);
+  TrackingParticle::Point vertex(0, 0, 0);
   
   FreeTrajectoryState ftsAtProduction(GlobalPoint(tp.vertex().x(),tp.vertex().y(),tp.vertex().z()),
 				      GlobalVector(tp.momentum().x(),tp.momentum().y(),tp.momentum().z()),
@@ -60,7 +60,7 @@ ParticleBase::Point ParametersDefinerForTP::vertex(const edm::Event& iEvent, con
   TrajectoryStateClosestToBeamLine tsAtClosestApproach = tscblBuilder(ftsAtProduction,*bs);//as in TrackProducerAlgorithm
   if(tsAtClosestApproach.isValid()){
     GlobalPoint v = tsAtClosestApproach.trackStateAtPCA().position();
-    vertex = ParticleBase::Point(v.x()-bs->x0(),v.y()-bs->y0(),v.z()-bs->z0());
+    vertex = TrackingParticle::Point(v.x()-bs->x0(),v.y()-bs->y0(),v.z()-bs->z0());
   }
   return vertex;
 }
