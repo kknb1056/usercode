@@ -9,8 +9,7 @@ QuickTrackAssociatorByHits::QuickTrackAssociatorByHits( const edm::ParameterSet&
 	  qualitySimToReco_( config.getParameter<double>( "Quality_SimToReco" ) ),
 	  puritySimToReco_( config.getParameter<double>( "Purity_SimToReco" ) ),
 	  cutRecoToSim_( config.getParameter<double>( "Cut_RecoToSim" ) ),
-	  threeHitTracksAreSpecial_( config.getParameter<bool> ( "ThreeHitTracksAreSpecial" ) ),
-	  requireStoredHits_( config.getParameter<bool> ( "requireStoredHits" ) )
+	  threeHitTracksAreSpecial_( config.getParameter<bool> ( "ThreeHitTracksAreSpecial" ) )
 {
 	//
 	// Check whether the denominator when working out the percentage of shared hits should
@@ -64,11 +63,11 @@ QuickTrackAssociatorByHits::QuickTrackAssociatorByHits( const QuickTrackAssociat
 	  cutRecoToSim_(otherAssociator.cutRecoToSim_),
 	  threeHitTracksAreSpecial_(otherAssociator.threeHitTracksAreSpecial_),
 	  simToRecoDenominator_(otherAssociator.simToRecoDenominator_),
-	  requireStoredHits_(otherAssociator.requireStoredHits_),
 	  pTrackCollectionHandle_(otherAssociator.pTrackCollectionHandle_),
 	  pTrackCollection_(otherAssociator.pTrackCollection_),
 	  pTrackingParticleCollectionHandle_(otherAssociator.pTrackingParticleCollectionHandle_),
 	  pTrackingParticleCollection_(otherAssociator.pTrackingParticleCollection_)
+
 {
 	// No operation other than the initialiser list. That copies everything straight from the other
 	// associator, except for pHitAssociator_ which needs a deep copy or both instances will try
@@ -100,7 +99,6 @@ QuickTrackAssociatorByHits& QuickTrackAssociatorByHits::operator=( const QuickTr
 	cutRecoToSim_=otherAssociator.cutRecoToSim_;
 	threeHitTracksAreSpecial_=otherAssociator.threeHitTracksAreSpecial_;
 	simToRecoDenominator_=otherAssociator.simToRecoDenominator_;
-	requireStoredHits_=otherAssociator.requireStoredHits_;
 	pTrackCollectionHandle_=otherAssociator.pTrackCollectionHandle_;
 	pTrackCollection_=otherAssociator.pTrackCollection_;
 	pTrackingParticleCollectionHandle_=otherAssociator.pTrackingParticleCollectionHandle_;
@@ -293,7 +291,7 @@ std::vector< std::pair<edm::Ref<TrackingParticleCollection>,size_t> > QuickTrack
 		else pTrackingParticle=&(*pTrackingParticleCollectionHandle_->product())[i];
 
 		// Ignore TrackingParticles with no hits
-		if( requireStoredHits_ && pTrackingParticle->trackPSimHit().empty() ) continue;
+		if( pTrackingParticle->trackPSimHit().empty() ) continue;
 
 		size_t numberOfAssociatedHits=0;
 		// Loop over all of the sim track identifiers and see if any of them are part of this TrackingParticle. If they are, add

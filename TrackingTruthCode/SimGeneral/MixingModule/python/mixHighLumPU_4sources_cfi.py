@@ -20,7 +20,6 @@ from SimGeneral.MixingModule.stripDigitizer_cfi import *
 from SimGeneral.MixingModule.ecalDigitizer_cfi import *
 from SimGeneral.MixingModule.hcalDigitizer_cfi import *
 from SimGeneral.MixingModule.castorDigitizer_cfi import *
-from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
 
 mix = cms.EDProducer("MixingModule",
     digitizers = cms.PSet(
@@ -38,9 +37,6 @@ mix = cms.EDProducer("MixingModule",
       ),
       castor  = cms.PSet(
         castorDigitizer
-      ),
-      mergedtruth = cms.PSet(
-      	mergedtruth
       )
     ),
     LabelPlayback = cms.string(''),

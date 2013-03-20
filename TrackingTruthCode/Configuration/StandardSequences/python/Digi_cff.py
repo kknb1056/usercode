@@ -8,10 +8,10 @@ import FWCore.ParameterSet.Config as cms
 # it's required for ECAL/HCAL & Muon's                
 # Defined in a separate fragment
 #                                                    
-# Tracker Digis (Pixel + SiStrips) are now made in the mixing
-# module, so the old "trDigi" sequence has been taken out.
+# Tracker Digis (Pixel + SiStrips)
+# returns sequence "trDigi"
 #
-
+from SimTracker.Configuration.SimTracker_cff import *
 # Calorimetry Digis (Ecal + Hcal) - * unsuppressed *
 # returns sequence "calDigi"
 from SimCalorimetry.Configuration.SimCalorimetry_cff import *
@@ -20,11 +20,12 @@ from SimCalorimetry.Configuration.SimCalorimetry_cff import *
 #
 from SimMuon.Configuration.SimMuon_cff import *
 #
-# TrackingParticle Producer is now part of the mixing module, so
-# it is no longer run here.
+# include TrackingParticle Producer
+# NOTA BENE: it MUST be run here at the moment, since it depends 
+# of the availability of the CrossingFrame in the Event
 #
 from SimGeneral.Configuration.SimGeneral_cff import *
-doAllDigi = cms.Sequence(calDigi+muonDigi)
-pdigi = cms.Sequence(cms.SequencePlaceholder("randomEngineStateProducer")*cms.SequencePlaceholder("mix")*doAllDigi*addPileupInfo)
+doAllDigi = cms.Sequence(trDigi+calDigi+muonDigi)
+pdigi = cms.Sequence(cms.SequencePlaceholder("randomEngineStateProducer")*cms.SequencePlaceholder("mix")*doAllDigi*trackingParticles*addPileupInfo)
 
 
