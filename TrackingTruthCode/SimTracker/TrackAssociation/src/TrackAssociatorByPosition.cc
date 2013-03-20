@@ -6,6 +6,7 @@
 
 #include "DataFormats/Math/interface/deltaR.h"
 //#include "PhysicsTools/Utilities/interface/DeltaR.h"
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
 using namespace edm;
 using namespace reco;
@@ -23,7 +24,7 @@ TrajectoryStateOnSurface TrackAssociatorByPosition::getState(const TrackingParti
   std::vector<PSimHit> pSimHit = st.trackPSimHit();
   if (!theConsiderAllSimHits) pSimHit=st.trackPSimHit(DetId::Tracker);
 #else
-  std::vector<PSimHit> pSimHit
+  std::vector<PSimHit> pSimHit;
 #endif
   std::vector<PSimHit> ::const_iterator start=pSimHit.begin();
   std::vector<PSimHit> ::const_iterator end=pSimHit.end();
