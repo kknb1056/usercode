@@ -58,10 +58,7 @@ public:
     /// PDG id, signal source, crossing number
     int pdgId() const
     {
-        if( genParticles_.empty() ) return 0;
-
-        reco::GenParticleRefVector::const_iterator it = genParticle_begin();
-        return (*it)->pdgId();
+        return g4Tracks_.at(0).type();
     }
     EncodedEventId eventId() const
     {
