@@ -26,6 +26,7 @@ mergedtruth = cms.PSet(
         	'TrackerHitsPixelEndcapHighTof')
 	),
 	simHitLabel = cms.string('g4SimHits'),
+	genParticleCollection = cms.InputTag('genParticles'),
 	removeDeadModules = cms.bool(False), # currently not implemented
 	useMultipleHepMCLabels = cms.bool(False),
 	volumeRadius = cms.double(1200.0),
