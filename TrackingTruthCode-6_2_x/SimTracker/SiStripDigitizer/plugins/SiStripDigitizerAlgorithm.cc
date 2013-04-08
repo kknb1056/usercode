@@ -9,6 +9,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "SiStripDigitizerAlgorithm.h"
 #include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
+#include "SimDataFormats/TrackerDigiSimLink/interface/StripDigiSimLink.h"
 #include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/GeometrySurface/interface/BoundSurface.h"
 #include "SimGeneral/HepPDTRecord/interface/ParticleDataTable.h"
@@ -87,6 +88,8 @@ SiStripDigitizerAlgorithm::initializeDetUnit(StripGeomDetUnit* det, const edm::E
 void
 SiStripDigitizerAlgorithm::initializeEvent(const edm::EventSetup& iSetup) {
   theSiPileUpSignals->reset();
+  // This should be clear by after all calls to digitize(), but I might as well make sure
+  associationInfoForDetId_.clear();
 
   //get gain noise pedestal lorentzAngle from ES handle
   edm::ESHandle<ParticleDataTable> pdt;
@@ -121,6 +124,10 @@ SiStripDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterato
   uint32_t detId = det->geographicalId().rawId();
   // First: loop on the SimHits
   if(theFlatDistribution->fire()>inefficiency) {
+    AssociationInfoForChannel* pDetIDAssociationInfo; // I only need this if makeDigiSimLinks_ is true...
+    if( makeDigiSimLinks_ ) pDetIDAssociationInfo=&(associationInfoForDetId_[detId]); // ...so only search the map if that is the case
+    std::vector<double> previousLocalAmplitude; // Only used if makeDigiSimLinks_ is true. Needed to work out the change in amplitude.
+
     for (std::vector<PSimHit>::const_iterator simHitIter = inputBegin; simHitIter != inputEnd; ++simHitIter) {
       // skip hits not in this detector.
       if((*simHitIter).detUnitId() != detId) {
@@ -128,6 +135,7 @@ SiStripDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterato
       }
       // check TOF
       if (std::fabs(simHitIter->tof() - cosmicShift - det->surface().toGlobal(simHitIter->localPosition()).mag()/30.) < tofCut && simHitIter->energyLoss()>0) {
+        if( makeDigiSimLinks_ ) previousLocalAmplitude=locAmpl; // Not needed except to make the sim link association.
         size_t localFirstChannel = numStrips;
         size_t localLastChannel  = 0;
         // process the hit
@@ -162,7 +170,30 @@ SiStripDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterato
     
         if(thisFirstChannelWithSignal > localFirstChannel) thisFirstChannelWithSignal = localFirstChannel;
         if(thisLastChannelWithSignal < localLastChannel) thisLastChannelWithSignal = localLastChannel;
-      }
+
+        if( makeDigiSimLinks_ ) { // No need to do any of this if truth association was turned off in the configuration
+          for( size_t stripIndex=0; stripIndex<locAmpl.size(); ++stripIndex ) {
+            // Work out the amplitude from this SimHit from the difference of what it was before and what it is now
+            float signalFromThisSimHit=locAmpl[stripIndex]-previousLocalAmplitude[stripIndex];
+            if( signalFromThisSimHit!=0 ) { // If this SimHit had any contribution I need to record it.
+              auto& associationVector=(*pDetIDAssociationInfo)[stripIndex];
+              bool addNewEntry=true;
+              // Make sure the hit isn't in already. I've seen this a few times, it always seems to happen in pairs so I think
+              // it's something to do with the stereo strips.
+              for( auto& associationInfo : associationVector ) {
+                if( associationInfo.trackID==simHitIter->trackId() && associationInfo.eventID==simHitIter->eventId() ) {
+                  // The hit is already in, so add this second contribution and move on
+                  associationInfo.contributionToADC+=signalFromThisSimHit;
+                  addNewEntry=false;
+                  break;
+                }
+              } // end of loop over associationVector
+              // If the hit wasn't already in create a new association info structure.
+              if( addNewEntry ) associationVector.push_back( AssociationInfo{ simHitIter->trackId(), simHitIter->eventId(), signalFromThisSimHit } );
+            } // end of "if( signalFromThisSimHit!=0 )"
+          } // end of loop over locAmpl strips
+        } // end of "if( makeDigiSimLinks_ )"
+      } // end of TOF check
     } // end for
   }
   theSiPileUpSignals->add(detID, locAmpl, thisFirstChannelWithSignal, thisLastChannelWithSignal);
@@ -175,6 +206,7 @@ void
 SiStripDigitizerAlgorithm::digitize(
 			   edm::DetSet<SiStripDigi>& outdigi,
 			   edm::DetSet<SiStripRawDigi>& outrawdigi,
+			   edm::DetSet<StripDigiSimLink>& outLink,
 			   const StripGeomDetUnit *det,
 			   edm::ESHandle<SiStripGain> & gainHandle,
 			   edm::ESHandle<SiStripThreshold> & thresholdHandle,
@@ -204,6 +236,7 @@ SiStripDigitizerAlgorithm::digitize(
 
   auto& firstChannelWithSignal = firstChannelsWithSignal[detID];
   auto& lastChannelWithSignal = lastChannelsWithSignal[detID];
+  auto iAssociationInfoByChannel=associationInfoForDetId_.find(detID); // Use an iterator so that I can easily remove it once finished
 
   if(zeroSuppression){
     if(noise){
@@ -219,6 +252,23 @@ SiStripDigitizerAlgorithm::digitize(
 	}
     DigitalVecType digis;
     theSiZeroSuppress->suppress(theSiDigitalConverter->convert(detAmpl, gainHandle, detID), digis, detID,noiseHandle,thresholdHandle);
+    // Now do the association to truth. Note that if truth association was turned off in the configuration this map
+    // will be empty and the iterator will always equal associationInfoForDetId_.end().
+    if( iAssociationInfoByChannel!=associationInfoForDetId_.end() ) { // make sure the readings for this DetID aren't completely from noise
+      for( const auto& iDigi : digis ) {
+        auto& associationInfoByChannel=iAssociationInfoByChannel->second;
+        const std::vector<AssociationInfo>& associationInfo=associationInfoByChannel[iDigi.channel()];
+
+        // Need to find the total from all sim hits, because this might not be the same as the total
+        // digitised due to noise or whatever.
+        float totalSimADC=0;
+        for( const auto& iAssociationInfo : associationInfo ) totalSimADC+=iAssociationInfo.contributionToADC;
+        // Now I know that I can loop again and create the links
+        for( const auto& iAssociationInfo : associationInfo ) {
+          outLink.push_back( StripDigiSimLink( iDigi.channel(), iAssociationInfo.trackID, 0, iAssociationInfo.eventID, iAssociationInfo.contributionToADC/totalSimADC ) );
+        } // end of loop over associationInfo
+      } // end of loop over the digis
+    } // end of check that iAssociationInfoByChannel is a valid iterator
     outdigi.data = digis;
   }
   
@@ -323,4 +373,9 @@ SiStripDigitizerAlgorithm::digitize(
 	
 	//}
   }
+
+  // Now that I've finished with this entry in the map of associations, I can remove it.
+  // Note that there might not be an association if the ADC reading is from noise in which
+  // case associationIsValid will be false.
+  if( iAssociationInfoByChannel!=associationInfoForDetId_.end() ) associationInfoForDetId_.erase(iAssociationInfoByChannel);
 }

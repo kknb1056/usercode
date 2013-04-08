@@ -13,6 +13,7 @@
 #include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/SiStripDigi/interface/SiStripDigi.h"
 #include "DataFormats/SiStripDigi/interface/SiStripRawDigi.h"
+#include "SimDataFormats/TrackerDigiSimLink/interface/StripDigiSimLink.h"
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -62,7 +63,8 @@ SiStripDigitizer::SiStripDigitizer(const edm::ParameterSet& conf, edm::EDProduce
   PRDigi(conf.getParameter<edm::ParameterSet>("DigiModeList").getParameter<std::string>("PRDigi")),
   geometryType(conf.getParameter<std::string>("GeometryType")),
   useConfFromDB(conf.getParameter<bool>("TrackerConfigurationFromDB")),
-  zeroSuppression(conf.getParameter<bool>("ZeroSuppression"))
+  zeroSuppression(conf.getParameter<bool>("ZeroSuppression")),
+  makeDigiSimLinks_(conf.getUntrackedParameter<bool>("makeDigiSimLinks", false))
 { 
   const std::string alias("simSiStripDigis");
   
@@ -70,6 +72,7 @@ SiStripDigitizer::SiStripDigitizer(const edm::ParameterSet& conf, edm::EDProduce
   mixMod.produces<edm::DetSetVector<SiStripRawDigi> >(SCDigi).setBranchAlias(alias + SCDigi);
   mixMod.produces<edm::DetSetVector<SiStripRawDigi> >(VRDigi).setBranchAlias(alias + VRDigi);
   mixMod.produces<edm::DetSetVector<SiStripRawDigi> >(PRDigi).setBranchAlias(alias + PRDigi);
+  mixMod.produces<edm::DetSetVector<StripDigiSimLink> >().setBranchAlias(alias + "siStripDigiSimLink");
   edm::Service<edm::RandomNumberGenerator> rng;
   if ( ! rng.isAvailable()) {
     throw cms::Exception("Configuration")
@@ -192,7 +195,7 @@ void SiStripDigitizer::finalizeEvent(edm::Event& iEvent, edm::EventSetup const& 
 
   std::vector<edm::DetSet<SiStripDigi> > theDigiVector;
   std::vector<edm::DetSet<SiStripRawDigi> > theRawDigiVector;
-
+  std::auto_ptr< edm::DetSetVector<StripDigiSimLink> > pOutputDigiSimLink( new edm::DetSetVector<StripDigiSimLink> );
   
   // Step B: LOOP on StripGeomDetUnit
   theDigiVector.reserve(10000);
@@ -208,15 +211,18 @@ void SiStripDigitizer::finalizeEvent(edm::Event& iEvent, edm::EventSetup const& 
     if (sgd != 0){
       edm::DetSet<SiStripDigi> collectorZS((*iu)->geographicalId().rawId());
       edm::DetSet<SiStripRawDigi> collectorRaw((*iu)->geographicalId().rawId());
-      theDigiAlgo->digitize(collectorZS,collectorRaw,sgd,
+      edm::DetSet<StripDigiSimLink> collectorLink((*iu)->geographicalId().rawId());
+      theDigiAlgo->digitize(collectorZS,collectorRaw,collectorLink,sgd,
 	 	       gainHandle,thresholdHandle,noiseHandle,pedestalHandle);
       if(zeroSuppression){
         if(collectorZS.data.size()>0){
           theDigiVector.push_back(collectorZS);
+          if( !collectorLink.data.empty() ) pOutputDigiSimLink->insert(collectorLink);
         }
       }else{
         if(collectorRaw.data.size()>0){
           theRawDigiVector.push_back(collectorRaw);
+          if( !collectorLink.data.empty() ) pOutputDigiSimLink->insert(collectorLink);
         }
       }
     }
@@ -233,6 +239,7 @@ void SiStripDigitizer::finalizeEvent(edm::Event& iEvent, edm::EventSetup const& 
     iEvent.put(output_scopemode, SCDigi);
     iEvent.put(output_virginraw, VRDigi);
     iEvent.put(output_processedraw, PRDigi);
+    if( makeDigiSimLinks_ ) iEvent.put( pOutputDigiSimLink ); // The previous EDProducer didn't name this collection so I won't either
   }else{
     // Step C: create output collection
     std::auto_ptr<edm::DetSetVector<SiStripRawDigi> > output_virginraw(new edm::DetSetVector<SiStripRawDigi>(theRawDigiVector));
@@ -244,5 +251,6 @@ void SiStripDigitizer::finalizeEvent(edm::Event& iEvent, edm::EventSetup const& 
     iEvent.put(output_scopemode, SCDigi);
     iEvent.put(output_virginraw, VRDigi);
     iEvent.put(output_processedraw, PRDigi);
+    if( makeDigiSimLinks_ ) iEvent.put( pOutputDigiSimLink ); // The previous EDProducer didn't name this collection so I won't either
   }
 }

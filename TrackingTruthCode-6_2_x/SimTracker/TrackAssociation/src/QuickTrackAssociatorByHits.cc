@@ -9,7 +9,8 @@ QuickTrackAssociatorByHits::QuickTrackAssociatorByHits( const edm::ParameterSet&
 	  qualitySimToReco_( config.getParameter<double>( "Quality_SimToReco" ) ),
 	  puritySimToReco_( config.getParameter<double>( "Purity_SimToReco" ) ),
 	  cutRecoToSim_( config.getParameter<double>( "Cut_RecoToSim" ) ),
-	  threeHitTracksAreSpecial_( config.getParameter<bool> ( "ThreeHitTracksAreSpecial" ) )
+	  threeHitTracksAreSpecial_( config.getParameter<bool> ( "ThreeHitTracksAreSpecial" ) ),
+	  requireStoredHits_( config.getParameter<bool> ( "requireStoredHits" ) )
 {
 	//
 	// Check whether the denominator when working out the percentage of shared hits should
@@ -63,6 +64,7 @@ QuickTrackAssociatorByHits::QuickTrackAssociatorByHits( const QuickTrackAssociat
 	  cutRecoToSim_(otherAssociator.cutRecoToSim_),
 	  threeHitTracksAreSpecial_(otherAssociator.threeHitTracksAreSpecial_),
 	  simToRecoDenominator_(otherAssociator.simToRecoDenominator_),
+	  requireStoredHits_(otherAssociator.requireStoredHits_),
 	  pTrackCollectionHandle_(otherAssociator.pTrackCollectionHandle_),
 	  pTrackCollection_(otherAssociator.pTrackCollection_),
 	  pTrackingParticleCollectionHandle_(otherAssociator.pTrackingParticleCollectionHandle_),
@@ -99,6 +101,7 @@ QuickTrackAssociatorByHits& QuickTrackAssociatorByHits::operator=( const QuickTr
 	cutRecoToSim_=otherAssociator.cutRecoToSim_;
 	threeHitTracksAreSpecial_=otherAssociator.threeHitTracksAreSpecial_;
 	simToRecoDenominator_=otherAssociator.simToRecoDenominator_;
+	requireStoredHits_=otherAssociator.requireStoredHits_;
 	pTrackCollectionHandle_=otherAssociator.pTrackCollectionHandle_;
 	pTrackCollection_=otherAssociator.pTrackCollection_;
 	pTrackingParticleCollectionHandle_=otherAssociator.pTrackingParticleCollectionHandle_;
@@ -291,7 +294,7 @@ template<typename iter> std::vector< std::pair<edm::Ref<TrackingParticleCollecti
 		else pTrackingParticle=&(*pTrackingParticleCollectionHandle_->product())[i];
 
 		// Ignore TrackingParticles with no hits
-		if( pTrackingParticle->trackPSimHit().empty() ) continue;
+		if( requireStoredHits_ && pTrackingParticle->trackPSimHit().empty() ) continue;
 
 		size_t numberOfAssociatedHits=0;
 		// Loop over all of the sim track identifiers and see if any of them are part of this TrackingParticle. If they are, add
