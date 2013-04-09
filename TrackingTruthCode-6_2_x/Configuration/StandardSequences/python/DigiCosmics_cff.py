@@ -52,6 +52,6 @@ simHcalDigis.HOlevel   = cms.int32(-10000)
 simHcalDigis.HFlevel   = cms.int32(-10000)
 
 doAllDigi = cms.Sequence(trDigi+calDigi+muonDigi)
-pdigi = cms.Sequence(cms.SequencePlaceholder("randomEngineStateProducer")*cms.SequencePlaceholder("mix")*doAllDigi*trackingParticles)
+pdigi = cms.Sequence(cms.SequencePlaceholder("randomEngineStateProducer")*cms.SequencePlaceholder("mix")*doAllDigi)
 
 

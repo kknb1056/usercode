@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
-from SimGeneral.MixingModule.trackingTruthProducer_cfi import mergedtruth
+from SimGeneral.MixingModule.trackingTruthProducer_cfi import trackingParticles
 
-mergedtruth.select = cms.PSet(
+trackingParticles.select = cms.PSet(
     lipTP = cms.double(1000),
     chargedOnlyTP = cms.bool(True),
     pdgIdTP = cms.vint32(),

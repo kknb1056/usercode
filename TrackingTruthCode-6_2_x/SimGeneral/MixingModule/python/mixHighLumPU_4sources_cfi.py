@@ -40,7 +40,7 @@ mix = cms.EDProducer("MixingModule",
         castorDigitizer
       ),
       mergedtruth = cms.PSet(
-      	mergedtruth
+      	trackingParticles
       )
     ),
     LabelPlayback = cms.string(''),
