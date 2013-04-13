@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-mergedtruth = cms.PSet(
+trackingParticles = cms.PSet(
 	accumulatorType = cms.string('TrackingTruthAccumulator'),
 	createUnmergedCollection = cms.bool(True),
 	createMergedBremsstrahlung = cms.bool(True),
