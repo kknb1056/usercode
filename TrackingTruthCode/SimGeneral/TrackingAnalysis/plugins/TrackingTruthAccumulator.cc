@@ -342,7 +342,6 @@ void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup
 
 template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event, const edm::EventSetup& setup )
 {
-	std::cout << "Starting event..." << std::endl;
 	//
 	// Get the collections
 	//
@@ -350,15 +349,25 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 	edm::Handle<std::vector<SimVertex> > hSimVertices;
 	edm::Handle< std::vector<reco::GenParticle> > hGenParticles;
 	edm::Handle< std::vector<int> > hGenParticleIndices;
-	std::cout << __LINE__ << std::endl;
+
 	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimTracks );
-	std::cout << __LINE__ << std::endl;
 	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimVertices );
-	std::cout << __LINE__ << std::endl;
-	event.getByLabel( genParticleLabel_, hGenParticles );
-	std::cout << __LINE__ << std::endl;
-	event.getByLabel( genParticleLabel_, hGenParticleIndices );
-	std::cout << "Got collections" << std::endl;
+
+	try
+	{
+		event.getByLabel( genParticleLabel_, hGenParticles );
+		event.getByLabel( genParticleLabel_, hGenParticleIndices );
+	}
+	catch( cms::Exception& exception )
+	{
+		//
+		// The Monte Carlo is not always available, e.g. for pileup events. The information
+		// is only used if it's available, but for some reason the PileUpEventPrincipal
+		// wrapper throws an exception here rather than waiting to see if the handle is
+		// used (as is the case for edm::Event). So I just want to catch this exception
+		// and use the normal handle checking later on.
+		//
+	}
 
 	// Run through the collections and work out the decay chain of each track/vertex. The
 	// information in SimTrack and SimVertex only allows traversing upwards, but this will
@@ -419,7 +428,6 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 		// specifies adding ancestors, the function is called recursively to do that.
 		::addTrack( pDecayTrack, pSelector, pUnmergedCollectionWrapper.get(), pMergedCollectionWrapper.get(), objectFactory, addAncestors_ );
 	}
-	std::cout << "...finished event." << std::endl;
 }
 
 template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const PSimHit*>& returnValue, const T& event, const edm::EventSetup& setup )
@@ -467,7 +475,7 @@ namespace // Unnamed namespace for things only used in this file
 	//---------------------------------------------------------------------------------
 
 	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles, const edm::Handle< std::vector<int> >& hHepMCGenParticleIndices, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ )
-		: decayChain_(decayChain), hGenParticles_(hGenParticles), genParticleIndices_(hHepMCGenParticleIndices->size()+1), simHits_(simHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
+		: decayChain_(decayChain), hGenParticles_(hGenParticles), simHits_(simHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
 	{
 		// Need to create a multimap to get from a SimTrackId to all of the hits in it. The SimTrackId
 		// is an unsigned int.
@@ -476,16 +484,21 @@ namespace // Unnamed namespace for things only used in this file
 			trackIdToHitIndex_.insert( std::make_pair( simHits_[index]->trackId(), index ) );
 		}
 
-		// What I need is the reverse mapping of this vector. The sizes are already equivalent because I set
-		// the size in the initialiser list.
-		for( size_t recoGenParticleIndex=0; recoGenParticleIndex<hHepMCGenParticleIndices->size(); ++recoGenParticleIndex )
+		if( hHepMCGenParticleIndices.isValid() ) // Monte Carlo might not be available for the pileup events
 		{
-			size_t hepMCGenParticleIndex=(*hHepMCGenParticleIndices)[recoGenParticleIndex];
+			genParticleIndices_.resize( hHepMCGenParticleIndices->size()+1 );
 
-			// They should be the same size, give or take a fencepost error, so this should never happen - but just in case
-			if( genParticleIndices_.size()<hepMCGenParticleIndex ) genParticleIndices_.resize(hepMCGenParticleIndex);
+			// What I need is the reverse mapping of this vector. The sizes are already equivalent because I set
+			// the size in the initialiser list.
+			for( size_t recoGenParticleIndex=0; recoGenParticleIndex<hHepMCGenParticleIndices->size(); ++recoGenParticleIndex )
+			{
+				size_t hepMCGenParticleIndex=(*hHepMCGenParticleIndices)[recoGenParticleIndex];
 
-			genParticleIndices_[ hepMCGenParticleIndex ]=recoGenParticleIndex;
+				// They should be the same size, give or take a fencepost error, so this should never happen - but just in case
+				if( genParticleIndices_.size()<hepMCGenParticleIndex ) genParticleIndices_.resize(hepMCGenParticleIndex);
+
+				genParticleIndices_[ hepMCGenParticleIndex ]=recoGenParticleIndex;
+			}
 		}
 	}
 
@@ -511,10 +524,10 @@ namespace // Unnamed namespace for things only used in this file
 		// Only do so if it is from the signal event however. Not sure why but that's what the
 		// old code did.
 		//
-//		if( simTrack.eventId().event()==0 && simTrack.eventId().bunchCrossing()==0 ) // if this is a track in the signal event
+		if( simTrack.eventId().event()==0 && simTrack.eventId().bunchCrossing()==0 ) // if this is a track in the signal event
 		{
 			int hepMCGenParticleIndex=simTrack.genpartIndex();
-			if( hepMCGenParticleIndex>=0 )
+			if( hepMCGenParticleIndex>=0 && hGenParticles_.isValid() )
 			{
 				int recoGenParticleIndex=genParticleIndices_[hepMCGenParticleIndex];
 				returnValue.addGenParticle( reco::GenParticleRef( hGenParticles_, recoGenParticleIndex ) );
