@@ -4,8 +4,8 @@
  *  
  *  \author Yanyan Gao, FNAL
  *
- *  $Date: 2013/04/30 14:44:25 $
- *  $Revision: 1.1.2.1 $
+ *  $Date: 2010/02/25 00:28:55 $
+ *  $Revision: 1.2 $
  */
 
 #include "FWCore/Framework/interface/MakerMacros.h"

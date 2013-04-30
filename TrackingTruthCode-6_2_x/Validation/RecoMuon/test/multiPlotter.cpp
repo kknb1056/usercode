@@ -12,8 +12,8 @@
  *  which had a problem with directories more than one level deep.
  *  (see macro hadd_old.C for this previous implementation).
  *
- *  $Date: 2013/04/30 14:55:58 $
- *  $Revision: 1.1.2.1 $
+ *  $Date: 2010/11/29 20:42:02 $
+ *  $Revision: 1.9 $
  *
  *  Authors:
  *  A. Everett Purdue University

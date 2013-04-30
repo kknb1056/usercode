@@ -28,7 +28,7 @@
 //
 // Original Author:  Nov 16 16:12 (lxplus231.cern.ch)
 //         Created:  Sun Nov 16 16:14:09 CET 2008
-// $Id: MuonMCClassifier.cc,v 1.1.2.1 2013/04/30 14:46:00 grimes Exp $
+// $Id: MuonMCClassifier.cc,v 1.8 2013/02/27 20:42:45 wmtan Exp $
 //
 //
 
@@ -314,8 +314,13 @@ MuonMCClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
             // Try to extract mother and grand mother of this muon.
             // Unfortunately, SIM and GEN histories require diffent code :-(
-            if (!tp->genParticle().empty()) { // Muon is in GEN
+            if (!tp->genParticles().empty()) { // Muon is in GEN
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
                 const HepMC::GenParticle * genMom = getGpMother(tp->genParticle()[0].get());
+#else
+                const HepMC::GenParticle * genMom = NULL;
+#endif
                 if (genMom) {
                     momPdgId[i]  = genMom->pdg_id();
                     momStatus[i] = genMom->status();
@@ -346,10 +351,13 @@ MuonMCClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
                     momZ[i]   = simMom->vertex().Z();
                     edm::LogVerbatim("MuonMCClassifier") << "\t Particle pdgId = "<<hitsPdgId[i] << " produced at rho = " << prodRho[i] << ", z = " << prodZ[i] << 
                                                             ", has SIM mother pdgId = " << momPdgId[i] << " produced at rho = " << simMom->vertex().Rho() << ", z = " << simMom->vertex().Z();
-                    if (!simMom->genParticle().empty()) {
-                        momStatus[i] = simMom->genParticle()[0]->status();
+                    if (!simMom->genParticles().empty()) {
+                        momStatus[i] = simMom->genParticles()[0]->status();
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
                         const HepMC::GenParticle * genGMom = getGpMother(simMom->genParticle()[0].get());
                         if (genGMom) gmomPdgId[i] = genGMom->pdg_id();
+#endif
                         edm::LogVerbatim("MuonMCClassifier") << "\t\t SIM mother is in GEN (status " << momStatus[i] << "), grand-mom id = " << gmomPdgId[i];
                     } else {
                         momStatus[i] = -1;
@@ -373,7 +381,7 @@ MuonMCClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
             }
 
             // Is this SIM muon also a GEN muon, with a mother?
-            if (!tp->genParticle().empty() && (momPdgId[i] != 0)) {
+            if (!tp->genParticles().empty() && (momPdgId[i] != 0)) {
                 if (abs(momPdgId[i]) < 100 && (abs(momPdgId[i]) != 15)) {
                     classif[i] = isGhost ? -4 : 4;
                     flav[i] = (abs(momPdgId[i]) == 15 ? 15 : 13);
@@ -412,8 +420,11 @@ MuonMCClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
             if (linkToGenParticles_ && abs(ext[i]) >= 2) {
                 // Link to the genParticle if possible, but not decays in flight (in ppMuX they're in GEN block, but they have wrong parameters)
-                if (!tp->genParticle().empty() && abs(ext[i]) >= 5) {
+                if (!tp->genParticles().empty() && abs(ext[i]) >= 5) {
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
                     muToPrimary[i] = fetch(genBarcodes, tp->genParticle()[0]->barcode());
+#endif
                 } else {
                     // Don't put the same trackingParticle twice!
                     int &indexPlus1 = tpToSecondaries[tp]; // will create a 0 if the tp is not in the list already
@@ -502,9 +513,12 @@ int MuonMCClassifier::convertAndPush(const TrackingParticle &tp,
                                      const edm::Handle<reco::GenParticleCollection> & genParticles,
                                      const edm::Handle<std::vector<int> > & genBarcodes) const {
     out.push_back(reco::GenParticle(tp.charge(), tp.p4(), tp.vertex(), tp.pdgId(), tp.status(), true));
-    if (simMom.isNonnull() && !simMom->genParticle().empty()) {
+    if (simMom.isNonnull() && !simMom->genParticles().empty()) {
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
         int momIdx = fetch(genBarcodes, simMom->genParticle()[0]->barcode());
         if (momIdx != -1)  out.back().addMother(reco::GenParticleRef(genParticles, momIdx));
+#endif
     }
     return out.size()-1;
 }

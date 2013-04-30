@@ -9,9 +9,9 @@
  *         based on code originally part of TrackSelector.h by Giovanni Petrucciani,
  *         but extended to deal with both SiStripRecHit1D and SiStripRecHit2D
  * 
- * \version $Revision: 1.1.2.1 $
+ * \version $Revision: 1.1 $
  *
- * $Id: ClusterStorer.h,v 1.1.2.1 2013/04/30 14:44:00 grimes Exp $
+ * $Id: ClusterStorer.h,v 1.1 2009/12/09 15:58:42 flucke Exp $
  *
  */
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHitFwd.h"

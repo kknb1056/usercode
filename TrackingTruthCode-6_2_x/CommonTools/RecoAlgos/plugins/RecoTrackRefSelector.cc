@@ -5,8 +5,8 @@
  * \author Giuseppe Cerati, INFN
  * \author Ian Tomalin, RAL
  *
- *  $Date: 2013/04/30 14:45:02 $
- *  $Revision: 1.1.2.1 $
+ *  $Date: 2009/10/13 12:07:49 $
+ *  $Revision: 1.1 $
  *
  */
 #include "FWCore/Framework/interface/MakerMacros.h"

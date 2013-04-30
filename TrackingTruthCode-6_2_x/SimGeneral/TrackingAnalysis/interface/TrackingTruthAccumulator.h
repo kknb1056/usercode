@@ -17,6 +17,7 @@ namespace edm
 	class EventSetup;
 }
 class PileUpEventPrincipal;
+class PSimHit;
 
 
 
@@ -57,13 +58,12 @@ private:
 	const bool createMergedCollection_;
 	/// Whether or not to add the full parentage of any TrackingParticle that is inserted in the collection.
 	const bool addAncestors_;
-	/// Whether or not to copy the PSimHits into the TrackingParticle.
-	const bool copySimHits_;
 
 	/// As of 11/Feb/2013 this option hasn't been implemented yet.
 	const bool removeDeadModules_;
 	const std::string simHitLabel_;
 	edm::ParameterSet simHitCollectionConfig_;
+	edm::InputTag genParticleLabel_;
 
 	bool selectorFlag_;
 	TrackingParticleSelector selector_;

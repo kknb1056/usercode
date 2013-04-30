@@ -4,8 +4,8 @@
  *
  * \author Ian Tomalin, RAL
  *
- *  $Date: 2013/04/30 14:44:07 $
- *  $Revision: 1.1.2.1 $
+ *  $Date: 2010/02/11 00:10:49 $
+ *  $Revision: 1.2 $
  *
  */
 #include "DataFormats/TrackReco/interface/Track.h"

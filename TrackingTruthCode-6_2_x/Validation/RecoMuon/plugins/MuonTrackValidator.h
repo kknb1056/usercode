@@ -4,8 +4,8 @@
 /** \class MuonTrackValidator
  *  Class that produces histograms to validate Muon Track Reconstruction performances
  *
- *  $Date: 2013/04/30 14:55:24 $
- *  $Revision: 1.1.2.1 $
+ *  $Date: 2011/02/22 18:28:59 $
+ *  $Revision: 1.5 $
  */
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"

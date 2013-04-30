@@ -8,9 +8,9 @@
  * 
  * \author Javier Fernandez, Uniovi
  *
- * \version $Revision: 1.1.2.1 $
+ * \version $Revision: 1.2 $
  *
- * $Id: MuonSelector.h,v 1.1.2.1 2013/04/30 14:44:04 grimes Exp $
+ * $Id: MuonSelector.h,v 1.2 2009/12/09 16:00:33 flucke Exp $
  *
  */
 #include "DataFormats/MuonReco/interface/Muon.h"

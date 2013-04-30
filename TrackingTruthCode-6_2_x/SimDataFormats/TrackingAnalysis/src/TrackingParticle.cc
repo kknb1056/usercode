@@ -1,103 +1,26 @@
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 
-typedef std::vector<TrackingVertex>                TrackingVertexCollection;
-typedef edm::Ref<TrackingVertexCollection>         TrackingVertexRef;
-typedef edm::RefVector<TrackingVertexCollection>   TrackingVertexRefVector;
-typedef TrackingVertexRefVector::iterator          tv_iterator;
+const unsigned int TrackingParticle::longLivedTag = 65536;
 
-TrackingParticle::TrackingParticle( char q, const LorentzVector & p4, const Point & vtx,
-                                    double t, const int pdgId, const int status, const EncodedEventId eventId) :
-        ParticleBase( q, p4, vtx,pdgId,status ), t_( t ), pdgId_( pdgId ), eventId_( eventId )
+int TrackingParticle::numberOfHits() const
 {
+    return numberOfHits_;
 }
 
-TrackingParticle::~TrackingParticle()
+int TrackingParticle::numberOfTrackerHits() const
 {
+    return numberOfTrackerHits_;
 }
 
-void TrackingParticle::addGenParticle( const edm::Ref<edm::HepMCProduct, HepMC::GenParticle > &ref)
+void TrackingParticle::setNumberOfHits( int numberOfHits )
 {
-    genParticles_.push_back(ref);
+    numberOfHits_=numberOfHits;
 }
 
-void TrackingParticle::addG4Track( const SimTrack& t)
+void TrackingParticle::setNumberOfTrackerHits( int numberOfTrackerHits )
 {
-    g4Tracks_.push_back(t);
-}
-
-void TrackingParticle::addPSimHit( const PSimHit & hit)
-{
-    trackPSimHit_.push_back(hit);
-}
-
-TrackingParticle::genp_iterator TrackingParticle::genParticle_begin() const
-{
-    return genParticles_.begin();
-}
-
-TrackingParticle::genp_iterator TrackingParticle::genParticle_end() const
-{
-    return genParticles_.end();
-}
-
-TrackingParticle::g4t_iterator TrackingParticle::g4Track_begin() const
-{
-    return g4Tracks_.begin();
-}
-
-TrackingParticle::g4t_iterator TrackingParticle::g4Track_end() const
-{
-    return g4Tracks_.end();
-}
-
-const std::vector<PSimHit>::const_iterator TrackingParticle::pSimHit_begin() const
-{
-    return trackPSimHit_.begin();
-}
-
-const std::vector<PSimHit>::const_iterator TrackingParticle::pSimHit_end() const
-{
-    return trackPSimHit_.end();
-}
-
-std::vector<PSimHit> TrackingParticle::trackPSimHit(DetId::Detector detector) const
-{
-    std::vector<PSimHit> result;    
-    for (std::vector<PSimHit>::const_iterator iHit = trackPSimHit_.begin(); iHit != trackPSimHit_.end(); ++iHit)
-        if ( detector == DetId( (uint32_t)((*iHit).detUnitId()) ).det() )
-            result.push_back(*iHit);
-    return result;
-}
-
-void TrackingParticle::setParentVertex(const TrackingVertexRef &ref)
-{
-    parentVertex_ = ref;
-}
-
-void TrackingParticle::addDecayVertex(const TrackingVertexRef &ref)
-{
-    decayVertices_.push_back(ref);
-}
-
-void TrackingParticle::clearParentVertex()
-{
-    parentVertex_ = TrackingVertexRef();
-}
-
-void TrackingParticle::clearDecayVertices()
-{
-    decayVertices_.clear();
-}
-
-void TrackingParticle::setMatchedHit(const int &hitnumb)
-{
-    matchedHit_ = hitnumb;
-}
-
-void TrackingParticle::setVertex(const Point & vtx, double t)
-{
-    t_ = t;
-    ParticleBase::setVertex(vtx);
+    numberOfTrackerHits_=numberOfTrackerHits;
 }
 
 std::ostream& operator<< (std::ostream& s, TrackingParticle const & tp)
@@ -105,14 +28,6 @@ std::ostream& operator<< (std::ostream& s, TrackingParticle const & tp)
     s << "TP momentum, q, ID, & Event #: "
     << tp.p4()                      << " " << tp.charge() << " "   << tp.pdgId() << " "
     << tp.eventId().bunchCrossing() << "." << tp.eventId().event() << std::endl;
-    s << " Hits for this track: " << tp.trackPSimHit().size() << std::endl;
-
-    for (int i = 1; i < DetId::Calo + 1; ++i)
-    {
-    	int numberOfHits = tp.trackPSimHit((DetId::Detector)i).size();
-        if (numberOfHits)
-          s << "\t sub-detector id : " << i << " -> " << numberOfHits << std::endl;
-    }
 
     for (TrackingParticle::genp_iterator hepT = tp.genParticle_begin(); hepT !=  tp.genParticle_end(); ++hepT)
     {

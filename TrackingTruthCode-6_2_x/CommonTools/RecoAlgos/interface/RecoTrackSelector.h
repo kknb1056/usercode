@@ -4,8 +4,8 @@
  *
  * \author Giuseppe Cerati, INFN
  *
- *  $Date: 2013/04/30 14:44:08 $
- *  $Revision: 1.1.2.1 $
+ *  $Date: 2010/02/11 00:10:50 $
+ *  $Revision: 1.3 $
  *
  */
 #include "DataFormats/TrackReco/interface/Track.h"

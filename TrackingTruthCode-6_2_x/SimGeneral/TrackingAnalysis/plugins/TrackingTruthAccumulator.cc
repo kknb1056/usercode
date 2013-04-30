@@ -17,6 +17,8 @@
  * Changelog:
  * 07/Feb/2013 Mark Grimes - Reorganised and added a bit more documentation. Still not enough
  * though.
+ * 12/Mar/2012 (branch NewTrackingParticle only) Mark Grimes - Updated TrackingParticle creation
+ * to fit in with Subir Sarkar's re-implementation of TrackingParticle.
  */
 #include "SimGeneral/TrackingAnalysis/interface/TrackingTruthAccumulator.h"
 
@@ -30,6 +32,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
@@ -134,15 +137,15 @@ namespace
 	class TrackingParticleFactory
 	{
 	public:
-		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits, double volumeRadius, double volumeZ );
+		TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles, const edm::Handle< std::vector<int> >& hHepMCGenParticleIndices, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ );
 		TrackingParticle createTrackingParticle( const DecayChainTrack* pTrack ) const;
 		TrackingVertex createTrackingVertex( const DecayChainVertex* pVertex ) const;
 		bool vectorIsInsideVolume( const math::XYZTLorentzVectorD& vector ) const;
 	private:
 		const ::DecayChain& decayChain_;
-		const edm::Handle<edm::HepMCProduct>& hHepMC_;
+		const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles_;
+		std::vector<int> genParticleIndices_;
 		const std::vector<const PSimHit*>& simHits_;
-		bool copySimHits_; ///< Whether each TrackingParticle should have a copy of its hits or not
 		const double volumeRadius_;
 		const double volumeZ_;
 		std::multimap<unsigned int, size_t> trackIdToHitIndex_; ///< A multimap linking SimTrack::trackId() to the hit index in pSimHits_
@@ -172,19 +175,6 @@ namespace
 		std::vector<int> trackingParticleIndices_;
 		std::vector<int> trackingVertexIndices_;
 	};
-
-
-	/** @brief Simply returns the HepMCProduct with the label "generator" from the event.
-	 * Put in a separate function because the event analysing function is templated to work with
-	 * both edm::Event and PileUpEventPrincipal, but HepMCProduct has to be retrieved in different
-	 * ways for each of those.
-	 */
-	edm::Handle<edm::HepMCProduct> getHepMC( const edm::Event& event );
-
-	/** @brief Returns the HepMCProduct with the label "generator" from the PileUpEventPrincipal.
-	 * See the note for the edm::Event overload.
-	 */
-	edm::Handle<edm::HepMCProduct> getHepMC( const PileUpEventPrincipal& event );
 
 	/** @brief Utility function copied verbatim from TrackinTruthProducer.
 	 */
@@ -228,10 +218,10 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 		createUnmergedCollection_( config.getParameter<bool>("createUnmergedCollection") ),
 		createMergedCollection_(config.getParameter<bool>("createMergedBremsstrahlung") ),
 		addAncestors_( config.getParameter<bool>("alwaysAddAncestors") ),
-		copySimHits_( config.getParameter<bool>("copySimHits") ),
 		removeDeadModules_( config.getParameter<bool>("removeDeadModules") ),
 		simHitLabel_( config.getParameter<std::string>("simHitLabel") ),
-		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") )
+		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") ),
+		genParticleLabel_( config.getParameter<edm::InputTag>("genParticleCollection") )
 {
 	//
 	// Make sure at least one of the merged and unmerged collections have been set
@@ -357,13 +347,27 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 	//
 	edm::Handle<std::vector<SimTrack> > hSimTracks;
 	edm::Handle<std::vector<SimVertex> > hSimVertices;
+	edm::Handle< std::vector<reco::GenParticle> > hGenParticles;
+	edm::Handle< std::vector<int> > hGenParticleIndices;
+
 	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimTracks );
 	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimVertices );
 
-	// Also need the HepMCProduct collection.
-	// For complex templated type reasons the way of requesting it as above doesn't work, so
-	// I need to use some specialisations I've written.
-	edm::Handle<edm::HepMCProduct> hHepMC=::getHepMC( event );
+	try
+	{
+		event.getByLabel( genParticleLabel_, hGenParticles );
+		event.getByLabel( genParticleLabel_, hGenParticleIndices );
+	}
+	catch( cms::Exception& exception )
+	{
+		//
+		// The Monte Carlo is not always available, e.g. for pileup events. The information
+		// is only used if it's available, but for some reason the PileUpEventPrincipal
+		// wrapper throws an exception here rather than waiting to see if the handle is
+		// used (as is the case for edm::Event). So I just want to catch this exception
+		// and use the normal handle checking later on.
+		//
+	}
 
 	// Run through the collections and work out the decay chain of each track/vertex. The
 	// information in SimTrack and SimVertex only allows traversing upwards, but this will
@@ -380,7 +384,7 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 
 	std::vector<const PSimHit*> simHitPointers;
 	fillSimHits( simHitPointers, event, setup );
-	TrackingParticleFactory objectFactory( decayChain, hHepMC, simHitPointers, copySimHits_, volumeRadius_, volumeZ_ );
+	TrackingParticleFactory objectFactory( decayChain, hGenParticles, hGenParticleIndices, simHitPointers, volumeRadius_, volumeZ_ );
 
 	// While I'm testing, perform some checks.
 	// TODO - drop this call once I'm happy it works in all situations.
@@ -424,7 +428,6 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 		// specifies adding ancestors, the function is called recursively to do that.
 		::addTrack( pDecayTrack, pSelector, pUnmergedCollectionWrapper.get(), pMergedCollectionWrapper.get(), objectFactory, addAncestors_ );
 	}
-
 }
 
 template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const PSimHit*>& returnValue, const T& event, const edm::EventSetup& setup )
@@ -465,35 +468,14 @@ template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const 
 
 namespace // Unnamed namespace for things only used in this file
 {
-	edm::Handle<edm::HepMCProduct> getHepMC( const edm::Event& event )
-	{
-		// This is just the standard way of getting things from an event. This code is only
-		// in a separate function because it doesn't work in the other case (i.e. for PileUpEventPrincipal).
-		edm::Handle<edm::HepMCProduct>returnValue;
-		event.getByLabel( edm::InputTag( "generator" ), returnValue );
-		return returnValue;
-	}
-
-	edm::Handle<edm::HepMCProduct> getHepMC( const PileUpEventPrincipal& event )
-	{
-		// The getByLabel method in PileUpEventPrincipal doesn't work to get HepMCProduct because
-		// it's written assuming it has the normal typedefs for a STL container, which it doesn't.
-		edm::InputTag inputTag( "generator" );
-		edm::BasicHandle hepMCBasicHandle=event.principal().getByLabel( edm::PRODUCT_TYPE, edm::TypeID( typeid(edm::HepMCProduct) ), inputTag );
-		edm::Handle<edm::HepMCProduct> returnValue;
-		edm::convert_handle( hepMCBasicHandle, returnValue );
-
-		return returnValue;
-	}
-
 	//---------------------------------------------------------------------------------
 	//---------------------------------------------------------------------------------
 	//----   TrackingParticleFactory methods   ----------------------------------------
 	//---------------------------------------------------------------------------------
 	//---------------------------------------------------------------------------------
 
-	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle<edm::HepMCProduct>& hHepMC, const std::vector<const PSimHit*>& simHits, bool copySimHits, double volumeRadius, double volumeZ )
-		: decayChain_(decayChain), hHepMC_(hHepMC), simHits_(simHits), copySimHits_(copySimHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
+	::TrackingParticleFactory::TrackingParticleFactory( const ::DecayChain& decayChain, const edm::Handle< std::vector<reco::GenParticle> >& hGenParticles, const edm::Handle< std::vector<int> >& hHepMCGenParticleIndices, const std::vector<const PSimHit*>& simHits, double volumeRadius, double volumeZ )
+		: decayChain_(decayChain), hGenParticles_(hGenParticles), simHits_(simHits), volumeRadius_(volumeRadius), volumeZ_(volumeZ)
 	{
 		// Need to create a multimap to get from a SimTrackId to all of the hits in it. The SimTrackId
 		// is an unsigned int.
@@ -501,29 +483,41 @@ namespace // Unnamed namespace for things only used in this file
 		{
 			trackIdToHitIndex_.insert( std::make_pair( simHits_[index]->trackId(), index ) );
 		}
+
+		if( hHepMCGenParticleIndices.isValid() ) // Monte Carlo might not be available for the pileup events
+		{
+			genParticleIndices_.resize( hHepMCGenParticleIndices->size()+1 );
+
+			// What I need is the reverse mapping of this vector. The sizes are already equivalent because I set
+			// the size in the initialiser list.
+			for( size_t recoGenParticleIndex=0; recoGenParticleIndex<hHepMCGenParticleIndices->size(); ++recoGenParticleIndex )
+			{
+				size_t hepMCGenParticleIndex=(*hHepMCGenParticleIndices)[recoGenParticleIndex];
+
+				// They should be the same size, give or take a fencepost error, so this should never happen - but just in case
+				if( genParticleIndices_.size()<hepMCGenParticleIndex ) genParticleIndices_.resize(hepMCGenParticleIndex);
+
+				genParticleIndices_[ hepMCGenParticleIndex ]=recoGenParticleIndex;
+			}
+		}
 	}
 
 	TrackingParticle TrackingParticleFactory::createTrackingParticle( const ::DecayChainTrack* pChainTrack ) const
 	{
-		const SimTrack& simTrack=decayChain_.getSimTrack( pChainTrack );
-		const SimVertex& parentSimVertex=decayChain_.getSimVertex( pChainTrack->pParentVertex );
-
-		typedef edm::Ref<edm::HepMCProduct,HepMC::GenParticle> GenParticleRef;
 		typedef math::XYZTLorentzVectorD LorentzVector;
 		typedef math::XYZPoint Vector;
+
+		const SimTrack& simTrack=decayChain_.getSimTrack( pChainTrack );
+		const SimVertex& parentSimVertex=decayChain_.getSimVertex( pChainTrack->pParentVertex );
 
 		LorentzVector position( 0, 0, 0, 0 );
 		if( !simTrack.noVertex() ) position=parentSimVertex.position();
 
 		int pdgId=simTrack.type();
 
-		TrackingParticle returnValue( (char)simTrack.charge(),
-		                              simTrack.momentum(),
-		                              Vector( position.x(), position.y(), position.z() ),
-		                              position.t(),
-		                              pdgId,
-		                              -99, // set to default, will be changed further down the routine if it should be different
-		                              simTrack.eventId() );
+		TrackingParticle returnValue;
+		// N.B. The sim track is added a few lines below, the parent and decay vertices are added in
+		// another function later on.
 
 		//
 		// If there is some valid Monte Carlo for this track, take some information from that.
@@ -532,17 +526,11 @@ namespace // Unnamed namespace for things only used in this file
 		//
 		if( simTrack.eventId().event()==0 && simTrack.eventId().bunchCrossing()==0 ) // if this is a track in the signal event
 		{
-			int genParticleIndex=simTrack.genpartIndex();
-			if( genParticleIndex>=0 )
+			int hepMCGenParticleIndex=simTrack.genpartIndex();
+			if( hepMCGenParticleIndex>=0 && hGenParticles_.isValid() )
 			{
-				const HepMC::GenParticle* pGenParticle=hHepMC_->GetEvent()->barcode_to_particle( genParticleIndex );
-				if( pGenParticle!=NULL )
-				{
-					returnValue.addGenParticle( GenParticleRef( hHepMC_, genParticleIndex ) );
-					returnValue.setStatus( pGenParticle->status() );
-					pdgId=pGenParticle->pdg_id();
-					returnValue.setPdgId( pdgId );
-				}
+				int recoGenParticleIndex=genParticleIndices_[hepMCGenParticleIndex];
+				returnValue.addGenParticle( reco::GenParticleRef( hGenParticles_, recoGenParticleIndex ) );
 			}
 		}
 
@@ -577,8 +565,6 @@ namespace // Unnamed namespace for things only used in this file
 			// Check for delta and interaction products discards
 			if( processType==pSimHit->processType() && particleType==pSimHit->particleType() && pdgId==pSimHit->particleType() )
 			{
-				if( copySimHits_ ) returnValue.addPSimHit( *pSimHit );
-
 				unsigned int detectorIdIndex=pSimHit->detUnitId();
 				DetId detectorId=DetId( detectorIdIndex );
 				oldLayer=newLayer;
@@ -601,18 +587,6 @@ namespace // Unnamed namespace for things only used in this file
 		}
 	    //std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
 		returnValue.setMatchedHit( totalSimHits );
-
-		if( false )
-		{
-			// The reco::Track associators have a cut on TrackingParticles with no sim hits. They
-			// don't actually use them for the association though. As a short term work around I'll
-			// just add a single uninitialised PSimHit to every TrackingParticle.
-			// All parameters are just arbitrary filler except the DetId, which needs to be part of
-			// tracker (any part). Otherwise the reco associators will ignore the hit,
-			PSimHit dummyHit( Local3DPoint(), Local3DPoint(), 0, 0, 0, 0, DetId(DetId::Tracker,0).rawId(), 0, 0, 0 ); // The only important part is "DetId::Tracker"
-			returnValue.addPSimHit( dummyHit );
-			returnValue.setMatchedHit( 1 );
-		}
 
 		//std::cout << "------Created TrackingParticle with PDG ID " << returnValue.pdgId() << std::endl;
 		return returnValue;
@@ -1149,9 +1123,10 @@ namespace // Unnamed namespace for things only used in this file
 						pBremParentTrackingParticle->addG4Track( trackSegment );
 					}
 
-					for( const auto& hit : newTrackingParticle.trackPSimHit() )
+					// Also copy the generator particle references
+					for( const auto& genParticleRef : newTrackingParticle.genParticles() )
 					{
-						pBremParentTrackingParticle->addPSimHit( hit );
+						pBremParentTrackingParticle->addGenParticle( genParticleRef );
 					}
 
 					// Set a proxy in the output collection wrapper so that any attempt to get objects for
@@ -1167,7 +1142,6 @@ namespace // Unnamed namespace for things only used in this file
 		} // end of "if( pMergedOutput!=NULL )", i.e. end of "if bremsstrahlung merging is turned on"
 
 	} // end of addTrack function
-
 
 } // end of the unnamed namespace
 
