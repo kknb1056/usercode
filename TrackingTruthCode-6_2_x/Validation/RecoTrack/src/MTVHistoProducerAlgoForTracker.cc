@@ -816,8 +816,8 @@ void MTVHistoProducerAlgoForTracker::bookRecoHistosForStandaloneRunning(){
 }
 
 void MTVHistoProducerAlgoForTracker::fill_generic_simTrack_histos(int count,
-								  ParticleBase::Vector momentumTP,
-								  ParticleBase::Point vertexTP,
+								  TrackingParticle::Vector momentumTP,
+								  TrackingParticle::Point vertexTP,
                                   int bx){
   h_ptSIM[count]->Fill(sqrt(momentumTP.perp2()));
   h_etaSIM[count]->Fill(momentumTP.eta());
@@ -830,8 +830,8 @@ void MTVHistoProducerAlgoForTracker::fill_generic_simTrack_histos(int count,
 // TO BE FIXED USING PLAIN HISTOGRAMS INSTEAD OF RE-IMPLEMENTATION OF HISTOGRAMS (i.d. vectors<int/double>)
 void MTVHistoProducerAlgoForTracker::fill_recoAssociated_simTrack_histos(int count,
 									 const TrackingParticle& tp,
-									 ParticleBase::Vector momentumTP,
-									 ParticleBase::Point vertexTP,
+									 TrackingParticle::Vector momentumTP,
+									 TrackingParticle::Point vertexTP,
 									 double dxySim, double dzSim, int nSimHits,
 									 const reco::Track* track,
 									 int numVertices, double vertz){
@@ -1206,8 +1206,8 @@ void MTVHistoProducerAlgoForTracker::fill_trackBased_histos(int count, int assTr
 
 
 void MTVHistoProducerAlgoForTracker::fill_ResoAndPull_recoTrack_histos(int count,
-								       ParticleBase::Vector momentumTP,
-								       ParticleBase::Point vertexTP,
+								       TrackingParticle::Vector momentumTP,
+								       TrackingParticle::Point vertexTP,
 								       int chargeTP,
 								       const reco::Track& track,
 								       math::XYZPoint bsPosition){
@@ -1667,8 +1667,8 @@ void MTVHistoProducerAlgoForTracker::fillHistosFromVectors(int counter){
 
 void MTVHistoProducerAlgoForTracker::fill_recoAssociated_simTrack_histos(int count,
 									 const reco::GenParticle& tp,
-									 ParticleBase::Vector momentumTP,
-									 ParticleBase::Point vertexTP,
+									 TrackingParticle::Vector momentumTP,
+									 TrackingParticle::Point vertexTP,
 									 double dxySim, double dzSim, int nSimHits,
 									 const reco::Track* track,
 									 int numVertices, double vertz){

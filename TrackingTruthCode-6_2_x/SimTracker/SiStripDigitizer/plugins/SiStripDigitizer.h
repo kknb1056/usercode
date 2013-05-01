@@ -64,6 +64,7 @@ private:
   const std::string geometryType;
   const bool useConfFromDB;
   const bool zeroSuppression;
+  const bool makeDigiSimLinks_; //< Whether or not to create the association to sim truth collection. Set in configuration.
 
   std::unique_ptr<SiStripDigitizerAlgorithm> theDigiAlgo;
   std::map<uint32_t, std::vector<int> > theDetIdList;

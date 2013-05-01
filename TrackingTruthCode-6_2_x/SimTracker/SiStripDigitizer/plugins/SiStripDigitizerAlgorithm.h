@@ -40,6 +40,7 @@ namespace edm {
 }
 
 class SiStripLorentzAngle;
+class StripDigiSimLink;
 
 namespace CLHEP {
   class HepRandomEngine;
@@ -73,6 +74,7 @@ class SiStripDigitizerAlgorithm {
   void digitize(
                 edm::DetSet<SiStripDigi>& outDigis,
                 edm::DetSet<SiStripRawDigi>& outRawDigis,
+                edm::DetSet<StripDigiSimLink>& outLink,
                 const StripGeomDetUnit* stripdet,
                 edm::ESHandle<SiStripGain>&,
                 edm::ESHandle<SiStripThreshold>&, 
@@ -93,7 +95,7 @@ class SiStripDigitizerAlgorithm {
   const double cmnRMStid;
   const double cmnRMStec;
   const double APVSaturationProb;          
-  const bool makeDigiSimLinks_;
+  const bool makeDigiSimLinks_; //< Whether or not to create the association to sim truth collection. Set in configuration.
   const bool peakMode;
   const bool noise;
   const bool RealPedestals;              
@@ -131,6 +133,20 @@ class SiStripDigitizerAlgorithm {
 
   // ESHandles
   edm::ESHandle<SiStripLorentzAngle> lorentzAngleHandle;
+
+  /** This structure is used to keep track of the SimTrack that contributed to each digi
+      so that the truth association can be created.*/
+  struct AssociationInfo
+  {
+    unsigned int trackID;
+    EncodedEventId eventID;
+    float contributionToADC;
+  };
+
+  typedef std::map<int, std::vector<AssociationInfo> >  AssociationInfoForChannel;
+  typedef std::map<uint32_t, AssociationInfoForChannel>  AssociationInfoForDetId;
+  /// Structure that holds the information on the SimTrack contributions. Only filled if makeDigiSimLinks_ is true.
+  AssociationInfoForDetId associationInfoForDetId_;
 
 };
 

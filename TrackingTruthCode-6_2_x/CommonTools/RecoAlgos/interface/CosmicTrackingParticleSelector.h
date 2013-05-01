@@ -90,9 +90,14 @@ public:
       GlobalPoint finalGP(0,0,0);      
       GlobalVector momentum(0,0,0);//At the PCA
       GlobalPoint vertex(0,0,0);//At the PCA
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
       double radius(9999);
+#endif
       bool found(0);
       
+#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
+#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
       const std::vector<PSimHit> & simHits = tp.trackPSimHit(DetId::Tracker);
       for(std::vector<PSimHit>::const_iterator it=simHits.begin(); it!=simHits.end(); ++it){
 	const GeomDet* tmpDet  = tracker->idToDet( DetId(it->detUnitId()) ) ;
@@ -107,6 +112,7 @@ public:
 	  finalGP = gp;
 	}
       }
+#endif
       if(!found) return 0;
       else
 	{

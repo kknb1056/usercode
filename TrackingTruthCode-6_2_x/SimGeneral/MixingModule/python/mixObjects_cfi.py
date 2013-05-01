@@ -27,36 +27,36 @@ mixSimHits = cms.PSet(
         'TrackerHitsTIDLowTof', 
         'TrackerHitsTOBHighTof', 
         'TrackerHitsTOBLowTof'),
-    crossingFrames = cms.untracked.vstring(
-        'BSCHits', 
-        'FP420SI', 
-        'MuonCSCHits', 
-        'MuonDTHits', 
-        'MuonRPCHits', 
-        'TotemHitsRP', 
-        'TotemHitsT1', 
-        'TotemHitsT2Gem', 
-        'TrackerHitsPixelBarrelHighTof', 
-        'TrackerHitsPixelBarrelLowTof', 
-        'TrackerHitsPixelEndcapHighTof', 
-        'TrackerHitsPixelEndcapLowTof', 
-        'TrackerHitsTECHighTof', 
-        'TrackerHitsTECLowTof', 
-        'TrackerHitsTIBHighTof', 
-        'TrackerHitsTIBLowTof', 
-        'TrackerHitsTIDHighTof', 
-        'TrackerHitsTIDLowTof', 
-        'TrackerHitsTOBHighTof', 
-        'TrackerHitsTOBLowTof'),
     #crossingFrames = cms.untracked.vstring(
-    #    'BSCHits',
-    #    'FP420SI',
-    #    'MuonCSCHits',
-    #    'MuonDTHits',
-    #    'MuonRPCHits',
-    #    'TotemHitsRP',
-    #    'TotemHitsT1',
-    #    'TotemHitsT2Gem')
+    #    'BSCHits', 
+    #    'FP420SI', 
+    #    'MuonCSCHits', 
+    #    'MuonDTHits', 
+    #    'MuonRPCHits', 
+    #    'TotemHitsRP', 
+    #    'TotemHitsT1', 
+    #    'TotemHitsT2Gem', 
+    #    'TrackerHitsPixelBarrelHighTof', 
+    #    'TrackerHitsPixelBarrelLowTof', 
+    #    'TrackerHitsPixelEndcapHighTof', 
+    #    'TrackerHitsPixelEndcapLowTof', 
+    #    'TrackerHitsTECHighTof', 
+    #    'TrackerHitsTECLowTof', 
+    #    'TrackerHitsTIBHighTof', 
+    #    'TrackerHitsTIBLowTof', 
+    #    'TrackerHitsTIDHighTof', 
+    #    'TrackerHitsTIDLowTof', 
+    #    'TrackerHitsTOBHighTof', 
+    #    'TrackerHitsTOBLowTof'),
+    crossingFrames = cms.untracked.vstring(
+        'BSCHits',
+        'FP420SI',
+        'MuonCSCHits',
+        'MuonDTHits',
+        'MuonRPCHits',
+        'TotemHitsRP',
+        'TotemHitsT1',
+        'TotemHitsT2Gem')
 )
 mixCaloHits = cms.PSet(
     input = cms.VInputTag(cms.InputTag("g4SimHits","CaloHitsTk"), cms.InputTag("g4SimHits","CastorBU"), cms.InputTag("g4SimHits","CastorFI"), cms.InputTag("g4SimHits","CastorPL"), cms.InputTag("g4SimHits","CastorTU"), 
@@ -91,20 +91,20 @@ mixCaloHits = cms.PSet(
         'ZDCHITS')
 )
 mixSimTracks = cms.PSet(
-    #makeCrossingFrame = cms.untracked.bool(False),
-    makeCrossingFrame = cms.untracked.bool(True),
+    makeCrossingFrame = cms.untracked.bool(False),
+    #makeCrossingFrame = cms.untracked.bool(True),
     input = cms.VInputTag(cms.InputTag("g4SimHits")),
     type = cms.string('SimTrack')
 )
 mixSimVertices = cms.PSet(
-    #makeCrossingFrame = cms.untracked.bool(False),
-    makeCrossingFrame = cms.untracked.bool(True),
+    makeCrossingFrame = cms.untracked.bool(False),
+    #makeCrossingFrame = cms.untracked.bool(True),
     input = cms.VInputTag(cms.InputTag("g4SimHits")),
     type = cms.string('SimVertex')
 )
 mixHepMCProducts = cms.PSet(
-    #makeCrossingFrame = cms.untracked.bool(False),
-    makeCrossingFrame = cms.untracked.bool(True),
+    makeCrossingFrame = cms.untracked.bool(False),
+    #makeCrossingFrame = cms.untracked.bool(True),
     input = cms.VInputTag(cms.InputTag("generator")),
     type = cms.string('HepMCProduct')
 )

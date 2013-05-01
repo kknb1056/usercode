@@ -16,8 +16,8 @@
 
 #include "SimDataFormats/EncodedEventId/interface/EncodedEventId.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
-#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticleFwd.h"
+#include "SimDataFormats/Track/interface/SimTrackContainer.h"
 #include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
 
 class TrackingVertex
