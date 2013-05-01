@@ -369,6 +369,30 @@ SiStripDigitizerAlgorithm::digitize(
     //}else{							 
     
     DigitalRawVecType rawdigis = theSiDigitalConverter->convertRaw(detAmpl, gainHandle, detID);
+
+    // Now do the association to truth. Note that if truth association was turned off in the configuration this map
+    // will be empty and the iterator will always equal associationInfoForDetId_.end().
+    if( iAssociationInfoByChannel!=associationInfoForDetId_.end() ) { // make sure the readings for this DetID aren't completely from noise
+      // N.B. For the raw digis the channel is inferred from the position in the vector.
+      // I'VE NOT TESTED THIS YET!!!!!
+      // ToDo Test this properly.
+      for( size_t channel=0; channel<rawdigis.size(); ++channel ) {
+        auto& associationInfoByChannel=iAssociationInfoByChannel->second;
+        const auto iAssociationInfo=associationInfoByChannel.find(channel);
+        if( iAssociationInfo==associationInfoByChannel.end() ) continue; // Skip if there is no sim information for this channel (i.e. it's all noise)
+        const std::vector<AssociationInfo>& associationInfo=iAssociationInfo->second;
+
+        // Need to find the total from all sim hits, because this might not be the same as the total
+        // digitised due to noise or whatever.
+        float totalSimADC=0;
+        for( const auto& iAssociationInfo : associationInfo ) totalSimADC+=iAssociationInfo.contributionToADC;
+        // Now I know that I can loop again and create the links
+        for( const auto& iAssociationInfo : associationInfo ) {
+          outLink.push_back( StripDigiSimLink( channel, iAssociationInfo.trackID, 0, iAssociationInfo.eventID, iAssociationInfo.contributionToADC/totalSimADC ) );
+        } // end of loop over associationInfo
+      } // end of loop over the digis
+    } // end of check that iAssociationInfoByChannel is a valid iterator
+
     outrawdigi.data = rawdigis;
 	
 	//}
