@@ -49,9 +49,9 @@ preprodPrevalidation = cms.Sequence(
 
 globalValidation = cms.Sequence(   trackerHitsValidation 
                                  + trackerDigisValidation 
-                                 + trackerRecHitsValidation 
+#                                 + trackerRecHitsValidation # N.B. this has been taken out because rec hits are no longer put in crossing frames 
                                  + trackingTruthValid 
-                                 + trackingRecHitsValid 
+#                                 + trackingRecHitsValid 
                                  + tracksValidation 
                                  + ecalSimHitsValidationSequence 
                                  + ecalDigisValidationSequence 
