@@ -210,9 +210,9 @@ namespace
 
 TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & config, edm::EDProducer& mixMod ) :
 		messageCategory_("TrackingTruthAccumulator"),
-	    volumeRadius_( config.getParameter<double>("volumeRadius") ),
-	    volumeZ_( config.getParameter<double>("volumeZ") ),
-	    ignoreTracksOutsideVolume_( config.getParameter<bool>("ignoreTracksOutsideVolume") ),
+		volumeRadius_( config.getParameter<double>("volumeRadius") ),
+		volumeZ_( config.getParameter<double>("volumeZ") ),
+		ignoreTracksOutsideVolume_( config.getParameter<bool>("ignoreTracksOutsideVolume") ),
 		maximumPreviousBunchCrossing_( config.getParameter<unsigned int>("maximumPreviousBunchCrossing") ),
 		maximumSubsequentBunchCrossing_( config.getParameter<unsigned int>("maximumSubsequentBunchCrossing") ),
 		createUnmergedCollection_( config.getParameter<bool>("createUnmergedCollection") ),
@@ -536,21 +536,24 @@ namespace // Unnamed namespace for things only used in this file
 
 		returnValue.addG4Track( simTrack );
 
-		// If a collection of SimHits has been provided, run through and count how many there are
-		// on different layers. Alse, if copying of the hits has been requested copy each one into
-		// the TrackingParticle.
-		bool init=true;
-	    int processType=0;
-	    int particleType=0;
-	    int totalSimHits = 0;
-	    int oldLayer = 0;
-	    int newLayer = 0;
-	    int oldDetector = 0;
-	    int newDetector = 0;
+		// I need to run over the sim hits and count up the different types of hits. To be honest
+		// I don't fully understand this next section of code, I copied it from the old TrackingTruthProducer
+		// to provide the same results. The different types of hits that I need to count are:
+		size_t matchedHits=0; // As far as I can tell, this is the number of tracker hits counting stereo hits as one hit
+		size_t numberOfHits=0; // The total number of hits, counting stereo hits as two hits
+		size_t numberOfTrackerHits=0; // The number of tracker hits, counting stereo hits as two hits
 
-	    for( std::multimap<unsigned int,size_t>::const_iterator iHitIndex=trackIdToHitIndex_.lower_bound( simTrack.trackId() );
-	    		iHitIndex!=trackIdToHitIndex_.upper_bound( simTrack.trackId() );
-	    		++iHitIndex )
+		bool init=true;
+		int processType=0;
+		int particleType=0;
+		int oldLayer = 0;
+		int newLayer = 0;
+		int oldDetector = 0;
+		int newDetector = 0;
+
+		for( std::multimap<unsigned int,size_t>::const_iterator iHitIndex=trackIdToHitIndex_.lower_bound( simTrack.trackId() );
+				iHitIndex!=trackIdToHitIndex_.upper_bound( simTrack.trackId() );
+				++iHitIndex )
 		{
 			const auto& pSimHit=simHits_[ iHitIndex->second ];
 
@@ -565,28 +568,25 @@ namespace // Unnamed namespace for things only used in this file
 			// Check for delta and interaction products discards
 			if( processType==pSimHit->processType() && particleType==pSimHit->particleType() && pdgId==pSimHit->particleType() )
 			{
-				unsigned int detectorIdIndex=pSimHit->detUnitId();
-				DetId detectorId=DetId( detectorIdIndex );
+				++numberOfHits;
+				if( DetId( (uint32_t)(pSimHit->detUnitId()) ).det() == DetId::Tracker ) ++numberOfTrackerHits;
+
 				oldLayer=newLayer;
 				oldDetector=newDetector;
-				newLayer=LayerFromDetid( detectorIdIndex );
-				newDetector=detectorId.subdetId();
+				newLayer=LayerFromDetid( pSimHit->detUnitId() );
+				newDetector=DetId( pSimHit->detUnitId() ).subdetId();
 
 				// Count hits using layers for glued detectors
 				// newlayer !=0 excludes Muon layers set to 0 by LayerFromDetid
-				if( (oldLayer!=newLayer || (oldLayer==newLayer && oldDetector!=newDetector)) && newLayer!=0 ) totalSimHits++;
+				if( (oldLayer!=newLayer || (oldLayer==newLayer && oldDetector!=newDetector)) && newLayer!=0 ) ++matchedHits;
 			}
-			//else
-			//{
-			//	std::cout << "-+- Failed TrackingParticle: "
-			//			<< processType << "==" << pSimHit->processType() << " && "
-			//			<< particleType << "==" << pSimHit->particleType() << " && "
-			//			<< pdgId << "==" << pSimHit->particleType() << std::endl;
-			//}
 
 		}
 	    //std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
-		returnValue.setMatchedHit( totalSimHits );
+		returnValue.setMatchedHit( matchedHits );
+		returnValue.setNumberOfHits( numberOfHits );
+		returnValue.setNumberOfTrackerHits( numberOfTrackerHits );
+		std::cout << "matchedHits=" << matchedHits << " numberOfHits=" << numberOfHits << " numberOfTrackerHits=" << numberOfTrackerHits << std::endl;
 
 		//std::cout << "------Created TrackingParticle with PDG ID " << returnValue.pdgId() << std::endl;
 		return returnValue;
@@ -984,7 +984,7 @@ namespace // Unnamed namespace for things only used in this file
 
 	int LayerFromDetid( const unsigned int & detid )
 	{
-		DetId detId=DetId( detid );
+		DetId detId( detid );
 
 		if( detId.det()!=DetId::Tracker ) return 0;
 
@@ -1021,7 +1021,7 @@ namespace // Unnamed namespace for things only used in this file
 			PXFDetId pxfid( detId.rawId() );
 			layerNumber=pxfid.disk();
 		}
-		else edm::LogVerbatim( "TrackingTruthProducer" )<<"Unknown subdetid: "<<subdetId;
+		else edm::LogVerbatim( "TrackingTruthAccumulator" )<<"Unknown subdetid: "<<subdetId;
 
 		return layerNumber;
 	}
