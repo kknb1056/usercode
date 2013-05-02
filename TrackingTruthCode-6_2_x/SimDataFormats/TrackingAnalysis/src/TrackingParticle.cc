@@ -1,7 +1,264 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
 const unsigned int TrackingParticle::longLivedTag = 65536;
+
+TrackingParticle::TrackingParticle()
+{
+	// No operation
+}
+
+TrackingParticle::TrackingParticle( const SimTrack& simtrk, const TrackingVertexRef& simvtx )
+{
+	addG4Track( simtrk );
+	setParentVertex( simvtx );
+}
+
+TrackingParticle::~TrackingParticle()
+{
+}
+
+int TrackingParticle::pdgId() const
+{
+	return g4Tracks_.at( 0 ).type();
+}
+
+EncodedEventId TrackingParticle::eventId() const
+{
+	return g4Tracks_.at( 0 ).eventId();
+}
+
+void TrackingParticle::addGenParticle( const reco::GenParticleRef& ref )
+{
+	genParticles_.push_back( ref );
+}
+
+void TrackingParticle::addG4Track( const SimTrack& t )
+{
+	g4Tracks_.push_back( t );
+}
+
+TrackingParticle::genp_iterator TrackingParticle::genParticle_begin() const
+{
+	return genParticles_.begin();
+}
+
+TrackingParticle::genp_iterator TrackingParticle::genParticle_end() const
+{
+	return genParticles_.end();
+}
+
+TrackingParticle::g4t_iterator TrackingParticle::g4Track_begin() const
+{
+	return g4Tracks_.begin();
+}
+
+TrackingParticle::g4t_iterator TrackingParticle::g4Track_end() const
+{
+	return g4Tracks_.end();
+}
+
+void TrackingParticle::setParentVertex( const TrackingVertexRef& ref )
+{
+	parentVertex_=ref;
+}
+
+void TrackingParticle::addDecayVertex( const TrackingVertexRef& ref )
+{
+	decayVertices_.push_back( ref );
+}
+
+void TrackingParticle::clearParentVertex()
+{
+	parentVertex_=TrackingVertexRef();
+}
+
+void TrackingParticle::clearDecayVertices()
+{
+	decayVertices_.clear();
+}
+
+void TrackingParticle::setMatchedHit( const int& hitnumb )
+{
+	matchedHit_=hitnumb;
+}
+
+const reco::GenParticleRefVector& TrackingParticle::genParticles() const
+{
+	return genParticles_;
+}
+
+const std::vector<SimTrack>& TrackingParticle::g4Tracks() const
+{
+	return g4Tracks_;
+}
+
+const TrackingVertexRef& TrackingParticle::parentVertex() const
+{
+	return parentVertex_;
+}
+
+const TrackingVertexRefVector& TrackingParticle::decayVertices() const
+{
+	return decayVertices_;
+}
+
+tv_iterator TrackingParticle::decayVertices_begin() const
+{
+	return decayVertices_.begin();
+}
+
+tv_iterator TrackingParticle::decayVertices_end() const
+{
+	return decayVertices_.end();
+}
+
+int TrackingParticle::matchedHit() const
+{
+	return matchedHit_;
+}
+
+int TrackingParticle::charge() const
+{
+	return g4Tracks_.at( 0 ).charge()/3;
+}
+
+int TrackingParticle::threeCharge() const
+{
+	return g4Tracks_.at( 0 ).charge();
+}
+
+const TrackingParticle::LorentzVector& TrackingParticle::p4() const
+{
+	return g4Tracks_.at( 0 ).momentum();
+}
+
+TrackingParticle::Vector TrackingParticle::momentum() const
+{
+	return p4().Vect();
+}
+
+TrackingParticle::Vector TrackingParticle::boostToCM() const
+{
+	return p4().BoostToCM();
+}
+
+double TrackingParticle::p() const
+{
+	return p4().P();
+}
+
+double TrackingParticle::energy() const
+{
+	return p4().E();
+}
+
+double TrackingParticle::et() const
+{
+	return p4().Et();
+}
+
+double TrackingParticle::mass() const
+{
+	return p4().M();
+}
+
+double TrackingParticle::massSqr() const
+{
+	return pow( mass(), 2 );
+}
+
+double TrackingParticle::mt() const
+{
+	return p4().Mt();
+}
+
+double TrackingParticle::mtSqr() const
+{
+	return p4().Mt2();
+}
+
+double TrackingParticle::px() const
+{
+	return p4().Px();
+}
+
+double TrackingParticle::py() const
+{
+	return p4().Py();
+}
+
+double TrackingParticle::pz() const
+{
+	return p4().Pz();
+}
+
+double TrackingParticle::pt() const
+{
+	return p4().Pt();
+}
+
+double TrackingParticle::phi() const
+{
+	return p4().Phi();
+}
+
+double TrackingParticle::theta() const
+{
+	return p4().Theta();
+}
+
+double TrackingParticle::eta() const
+{
+	return p4().Eta();
+}
+
+double TrackingParticle::rapidity() const
+{
+	return p4().Rapidity();
+}
+
+double TrackingParticle::y() const
+{
+	return rapidity();
+}
+
+TrackingParticle::Point TrackingParticle::vertex() const
+{
+	return Point( vx(), vy(), vz() );
+}
+
+double TrackingParticle::vx() const
+{
+	const TrackingVertex& r=( *parentVertex_);
+	return r.position().X();
+}
+
+double TrackingParticle::vy() const
+{
+	const TrackingVertex& r=( *parentVertex_);
+	return r.position().Y();
+}
+
+double TrackingParticle::vz() const
+{
+	const TrackingVertex& r=( *parentVertex_);
+	return r.position().Z();
+}
+
+int TrackingParticle::status() const
+{
+	// ToDo - gen particles aren't always available so this can crash some TrackingParticles
+	reco::GenParticleRefVector::const_iterator it=genParticle_begin();
+	return ( *it)->status();
+}
+
+bool TrackingParticle::longLived() const
+{
+	return status()&longLivedTag;
+}
 
 int TrackingParticle::numberOfHits() const
 {

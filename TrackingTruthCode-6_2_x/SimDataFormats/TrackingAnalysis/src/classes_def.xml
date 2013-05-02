@@ -11,7 +11,7 @@
   <class name="edm::RefProd<std::vector<TrackingVertex> >" />
 
   <class name="TrackingParticle" ClassVersion="11">
-   <version ClassVersion="11" checksum="1870375596"/>
+   <version ClassVersion="11" checksum="2808033281"/>
    <version ClassVersion="10" checksum="2835241548"/>
   </class>
   <class name="std::vector<TrackingParticle>" />

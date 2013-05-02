@@ -9,6 +9,7 @@
  *
  */
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 class TrackingParticleSelector {
 
