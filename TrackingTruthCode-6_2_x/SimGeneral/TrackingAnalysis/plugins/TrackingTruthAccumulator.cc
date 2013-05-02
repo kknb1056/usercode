@@ -23,6 +23,7 @@
 #include "SimGeneral/TrackingAnalysis/interface/TrackingTruthAccumulator.h"
 
 #include <SimGeneral/MixingModule/interface/DigiAccumulatorMixModFactory.h>
+#include <FWCore/MessageLogger/interface/MessageLogger.h>
 #include <FWCore/Framework/interface/Event.h>
 #include <FWCore/Framework/interface/EventSetup.h>
 #include <FWCore/ParameterSet/interface/ParameterSet.h>
@@ -321,8 +322,8 @@ void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup
 
 	if( createUnmergedCollection_ )
 	{
-		std::cout << "Adding " << unmergedOutput_.pTrackingParticles->size() << " TrackingParticles and " << unmergedOutput_.pTrackingVertices->size()
-				<< " TrackingVertexs to the event." << std::endl;
+		edm::LogInfo("TrackingTruthAccumulator") << "Adding " << unmergedOutput_.pTrackingParticles->size() << " TrackingParticles and " << unmergedOutput_.pTrackingVertices->size()
+				<< " TrackingVertexs to the event.";
 
 		event.put( unmergedOutput_.pTrackingParticles );
 		event.put( unmergedOutput_.pTrackingVertices );
@@ -330,8 +331,8 @@ void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup
 
 	if( createMergedCollection_ )
 	{
-		std::cout << "Adding " << mergedOutput_.pTrackingParticles->size() << " merged TrackingParticles and " << mergedOutput_.pTrackingVertices->size()
-				<< " merged TrackingVertexs to the event." << std::endl;
+		edm::LogInfo("TrackingTruthAccumulator") << "Adding " << mergedOutput_.pTrackingParticles->size() << " merged TrackingParticles and " << mergedOutput_.pTrackingVertices->size()
+				<< " merged TrackingVertexs to the event.";
 
 		event.put( mergedOutput_.pTrackingParticles, "MergedTrackTruth" );
 		event.put( mergedOutput_.pTrackingVertices, "MergedTrackTruth" );
