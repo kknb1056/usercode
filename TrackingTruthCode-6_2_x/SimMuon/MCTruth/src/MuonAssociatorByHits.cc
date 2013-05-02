@@ -150,7 +150,7 @@ MuonAssociatorByHits::associateRecoToSimIndices(const TrackHitsCollection & tC,
       
       edm::LogVerbatim("MuonAssociatorByHits")
 	<<"\t pdg code = "<<ITER->pdgId()<<", made of "<<ITER->numberOfHits()<<" PSimHit"
-	<<" (in "<<ITER->matchedHit()<<" layers)"
+	<<" (in "<<ITER->numberOfTrackerLayers()<<" layers)"
 	<<" from "<<ITER->g4Tracks().size()<<" SimTrack:";
       for (TrackingParticle::g4t_iterator g4T=ITER->g4Track_begin(); g4T!=ITER->g4Track_end(); g4T++) {
 	edm::LogVerbatim("MuonAssociatorByHits")

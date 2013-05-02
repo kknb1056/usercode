@@ -217,7 +217,7 @@ void VertexClassifier::processesAtSimulation()
         )
         {
 
-            if ( (*iparticle)->matchedHit() )
+            if ( (*iparticle)->numberOfTrackerLayers() )
             {
 #warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
 #ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED

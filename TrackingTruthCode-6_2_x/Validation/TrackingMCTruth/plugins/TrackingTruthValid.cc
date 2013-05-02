@@ -136,7 +136,7 @@ void TrackingTruthValid::analyze(const edm::Event& event, const edm::EventSetup&
 #ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
     if(trackerPSimHit.size() !=0) meTPProc->Fill( trackerPSimHit.front().processType());
 #endif
-    meTPMatchedHits->Fill(t->matchedHit());
+    meTPMatchedHits->Fill(t->numberOfTrackerLayers());
     meTPVtxX->Fill(t->vx());
     meTPVtxY->Fill(t->vy());
     meTPVtxZ->Fill(t->vz());

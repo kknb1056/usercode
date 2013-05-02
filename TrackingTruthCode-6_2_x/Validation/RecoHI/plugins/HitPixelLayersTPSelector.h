@@ -77,7 +77,7 @@ class HitPixelLayersTPSelector
 	  }
 	  
 	  // selection criteria
-	  if ( tpr->matchedHit() >= minHit_ &&   
+	  if ( tpr->numberOfTrackerLayers() >= minHit_ &&   
 	       sqrt(tpr->momentum().perp2()) >= ptMin_ && 
 	       tpr->momentum().eta() >= minRapidity_ && tpr->momentum().eta() <= maxRapidity_ && 
 	       sqrt(tpr->vertex().perp2()) <= tip_ &&

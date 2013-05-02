@@ -224,7 +224,7 @@ void TrackClassifier::simulationInformation()
     // Check for muons
     flags_[Muon] = (abs(tracer_.simParticle()->pdgId()) == 13);
     // Check for the number of psimhit in tracker
-    flags_[TrackerSimHits] = tracer_.simParticle()->matchedHit() >= (int)minTrackerSimHits_;
+    flags_[TrackerSimHits] = tracer_.simParticle()->numberOfTrackerLayers() >= (int)minTrackerSimHits_;
 }
 
 

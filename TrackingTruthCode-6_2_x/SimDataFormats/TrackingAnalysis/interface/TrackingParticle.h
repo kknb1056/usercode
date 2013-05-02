@@ -54,7 +54,6 @@ public:
     void addDecayVertex(const TrackingVertexRef& ref);
     void clearParentVertex();
     void clearDecayVertices();
-    void setMatchedHit(const int& hitnumb);
     // Getters for Embd and Sim Tracks
     const reco::GenParticleRefVector& genParticles() const;
     const std::vector<SimTrack>& g4Tracks() const;
@@ -103,23 +102,28 @@ public:
 
     bool longLived() const; ///< is long lived?
 
-   /** Gives the total number of hits, including muon hits and counts stereo hits as two hits.
-    */
+   /** Gives the total number of hits, including muon hits. Hits on overlaps in the same layer count as two
+    * hits. Equivalent to trackPSimHit().size() in the old TrackingParticle implementation. */
    int numberOfHits() const;
 
-   /// Gives the same result as the old trackPSimHit(DetId::Tracker).size(), i.e. the number of hits in the tracker but counting stereo hits as two hits.
+   /** The number of hits in the tracker. Hits on overlaps in the same layer count as two hits. Equivalent to
+    * trackPSimHit(DetId::Tracker).size() in the old TrackingParticle implementation. */
    int numberOfTrackerHits() const;
 
-   /// The number of hits in the tracker but counting stereo hits as a single hit.
+   /** @deprecated The number of hits in the tracker but taking account of overlaps.
+    * Deprecated in favour of the more aptly named numberOfTrackerLayers(). */
    int matchedHit() const;
+   /** The number of tracker layers with a hit. Different from numberOfTrackerHits because
+    * this method counts multiple hits on overlaps in the layer as one hit. */
+   int numberOfTrackerLayers() const;
 
    void setNumberOfHits( int numberOfHits );
    void setNumberOfTrackerHits( int numberOfTrackerHits );
+   void setNumberOfTrackerLayers( const int numberOfTrackerLayers );
 private:
-    /// Total Number of Hits belonging to the TrackingParticle
-    int matchedHit_;
     int numberOfHits_; ///< I'll put this in until I'm certain matchedHits is the same as simHits.size()
     int numberOfTrackerHits_; ///< The number of tracker only hits
+    int numberOfTrackerLayers_; ///< Equivalent to the old matchedHit
 
     /// references to G4 and reco::GenParticle tracks
     std::vector<SimTrack> g4Tracks_;

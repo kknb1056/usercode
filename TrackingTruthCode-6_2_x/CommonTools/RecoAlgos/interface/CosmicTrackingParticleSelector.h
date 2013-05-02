@@ -128,7 +128,7 @@ public:
 	      momentum = tsAtClosestApproach.trackStateAtPCA().momentum();
 	      vertex = tsAtClosestApproach.trackStateAtPCA().position();
 	      return (
-		      tp.matchedHit() >= minHit_ &&
+		      tp.numberOfTrackerLayers() >= minHit_ &&
 		      sqrt(momentum.perp2()) >= ptMin_ && 
 		      momentum.eta() >= minRapidity_ && momentum.eta() <= maxRapidity_ && 
 		      sqrt(vertex.perp2()) <= tip_ &&

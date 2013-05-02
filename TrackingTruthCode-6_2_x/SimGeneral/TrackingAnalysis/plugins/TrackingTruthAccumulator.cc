@@ -540,9 +540,9 @@ namespace // Unnamed namespace for things only used in this file
 		// I need to run over the sim hits and count up the different types of hits. To be honest
 		// I don't fully understand this next section of code, I copied it from the old TrackingTruthProducer
 		// to provide the same results. The different types of hits that I need to count are:
-		size_t matchedHits=0; // As far as I can tell, this is the number of tracker hits counting stereo hits as one hit
-		size_t numberOfHits=0; // The total number of hits, counting stereo hits as two hits
-		size_t numberOfTrackerHits=0; // The number of tracker hits, counting stereo hits as two hits
+		size_t matchedHits=0; // As far as I can tell, this is the number of tracker layers with hits on them, i.e. taking account of overlaps.
+		size_t numberOfHits=0; // The total number of hits not taking account of overlaps.
+		size_t numberOfTrackerHits=0; // The number of tracker hits not taking account of overlaps.
 
 		bool init=true;
 		int processType=0;
@@ -583,7 +583,7 @@ namespace // Unnamed namespace for things only used in this file
 			}
 
 		}
-		returnValue.setMatchedHit( matchedHits );
+		returnValue.setNumberOfTrackerLayers( matchedHits );
 		returnValue.setNumberOfHits( numberOfHits );
 		returnValue.setNumberOfTrackerHits( numberOfTrackerHits );
 

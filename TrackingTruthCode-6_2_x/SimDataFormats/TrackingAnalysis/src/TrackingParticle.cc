@@ -3,6 +3,8 @@
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
+#include <FWCore/MessageLogger/interface/MessageLogger.h>
+
 const unsigned int TrackingParticle::longLivedTag = 65536;
 
 TrackingParticle::TrackingParticle()
@@ -80,11 +82,6 @@ void TrackingParticle::clearDecayVertices()
 	decayVertices_.clear();
 }
 
-void TrackingParticle::setMatchedHit( const int& hitnumb )
-{
-	matchedHit_=hitnumb;
-}
-
 const reco::GenParticleRefVector& TrackingParticle::genParticles() const
 {
 	return genParticles_;
@@ -113,11 +110,6 @@ tv_iterator TrackingParticle::decayVertices_begin() const
 tv_iterator TrackingParticle::decayVertices_end() const
 {
 	return decayVertices_.end();
-}
-
-int TrackingParticle::matchedHit() const
-{
-	return matchedHit_;
 }
 
 int TrackingParticle::charge() const
@@ -270,6 +262,17 @@ int TrackingParticle::numberOfTrackerHits() const
     return numberOfTrackerHits_;
 }
 
+int TrackingParticle::matchedHit() const
+{
+	edm::LogWarning("TrackingParticle") << "The method matchedHit() has been deprecated. Use numberOfTrackerLayers() instead.";
+	return numberOfTrackerLayers_;
+}
+
+int TrackingParticle::numberOfTrackerLayers() const
+{
+	return numberOfTrackerLayers_;
+}
+
 void TrackingParticle::setNumberOfHits( int numberOfHits )
 {
     numberOfHits_=numberOfHits;
@@ -278,6 +281,11 @@ void TrackingParticle::setNumberOfHits( int numberOfHits )
 void TrackingParticle::setNumberOfTrackerHits( int numberOfTrackerHits )
 {
     numberOfTrackerHits_=numberOfTrackerHits;
+}
+
+void TrackingParticle::setNumberOfTrackerLayers( const int numberOfTrackerLayers )
+{
+	numberOfTrackerLayers_=numberOfTrackerLayers;
 }
 
 std::ostream& operator<< (std::ostream& s, TrackingParticle const & tp)
