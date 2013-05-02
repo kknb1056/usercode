@@ -143,7 +143,6 @@ private:
 	double cutRecoToSim_;
 	bool threeHitTracksAreSpecial_;
 	SimToRecoDenomType simToRecoDenominator_;
-	bool requireStoredHits_; ///< Whether or not to allow TrackingParticles with no stored PSimHits
 
 	/** @brief Pointer to the handle to the track collection.
 	 *

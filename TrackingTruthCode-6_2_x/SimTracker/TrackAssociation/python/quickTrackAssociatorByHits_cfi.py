@@ -9,6 +9,5 @@ quickTrackAssociatorByHits = cms.ESProducer("QuickTrackAssociatorByHitsESProduce
 	ThreeHitTracksAreSpecial = cms.bool(True),
 	associatePixel = cms.bool(True),
 	associateStrip = cms.bool(True),
-	requireStoredHits = cms.bool(True), # True retains the old behaviour, False allows TrackingParticles without stored PSimHits
     ComponentName = cms.string('quickTrackAssociatorByHits')
 )
