@@ -582,13 +582,10 @@ namespace // Unnamed namespace for things only used in this file
 			}
 
 		}
-	    //std::cout << "    Adding " << returnValue.trackPSimHit().size() << " hits, matched=" << totalSimHits << std::endl;
 		returnValue.setMatchedHit( matchedHits );
 		returnValue.setNumberOfHits( numberOfHits );
 		returnValue.setNumberOfTrackerHits( numberOfTrackerHits );
-		std::cout << "matchedHits=" << matchedHits << " numberOfHits=" << numberOfHits << " numberOfTrackerHits=" << numberOfTrackerHits << std::endl;
 
-		//std::cout << "------Created TrackingParticle with PDG ID " << returnValue.pdgId() << std::endl;
 		return returnValue;
 	}
 
