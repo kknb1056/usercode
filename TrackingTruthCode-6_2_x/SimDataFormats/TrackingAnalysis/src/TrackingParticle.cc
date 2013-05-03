@@ -114,12 +114,12 @@ tv_iterator TrackingParticle::decayVertices_end() const
 
 int TrackingParticle::charge() const
 {
-	return g4Tracks_.at( 0 ).charge()/3;
+	return g4Tracks_.at( 0 ).charge();
 }
 
 int TrackingParticle::threeCharge() const
 {
-	return g4Tracks_.at( 0 ).charge();
+	return g4Tracks_.at( 0 ).charge()*3;
 }
 
 const TrackingParticle::LorentzVector& TrackingParticle::p4() const
