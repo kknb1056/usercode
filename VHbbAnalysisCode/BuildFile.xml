@@ -1,9 +1,0 @@
-<flags CXXFLAGS="-O0 -g -DDEBUG"/>
-<use name="root"/>
-<use name="CLHEP"/>
-<use name="FWCore/FWLite"/>
-<use name="DataFormats/FWLite"/>
-<use name="DataFormats/GeometryVector"/>
-<export>
-	<lib name="1"/>
-</export>
