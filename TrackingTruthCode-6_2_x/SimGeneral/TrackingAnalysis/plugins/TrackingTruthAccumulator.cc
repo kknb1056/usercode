@@ -338,7 +338,6 @@ void TrackingTruthAccumulator::finalizeEvent( edm::Event& event, edm::EventSetup
 		event.put( mergedOutput_.pTrackingVertices, "MergedTrackTruth" );
 	}
 
-	std::cout<<"finalizeEvent finished"<<std::endl;
 }
 
 template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event, const edm::EventSetup& setup )
