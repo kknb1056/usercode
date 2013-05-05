@@ -19,3 +19,9 @@ cd $CMSSW_BASE/src
 cvs co -d SimGeneral/TrackingAnalysis UserCode/grimes/TrackingTruthCode/SimGeneral/TrackingAnalysis
 cvs co -d SimTracker/SiStripDigitizer UserCode/grimes/TrackingTruthCode/SimTracker/SiStripDigitizer
 scram b
+
+----------
+- L1Menu -
+----------
+
+Refactoring of the L1 Trigger rate estimation and menu generation code.

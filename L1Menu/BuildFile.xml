@@ -1,0 +1,15 @@
+<use name="root"/>
+<include_path path="interface"/>
+<include_path path="../../UserCode/L1TriggerUpgrade/macros"/>
+<include_path path="../../UserCode/L1TriggerUpgrade/interface"/>
+<include_path path="../../UserCode/L1TriggerDPG/interface"/>
+<flags LDFLAGS="-Wl,-rpath=/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerUpgrade/macros"/>
+<flags LDFLAGS="-Wl,-rpath=/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerDPG/macros"/>
+<flags LDFLAGS="-Wl,-rpath=/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerDPG/macros/L1Rates/toolbox"/>
+<flags LDFLAGS="/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerUpgrade/macros/L1UpgradeNtuple_C.so"/>
+<flags LDFLAGS="/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerUpgrade/macros/L1Menu2015_C.so"/>
+<flags LDFLAGS="/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerDPG/macros/L1Ntuple_C.so"/>
+<flags LDFLAGS="/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerDPG/macros/L1Rates/toolbox/L1GtNtuple_C.so"/>
+<export>
+	<lib name="MarksStuffMenuGeneration"/>
+</export>
