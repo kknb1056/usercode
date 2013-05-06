@@ -1,12 +1,12 @@
-#ifndef menugeneration_triggers_DoubleJetCentral_h
-#define menugeneration_triggers_DoubleJetCentral_h
+#ifndef l1menu_triggers_DoubleJetCentral_h
+#define l1menu_triggers_DoubleJetCentral_h
 
-#include "menugeneration/ITrigger.h"
+#include "l1menu/ITrigger.h"
 
 #include <string>
 #include <vector>
 
-namespace menugeneration
+namespace l1menu
 {
 	namespace triggers
 	{
@@ -19,7 +19,7 @@ namespace menugeneration
 		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 		 * @date 29/Apr/2013
 		 */
-		class DoubleJetCentral : public menugeneration::ITrigger
+		class DoubleJetCentral : public l1menu::ITrigger
 		{
 		public:
 			DoubleJetCentral();
@@ -47,6 +47,6 @@ namespace menugeneration
 
 	} // end of namespace triggers
 
-} // end of namespace menugeneration
+} // end of namespace l1menu
 
 #endif

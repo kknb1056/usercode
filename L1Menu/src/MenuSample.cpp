@@ -4,7 +4,8 @@
 #include <stdexcept>
 #include <cmath>
 
-#include "UserCode/L1TriggerUpgrade/macros/L1Menu2015.h"
+#include "UserCode/L1TriggerUpgrade/macros/L1UpgradeNtuple.h"
+#include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 
 namespace l1menu
 {
