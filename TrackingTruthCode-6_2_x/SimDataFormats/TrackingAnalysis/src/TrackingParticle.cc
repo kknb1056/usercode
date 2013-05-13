@@ -15,7 +15,7 @@ TrackingParticle::TrackingParticle()
 TrackingParticle::TrackingParticle( const SimTrack& simtrk, const TrackingVertexRef& parentVertex )
 {
 	addG4Track( simtrk );
-	setParentVertex( simvtx );
+	setParentVertex( parentVertex );
 }
 
 TrackingParticle::~TrackingParticle()
@@ -24,7 +24,8 @@ TrackingParticle::~TrackingParticle()
 
 int TrackingParticle::pdgId() const
 {
-	return g4Tracks_.at( 0 ).type();
+	if( genParticles_.empty() ) return g4Tracks_.at( 0 ).type();
+	else return (*genParticles_.begin())->pdgId();
 }
 
 EncodedEventId TrackingParticle::eventId() const
@@ -242,9 +243,8 @@ double TrackingParticle::vz() const
 
 int TrackingParticle::status() const
 {
-	// ToDo - gen particles aren't always available so this can crash some TrackingParticles
-	reco::GenParticleRefVector::const_iterator it=genParticle_begin();
-	return ( *it)->status();
+	if( genParticles_.empty() ) return -99; // Use the old invalid status flag that used to be set by TrackingTruthProducer.
+	else return (*genParticles_.begin())->status();
 }
 
 bool TrackingParticle::longLived() const

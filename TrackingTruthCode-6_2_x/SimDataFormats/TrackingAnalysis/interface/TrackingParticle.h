@@ -54,7 +54,11 @@ public:
     // destructor
     ~TrackingParticle();
 
-    int pdgId() const; ///< @brief PDG ID. Note this is taken from the first SimTrack only.
+    /** @brief PDG ID.
+     *
+     * Returns the PDG ID of the first associated gen particle. If there are no gen particles associated
+     * then it returns type() from the first SimTrack. */
+    int pdgId() const;
     /** @brief Signal source, crossing number.
      *
      * Note this is taken from the first SimTrack only, but there shouldn't be any SimTracks from different
