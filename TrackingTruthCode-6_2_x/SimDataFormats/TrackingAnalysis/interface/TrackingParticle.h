@@ -16,6 +16,16 @@ class TrackingVertex;
 class SimTrack;
 class EncodedEventId;
 
+/** @brief Monte Carlo truth information used for tracking validation.
+ *
+ * Object with references to the original SimTrack and parent and daughter TrackingVertices.
+ * Simulation with high (~100) pileup was taking too much memory so the class was slimmed down
+ * and copies of the SimHits were removed.
+ *
+ * @author original author unknown, re-engineering and slimming by Subir Sarkar (subir.sarkar@cern.ch),
+ * some tweaking and documentation by Mark Grimes (mark.grimes@bristol.ac.uk).
+ * @date original date unknown, re-engineering Jan-May 2013
+ */
 class TrackingParticle
 {
     friend std::ostream& operator<< (std::ostream& s, TrackingParticle const& tp);
@@ -30,16 +40,25 @@ public:
     typedef reco::GenParticleRefVector::iterator   genp_iterator;
     typedef std::vector<SimTrack>::const_iterator  g4t_iterator;
 
-    /// default constructor
+    /** @brief Default constructor. Note that the object will be useless until it is provided
+     * with a SimTrack and parent TrackingVertex.
+     *
+     * Most of the methods assume there is a SimTrack and parent TrackingVertex set, so will either
+     * crash or give undefined results if this isn't true. This constructor should only be used to
+     * create a placeholder until setParentVertex() and addG4Track() can be called.
+     */
     TrackingParticle();
 
-    TrackingParticle( const SimTrack& simtrk, const TrackingVertexRef& simvtx );
+    TrackingParticle( const SimTrack& simtrk, const TrackingVertexRef& parentVertex );
 
     // destructor
     ~TrackingParticle();
 
-    /// PDG id, signal source, crossing number
-    int pdgId() const;
+    int pdgId() const; ///< @brief PDG ID. Note this is taken from the first SimTrack only.
+    /** @brief Signal source, crossing number.
+     *
+     * Note this is taken from the first SimTrack only, but there shouldn't be any SimTracks from different
+     * crossings in the TrackingParticle. */
     EncodedEventId eventId() const;
 
     // Setters for G4 and reco::GenParticle
@@ -65,65 +84,69 @@ public:
     tv_iterator decayVertices_end() const;
 
 
-    int charge() const; ///< electric charge
-    int threeCharge() const; ///< electric charge
-    const LorentzVector& p4() const; ///< four-momentum Lorentz vector
+    int charge() const; ///< @brief Electric charge. Note this is taken from the first SimTrack only.
+    int threeCharge() const; ///< @brief Kept for backwards compatibility. Gives 3*charge(), don't know why.
+    const LorentzVector& p4() const; ///< @brief Four-momentum Lorentz vector. Note this is taken from the first SimTrack only.
 
 
     Vector momentum() const; ///< spatial momentum vector
 
-    /// boost vector to boost a Lorentz vector
-    /// to the particle center of mass system
-    Vector boostToCM() const;
+    Vector boostToCM() const; ///< @brief Vector to boost to the particle centre of mass frame.
 
-    double p() const; ///< magnitude of momentum vector
-    double energy() const; ///< energy
-    double et() const; ///< transverse energy
-    double mass() const; ///< mass
-    double massSqr() const; ///< mass squared
-    double mt() const; ///< transverse mass
-    double mtSqr() const; ///< transverse mass squared
-    double px() const; ///< x coordinate of momentum vector
-    double py() const; ///< y coordinate of momentum vector
-    double pz() const; ///< z coordinate of momentum vector
-    double pt() const; ///< transverse momentum
-    double phi() const; ///< momentum azimuthal angle
-    double theta() const; ///< momentum polar angle
-    double eta() const; ///< momentum pseudorapidity
-    double rapidity() const; ///< rapidity
-    double y() const; ///< rapidity
-    Point vertex() const; ///< vertex position
-    double vx() const; ///< x coordinate of vertex position
-    double vy() const; ///< y coordinate of vertex position
-    double vz() const; ///< z coordinate of vertex position
-    int status() const; ///< status word
+    double p() const; ///< @brief Magnitude of momentum vector. Note this is taken from the first SimTrack only.
+    double energy() const; ///< @brief Energy. Note this is taken from the first SimTrack only.
+    double et() const; ///< @brief Transverse energy. Note this is taken from the first SimTrack only.
+    double mass() const; ///< @brief Mass. Note this is taken from the first SimTrack only.
+    double massSqr() const; ///< @brief Mass squared. Note this is taken from the first SimTrack only.
+    double mt() const; ///< @brief Transverse mass. Note this is taken from the first SimTrack only.
+    double mtSqr() const; ///< @brief Transverse mass squared. Note this is taken from the first SimTrack only.
+    double px() const; ///< @brief x coordinate of momentum vector. Note this is taken from the first SimTrack only.
+    double py() const; ///< @brief y coordinate of momentum vector. Note this is taken from the first SimTrack only.
+    double pz() const; ///< @brief z coordinate of momentum vector. Note this is taken from the first SimTrack only.
+    double pt() const; ///< @brief Transverse momentum. Note this is taken from the first SimTrack only.
+    double phi() const; ///< @brief Momentum azimuthal angle. Note this is taken from the first SimTrack only.
+    double theta() const; ///< @brief Momentum polar angle. Note this is taken from the first SimTrack only.
+    double eta() const; ///< @brief Momentum pseudorapidity. Note this is taken from the first SimTrack only.
+    double rapidity() const; ///< @brief Rapidity. Note this is taken from the first SimTrack only.
+    double y() const; ///< @brief Same as rapidity().
+    Point vertex() const; ///< @brief Parent vertex position
+    double vx() const; ///< @brief x coordinate of parent vertex position
+    double vy() const; ///< @brief y coordinate of parent vertex position
+    double vz() const; ///< @brief z coordinate of parent vertex position
+    /** @brief Status word.
+     *
+     * Returns status() from the first gen particle, or -99 if there are no gen particles attached. */
+    int status() const;
 
     static const unsigned int longLivedTag; ///< long lived flag
 
     bool longLived() const; ///< is long lived?
 
-   /** Gives the total number of hits, including muon hits. Hits on overlaps in the same layer count as two
-    * hits. Equivalent to trackPSimHit().size() in the old TrackingParticle implementation. */
+   /** @brief Gives the total number of hits, including muon hits. Hits on overlaps in the same layer count separately.
+    *
+    * Equivalent to trackPSimHit().size() in the old TrackingParticle implementation. */
    int numberOfHits() const;
 
-   /** The number of hits in the tracker. Hits on overlaps in the same layer count as two hits. Equivalent to
-    * trackPSimHit(DetId::Tracker).size() in the old TrackingParticle implementation. */
+   /** @brief The number of hits in the tracker. Hits on overlaps in the same layer count separately.
+    *
+    * Equivalent to trackPSimHit(DetId::Tracker).size() in the old TrackingParticle implementation. */
    int numberOfTrackerHits() const;
 
    /** @deprecated The number of hits in the tracker but taking account of overlaps.
     * Deprecated in favour of the more aptly named numberOfTrackerLayers(). */
    int matchedHit() const;
-   /** The number of tracker layers with a hit. Different from numberOfTrackerHits because
-    * this method counts multiple hits on overlaps in the layer as one hit. */
+   /** @brief The number of tracker layers with a hit.
+    *
+    * Different from numberOfTrackerHits because this method counts multiple hits on overlaps in the layer as one hit. */
    int numberOfTrackerLayers() const;
 
    void setNumberOfHits( int numberOfHits );
    void setNumberOfTrackerHits( int numberOfTrackerHits );
    void setNumberOfTrackerLayers( const int numberOfTrackerLayers );
 private:
-    int numberOfHits_; ///< I'll put this in until I'm certain matchedHits is the same as simHits.size()
-    int numberOfTrackerHits_; ///< The number of tracker only hits
-    int numberOfTrackerLayers_; ///< Equivalent to the old matchedHit
+    int numberOfHits_; ///< @brief The total number of hits
+    int numberOfTrackerHits_; ///< @brief The number of tracker only hits
+    int numberOfTrackerLayers_; ///< @brief The number of tracker layers with hits. Equivalent to the old matchedHit.
 
     /// references to G4 and reco::GenParticle tracks
     std::vector<SimTrack> g4Tracks_;

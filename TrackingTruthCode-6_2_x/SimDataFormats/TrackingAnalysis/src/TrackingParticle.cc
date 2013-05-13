@@ -12,7 +12,7 @@ TrackingParticle::TrackingParticle()
 	// No operation
 }
 
-TrackingParticle::TrackingParticle( const SimTrack& simtrk, const TrackingVertexRef& simvtx )
+TrackingParticle::TrackingParticle( const SimTrack& simtrk, const TrackingVertexRef& parentVertex )
 {
 	addG4Track( simtrk );
 	setParentVertex( simvtx );
