@@ -2,6 +2,8 @@
 #define l1menu_TriggerTable_h
 
 #include <memory>
+#include <string>
+#include <vector>
 
 // Forward declarations
 namespace l1menu

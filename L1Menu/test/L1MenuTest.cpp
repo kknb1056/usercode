@@ -1,16 +1,24 @@
 #include "TSystem.h"
 #include "TROOT.h"
-#include "menugeneration/MenuSample.h"
+#include "l1menu/MenuSample.h"
+
+#include <iostream>
+#include <string>
 
 int main( int argc, char* argv[] )
 {
-	gSystem->Load("libFWCoreFWLite.so");
-//	AutoLibraryLoader::enable();
-	gROOT->ProcessLine(".L $CMSSW_BASE/src/UserCode/L1TriggerUpgrade/macros/L1UpgradeNtuple.C+");
-	gROOT->ProcessLine(".L $CMSSW_BASE/src/UserCode/L1TriggerDPG/macros/L1Ntuple.C+");
-	gROOT->ProcessLine(".L $CMSSW_BASE/src/UserCode/L1TriggerDPG/macros/L1Rates/toolbox/L1GtNtuple.C+");
-	gROOT->ProcessLine(".L $CMSSW_BASE/src/UserCode/L1TriggerUpgrade/macros/L1Menu2015.C+");
+	if( argc!=2 )
+	{
+		std::string executableName=argv[0];
+		size_t lastSlashPosition=executableName.find_last_of('/');
+		if( lastSlashPosition!=std::string::npos ) executableName=executableName.substr( lastSlashPosition+1, std::string::npos );
+		std::cerr << "   Usage: " << executableName << " <ntuple filename>" << std::endl;
+		return -1;
+	}
 
-	menugeneration::MenuSample mySample;
-	mySample.loadFile("/gpfs_phys/storm/cms/user/jbrooke/L1UpgradeNtuples_v16/Fallback_NeutrinoGun_14TeV_PU100/L1Tree_1_1_3px.root");
+	gSystem->Load("libFWCoreFWLite.so");
+	std::string filename=argv[1];
+
+	l1menu::MenuSample mySample;
+	mySample.loadFile(filename);
 }

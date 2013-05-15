@@ -178,7 +178,7 @@ bool l1menu::TriggerMenu::apply( const L1Analysis::L1AnalysisDataFormat& event )
 
 void l1menu::TriggerMenu::loadMenuFromFile( const std::string& filename )
 {
-	std::ifstream file( filename );
+	std::ifstream file( filename.c_str() );
 	if( !file.is_open() ) throw std::runtime_error( "Unable to open file "+filename );
 
 	loadMenuInOldFormat( file );
