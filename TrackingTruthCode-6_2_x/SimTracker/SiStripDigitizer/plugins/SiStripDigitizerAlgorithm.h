@@ -67,6 +67,7 @@ class SiStripDigitizerAlgorithm {
   //run the algorithm to digitize a single det
   void accumulateSimHits(const std::vector<PSimHit>::const_iterator inputBegin,
                          const std::vector<PSimHit>::const_iterator inputEnd,
+                         size_t inputBeginGlobalIndex,
                          const StripGeomDetUnit *stripdet,
                          const GlobalVector& bfield,
 			 const TrackerTopology *tTopo);
@@ -141,6 +142,7 @@ class SiStripDigitizerAlgorithm {
     unsigned int trackID;
     EncodedEventId eventID;
     float contributionToADC;
+    size_t simHitGlobalIndex; ///< The array index of the sim hit, but in the array for all crossings
   };
 
   typedef std::map<int, std::vector<AssociationInfo> >  AssociationInfoForChannel;

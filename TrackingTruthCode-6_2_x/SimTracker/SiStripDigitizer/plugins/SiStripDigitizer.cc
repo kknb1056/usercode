@@ -1,6 +1,10 @@
 // File: SiStripDigitizerAlgorithm.cc
 // Description:  Class for digitization.
 
+// Modified 15/May/2013 mark.grimes@bristol.ac.uk - Modified so that the digi-sim link has the correct
+// index for the sim hits stored. It was previously always set to zero (I won't mention that it was
+// me who originally wrote that).
+
 // system include files
 #include <memory>
 
@@ -91,11 +95,15 @@ SiStripDigitizer::~SiStripDigitizer() {
 }  
 
 void SiStripDigitizer::accumulateStripHits(edm::Handle<std::vector<PSimHit> > hSimHits,
-					   const TrackerTopology *tTopo) {
+					   const TrackerTopology *tTopo, size_t globalSimHitIndex ) {
+  // globalSimHitIndex is the index the sim hit will have when it is put in a collection
+  // of sim hits for all crossings. This is only used when creating digi-sim links if
+  // configured to do so.
+
   if(hSimHits.isValid()) {
     std::set<unsigned int> detIds;
     std::vector<PSimHit> const& simHits = *hSimHits.product();
-    for(std::vector<PSimHit>::const_iterator it = simHits.begin(), itEnd = simHits.end(); it != itEnd; ++it) {
+    for(std::vector<PSimHit>::const_iterator it = simHits.begin(), itEnd = simHits.end(); it != itEnd; ++it, ++globalSimHitIndex ) {
       unsigned int detId = (*it).detUnitId();
       if(detIds.insert(detId).second) {
         // The insert succeeded, so this detector element has not yet been processed.
@@ -104,9 +112,9 @@ void SiStripDigitizer::accumulateStripHits(edm::Handle<std::vector<PSimHit> > hS
         GlobalVector bfield = pSetup->inTesla(stripdet->surface().position());
         LogDebug ("Digitizer ") << "B-field(T) at " << stripdet->surface().position() << "(cm): "
                                 << pSetup->inTesla(stripdet->surface().position());
-        theDigiAlgo->accumulateSimHits(it, itEnd, stripdet, bfield, tTopo);
+        theDigiAlgo->accumulateSimHits(it, itEnd, globalSimHitIndex, stripdet, bfield, tTopo);
       }
-    }
+    } // end of loop over sim hits
   }
 }
 
@@ -124,7 +132,18 @@ void SiStripDigitizer::accumulateStripHits(edm::Handle<std::vector<PSimHit> > hS
       edm::InputTag tag(hitsProducer, *i);
 
       iEvent.getByLabel(tag, simHits);
-      accumulateStripHits(simHits,tTopo);
+      accumulateStripHits(simHits,tTopo,crossingSimHitIndexOffset_[tag.encode()]);
+      // Now that the hits have been processed, I'll add the amount of hits in this crossing on to
+      // the global counter. Next time accumulateStripHits() is called it will count the sim hits
+      // as though they were on the end of this collection.
+      // Note that this is only used for creating digi-sim links (if configured to do so).
+      if( simHits.isValid() )
+      {
+    	  std::cout << "Changing offset for " << tag.encode()
+    			  << " from " << crossingSimHitIndexOffset_[tag.encode()] << " to "
+    			  << crossingSimHitIndexOffset_[tag.encode()]+simHits->size() << " in signal." << std::endl;
+    	  crossingSimHitIndexOffset_[tag.encode()]+=simHits->size();
+      }
     }
   }
 
@@ -141,12 +160,29 @@ void SiStripDigitizer::accumulateStripHits(edm::Handle<std::vector<PSimHit> > hS
       edm::InputTag tag(hitsProducer, *i);
 
       iEvent.getByLabel(tag, simHits);
-      accumulateStripHits(simHits,tTopo);
+      accumulateStripHits(simHits,tTopo,crossingSimHitIndexOffset_[tag.encode()]);
+      // Now that the hits have been processed, I'll add the amount of hits in this crossing on to
+      // the global counter. Next time accumulateStripHits() is called it will count the sim hits
+      // as though they were on the end of this collection.
+      // Note that this is only used for creating digi-sim links (if configured to do so).
+      if( simHits.isValid() )
+      {
+    	  std::cout << "Changing offset for " << tag.encode()
+    			  << " from " << crossingSimHitIndexOffset_[tag.encode()] << " to "
+    			  << crossingSimHitIndexOffset_[tag.encode()]+simHits->size() << " in signal." << std::endl;
+    	  crossingSimHitIndexOffset_[tag.encode()]+=simHits->size();
+      }
     }
   }
 
 
 void SiStripDigitizer::initializeEvent(edm::Event const& iEvent, edm::EventSetup const& iSetup) {
+  // Make sure that the first crossing processed starts indexing the sim hits from zero.
+  // This variable is used so that the sim hits from all crossing frames have sequential
+  // indices used to create the digi-sim link (if configured to do so) rather than starting
+  // from zero for each crossing.
+  crossingSimHitIndexOffset_.clear();
+
   // Step A: Get Inputs
 
   if(useConfFromDB){

@@ -1,6 +1,10 @@
 // File: SiStripDigitizerAlgorithm.cc
 // Description:  Steering class for digitization.
 
+// Modified 15/May/2013 mark.grimes@bristol.ac.uk - Modified so that the digi-sim link has the correct
+// index for the sim hits stored. It was previously always set to zero (I won't mention that it was
+// me who originally wrote that).
+
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -104,6 +108,7 @@ SiStripDigitizerAlgorithm::initializeEvent(const edm::EventSetup& iSetup) {
 void
 SiStripDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterator inputBegin,
                                              std::vector<PSimHit>::const_iterator inputEnd,
+                                             size_t inputBeginGlobalIndex,
                                              const StripGeomDetUnit* det,
                                              const GlobalVector& bfield,
 					     const TrackerTopology *tTopo) {
@@ -128,7 +133,8 @@ SiStripDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterato
     if( makeDigiSimLinks_ ) pDetIDAssociationInfo=&(associationInfoForDetId_[detId]); // ...so only search the map if that is the case
     std::vector<double> previousLocalAmplitude; // Only used if makeDigiSimLinks_ is true. Needed to work out the change in amplitude.
 
-    for (std::vector<PSimHit>::const_iterator simHitIter = inputBegin; simHitIter != inputEnd; ++simHitIter) {
+    size_t simHitGlobalIndex=inputBeginGlobalIndex; // This needs to stored to create the digi-sim link later
+    for (std::vector<PSimHit>::const_iterator simHitIter = inputBegin; simHitIter != inputEnd; ++simHitIter, ++simHitGlobalIndex ) {
       // skip hits not in this detector.
       if((*simHitIter).detUnitId() != detId) {
         continue;
@@ -189,7 +195,7 @@ SiStripDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterato
                 }
               } // end of loop over associationVector
               // If the hit wasn't already in create a new association info structure.
-              if( addNewEntry ) associationVector.push_back( AssociationInfo{ simHitIter->trackId(), simHitIter->eventId(), signalFromThisSimHit } );
+              if( addNewEntry ) associationVector.push_back( AssociationInfo{ simHitIter->trackId(), simHitIter->eventId(), signalFromThisSimHit, simHitGlobalIndex } );
             } // end of "if( signalFromThisSimHit!=0 )"
           } // end of loop over locAmpl strips
         } // end of "if( makeDigiSimLinks_ )"
@@ -265,7 +271,9 @@ SiStripDigitizerAlgorithm::digitize(
         for( const auto& iAssociationInfo : associationInfo ) totalSimADC+=iAssociationInfo.contributionToADC;
         // Now I know that I can loop again and create the links
         for( const auto& iAssociationInfo : associationInfo ) {
-          outLink.push_back( StripDigiSimLink( iDigi.channel(), iAssociationInfo.trackID, 0, iAssociationInfo.eventID, iAssociationInfo.contributionToADC/totalSimADC ) );
+          // Note simHitGlobalIndex has +1 because TrackerHitAssociator (the only place I can find this value being used)
+          // expects counting to start at 1, not 0.
+          outLink.push_back( StripDigiSimLink( iDigi.channel(), iAssociationInfo.trackID, iAssociationInfo.simHitGlobalIndex+1, iAssociationInfo.eventID, iAssociationInfo.contributionToADC/totalSimADC ) );
         } // end of loop over associationInfo
       } // end of loop over the digis
     } // end of check that iAssociationInfoByChannel is a valid iterator
@@ -388,7 +396,9 @@ SiStripDigitizerAlgorithm::digitize(
         for( const auto& iAssociationInfo : associationInfo ) totalSimADC+=iAssociationInfo.contributionToADC;
         // Now I know that I can loop again and create the links
         for( const auto& iAssociationInfo : associationInfo ) {
-          outLink.push_back( StripDigiSimLink( channel, iAssociationInfo.trackID, 0, iAssociationInfo.eventID, iAssociationInfo.contributionToADC/totalSimADC ) );
+          // Note simHitGlobalIndex has +1 because TrackerHitAssociator (the only place I can find this value being used)
+          // expects counting to start at 1, not 0.
+          outLink.push_back( StripDigiSimLink( channel, iAssociationInfo.trackID, iAssociationInfo.simHitGlobalIndex+1, iAssociationInfo.eventID, iAssociationInfo.contributionToADC/totalSimADC ) );
         } // end of loop over associationInfo
       } // end of loop over the digis
     } // end of check that iAssociationInfoByChannel is a valid iterator
