@@ -137,13 +137,7 @@ void SiStripDigitizer::accumulateStripHits(edm::Handle<std::vector<PSimHit> > hS
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
       // as though they were on the end of this collection.
       // Note that this is only used for creating digi-sim links (if configured to do so).
-      if( simHits.isValid() )
-      {
-    	  std::cout << "Changing offset for " << tag.encode()
-    			  << " from " << crossingSimHitIndexOffset_[tag.encode()] << " to "
-    			  << crossingSimHitIndexOffset_[tag.encode()]+simHits->size() << " in signal." << std::endl;
-    	  crossingSimHitIndexOffset_[tag.encode()]+=simHits->size();
-      }
+      if( simHits.isValid() ) crossingSimHitIndexOffset_[tag.encode()]+=simHits->size();
     }
   }
 
@@ -165,13 +159,7 @@ void SiStripDigitizer::accumulateStripHits(edm::Handle<std::vector<PSimHit> > hS
       // the global counter. Next time accumulateStripHits() is called it will count the sim hits
       // as though they were on the end of this collection.
       // Note that this is only used for creating digi-sim links (if configured to do so).
-      if( simHits.isValid() )
-      {
-    	  std::cout << "Changing offset for " << tag.encode()
-    			  << " from " << crossingSimHitIndexOffset_[tag.encode()] << " to "
-    			  << crossingSimHitIndexOffset_[tag.encode()]+simHits->size() << " in signal." << std::endl;
-    	  crossingSimHitIndexOffset_[tag.encode()]+=simHits->size();
-      }
+      if( simHits.isValid() ) crossingSimHitIndexOffset_[tag.encode()]+=simHits->size();
     }
   }
 
