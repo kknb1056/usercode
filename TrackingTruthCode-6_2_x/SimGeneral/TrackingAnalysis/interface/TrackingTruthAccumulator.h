@@ -61,7 +61,8 @@ private:
 
 	/// As of 11/Feb/2013 this option hasn't been implemented yet.
 	const bool removeDeadModules_;
-	const std::string simHitLabel_;
+	const edm::InputTag simTrackLabel_;
+	const edm::InputTag simVertexLabel_;
 	edm::ParameterSet simHitCollectionConfig_;
 	edm::InputTag genParticleLabel_;
 

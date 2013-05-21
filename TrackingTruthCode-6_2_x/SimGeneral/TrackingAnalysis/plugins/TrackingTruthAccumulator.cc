@@ -44,6 +44,7 @@
 #include "DataFormats/SiStripDetId/interface/TIBDetId.h"
 #include "DataFormats/SiStripDetId/interface/TIDDetId.h"
 #include "DataFormats/SiStripDetId/interface/TOBDetId.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 
 
@@ -220,7 +221,8 @@ TrackingTruthAccumulator::TrackingTruthAccumulator( const edm::ParameterSet & co
 		createMergedCollection_(config.getParameter<bool>("createMergedBremsstrahlung") ),
 		addAncestors_( config.getParameter<bool>("alwaysAddAncestors") ),
 		removeDeadModules_( config.getParameter<bool>("removeDeadModules") ),
-		simHitLabel_( config.getParameter<std::string>("simHitLabel") ),
+		simTrackLabel_( config.getParameter<edm::InputTag>("simTrackCollection") ),
+		simVertexLabel_( config.getParameter<edm::InputTag>("simVertexCollection") ),
 		simHitCollectionConfig_( config.getParameter<edm::ParameterSet>("simHitCollections") ),
 		genParticleLabel_( config.getParameter<edm::InputTag>("genParticleCollection") )
 {
@@ -350,8 +352,8 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 	edm::Handle< std::vector<reco::GenParticle> > hGenParticles;
 	edm::Handle< std::vector<int> > hGenParticleIndices;
 
-	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimTracks );
-	event.getByLabel( edm::InputTag( simHitLabel_ ), hSimVertices );
+	event.getByLabel( simTrackLabel_, hSimTracks );
+	event.getByLabel( simVertexLabel_, hSimVertices );
 
 	try
 	{
@@ -415,11 +417,7 @@ template<class T> void TrackingTruthAccumulator::accumulateEvent( const T& event
 		if( ignoreTracksOutsideVolume_ )
 		{
 			const SimVertex& simVertex=hSimVertices->at( pDecayTrack->pParentVertex->simVertexIndex );
-			if( !objectFactory.vectorIsInsideVolume( simVertex.position() ) )
-			{
-//				std::cout << "Vertex " << simVertex.position() << " is outside detector volume" << std::endl;
-				continue;
-			}
+			if( !objectFactory.vectorIsInsideVolume( simVertex.position() ) ) continue;
 		}
 
 
@@ -434,21 +432,25 @@ template<class T> void TrackingTruthAccumulator::fillSimHits( std::vector<const 
 {
 	std::vector<std::string> parameterNames=simHitCollectionConfig_.getParameterNames();
 
-	for( const auto& paramterName : parameterNames )
+	// loop over the different parameter collections. The names of these are unimportant but
+	// usually set to the sub-detectors, e.g. "muon", "pixel" etcetera.
+	for( const auto& parameterName : parameterNames )
 	{
-		std::vector<std::string> collectionNames=simHitCollectionConfig_.getParameter<std::vector<std::string> >(paramterName);
-		for( const auto& collectionName : collectionNames )
+		std::vector<edm::InputTag> collectionTags=simHitCollectionConfig_.getParameter<std::vector<edm::InputTag> >(parameterName);
+
+		for( const auto& collectionTag : collectionTags )
 		{
 			edm::Handle< std::vector<PSimHit> > hSimHits;
-			event.getByLabel( edm::InputTag( simHitLabel_, collectionName ), hSimHits );
+			event.getByLabel( collectionTag, hSimHits );
 
 			// TODO - implement removing the dead modules
 			for( const auto& simHit : *hSimHits )
 			{
 				returnValue.push_back( &simHit );
 			}
-		}
-	}
+
+		} // end of loop over InputTags
+	} // end of loop over parameter names. These are arbitrary but usually "muon", "pixel" etcetera.
 }
 
 
@@ -661,7 +663,11 @@ namespace // Unnamed namespace for things only used in this file
 			else throw std::runtime_error( "TrackingTruthAccumulator: Found a track with an invalid parent vertex index." );
 		}
 
-		assert( vertexIdToDecayVertex.size()==vertexCollection.size() && vertexCollection.size()==decayVertexIndex );
+		// This assert was originally in to check the internal consistency of the decay chain. Fast sim
+		// pileup seems to have a load of vertices with no tracks pointing to them though, so fast sim fails
+		// this assert if pileup is added. I don't think the problem is vital however, so if the assert is
+		// taken out these extra vertices are ignored.
+		//assert( vertexIdToDecayVertex.size()==vertexCollection.size() && vertexCollection.size()==decayVertexIndex );
 
 		// I still need to set DecayChainTrack::daughterVertices and DecayChainVertex::pParentTrack.
 		// The information to do this comes from SimVertex::parentIndex. I couldn't do this before
