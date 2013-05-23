@@ -1,6 +1,0 @@
-<flags CXXFLAGS="-O0 -g -DDEBUG"/>
-<use   name="SimGeneral/TrackingAnalysis"/>
-<use   name="SimGeneral/MixingModule"/>
-<library   file="*.cc" name="SimGeneralTrackingAnalysisPlugins">
-  <flags   EDM_PLUGIN="1"/>
-</library>

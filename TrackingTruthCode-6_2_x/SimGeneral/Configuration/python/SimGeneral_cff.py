@@ -1,8 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
 #
-# TrackingParticle Producer is now part of the mixing
-# module, so it is no longer included here.
+# include TrackingParticle Producer
 #
+from SimGeneral.TrackingAnalysis.trackingParticles_cfi import *
 from SimGeneral.PileupInformation.AddPileupSummary_cfi import *
 

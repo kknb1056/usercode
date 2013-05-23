@@ -1,6 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
-# The strip digi-sim link has been taken out, because it's now part of
-# the strip digitizer.
+from SimTracker.SiStripDigitizer.SiStripDigiSimLink_cfi import simSiStripDigiSimLink
+
+# Combined sequence
+trDigi = cms.Sequence(simSiStripDigiSimLink)
 
 import SimGeneral.MixingModule.stripDigitizer_APVModeDec_cff 

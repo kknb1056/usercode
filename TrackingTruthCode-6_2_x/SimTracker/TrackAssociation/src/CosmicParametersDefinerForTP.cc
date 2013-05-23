@@ -18,7 +18,7 @@
 class TrajectoryStateClosestToBeamLineBuilder;
 
 
-TrackingParticle::Vector
+ParticleBase::Vector
  CosmicParametersDefinerForTP::momentum(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const{
   // to add a new implementation for cosmic. For the moment, it is just as for the base class:
   using namespace edm;
@@ -40,15 +40,10 @@ TrackingParticle::Vector
   
   GlobalVector finalGV;
   GlobalPoint finalGP;
-#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
-#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
   double radius(9999);
-#endif
   bool found(0);
-  TrackingParticle::Vector momentum(0,0,0);
+  ParticleBase::Vector momentum(0,0,0);
   
-#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
-#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
   const vector<PSimHit> & simHits = tp.trackPSimHit(DetId::Tracker);
   for(vector<PSimHit>::const_iterator it=simHits.begin(); it!=simHits.end(); ++it){
     const GeomDet* tmpDet  = tracker->idToDet( DetId(it->detUnitId()) ) ;
@@ -63,7 +58,6 @@ TrackingParticle::Vector
       finalGP = gp;
     }
   }
-#endif
 
   //cout<<"found = "<<found<<endl;
   // cout<<"Closest Hit Position: ("<<finalGP.x()<<", "<<finalGP.y()<<", "<<finalGP.z()<<")"<<endl;
@@ -76,14 +70,14 @@ TrackingParticle::Vector
       TrajectoryStateClosestToBeamLine tsAtClosestApproach = tscblBuilder(ftsAtProduction,*bs);//as in TrackProducerAlgorithm
       if(tsAtClosestApproach.isValid()){
 	GlobalVector p = tsAtClosestApproach.trackStateAtPCA().momentum();
-	momentum = TrackingParticle::Vector(p.x(), p.y(), p.z());
+	momentum = ParticleBase::Vector(p.x(), p.y(), p.z());
       }
       return momentum;
     }
   return momentum;
 }
 
-TrackingParticle::Point CosmicParametersDefinerForTP::vertex(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const{
+ParticleBase::Point CosmicParametersDefinerForTP::vertex(const edm::Event& iEvent, const edm::EventSetup& iSetup, const TrackingParticle& tp) const{
   
   using namespace edm;
   using namespace std;
@@ -100,15 +94,10 @@ TrackingParticle::Point CosmicParametersDefinerForTP::vertex(const edm::Event& i
 
   GlobalVector finalGV;
   GlobalPoint finalGP;
-#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
-#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
   double radius(9999);
-#endif
   bool found(0);
-  TrackingParticle::Point vertex(0,0,0);
+  ParticleBase::Point vertex(0,0,0);
 
-#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
-#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
   const vector<PSimHit> & simHits = tp.trackPSimHit(DetId::Tracker);
   for(vector<PSimHit>::const_iterator it=simHits.begin(); it!=simHits.end(); ++it){
     const GeomDet* tmpDet  = tracker->idToDet( DetId(it->detUnitId()) ) ;
@@ -123,7 +112,6 @@ TrackingParticle::Point CosmicParametersDefinerForTP::vertex(const edm::Event& i
       finalGP = gp;
     }
   }
-#endif
   if(found)
     {
       FreeTrajectoryState ftsAtProduction(finalGP,finalGV,TrackCharge(tp.charge()),theMF.product());
@@ -131,7 +119,7 @@ TrackingParticle::Point CosmicParametersDefinerForTP::vertex(const edm::Event& i
       TrajectoryStateClosestToBeamLine tsAtClosestApproach = tscblBuilder(ftsAtProduction,*bs);//as in TrackProducerAlgorithm
       if(tsAtClosestApproach.isValid()){
 	GlobalPoint v = tsAtClosestApproach.trackStateAtPCA().position();
-	vertex = TrackingParticle::Point(v.x()-bs->x0(),v.y()-bs->y0(),v.z()-bs->z0());
+	vertex = ParticleBase::Point(v.x()-bs->x0(),v.y()-bs->y0(),v.z()-bs->z0());
       }
       return vertex;
     }

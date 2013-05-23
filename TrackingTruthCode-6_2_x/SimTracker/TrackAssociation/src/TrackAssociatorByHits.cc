@@ -188,12 +188,7 @@ TrackAssociatorByHits::associateSimToReco(const edm::RefToBaseVector<reco::Track
       int tpindex =0;
       for (TrackingParticleCollection::iterator t = tPC.begin(); t != tPC.end(); ++t, ++tpindex) {
 	idcachev.clear();
-#warning "This file has been modified just to get it to compile without any regard as to whether it still functions as intended"
-#ifdef REMOVED_JUST_TO_GET_IT_TO_COMPILE__THIS_CODE_NEEDS_TO_BE_CHECKED
         std::vector<PSimHit> trackerPSimHit( t->trackPSimHit(DetId::Tracker) );
-#else
-        std::vector<PSimHit> trackerPSimHit;
-#endif
         //int nsimhit = trackerPSimHit.size();
 	float totsimhit = 0; 
 	std::vector<PSimHit> tphits;
@@ -397,7 +392,7 @@ TrackAssociatorByHits::associateSimToReco(edm::Handle<edm::View<TrajectorySeed> 
       int tpindex =0;
       for (TrackingParticleCollection::iterator t = tPC.begin(); t != tPC.end(); ++t, ++tpindex) {
 	idcachev.clear();
-        int nsimhit = t->numberOfTrackerHits();
+        int nsimhit = t->trackPSimHit(DetId::Tracker).size(); 
 	LogTrace("TrackAssociator") << "TP number " << tpindex << " pdgId=" << t->pdgId() << " with number of PSimHits: "  << nsimhit;
 	nshared = getShared(matchedIds, idcachev, t);
 	
@@ -479,7 +474,7 @@ int TrackAssociatorByHits::getShared(std::vector<SimHitIdpr>& matchedIds,
 				     std::vector<SimHitIdpr>& idcachev,
 				     TrackingParticleCollection::const_iterator t) const {
   int nshared = 0;
-  if (t->numberOfHits()==0) return nshared;//should use trackerPSimHit but is not const
+  if (t->trackPSimHit().size()==0) return nshared;//should use trackerPSimHit but is not const
 
   for(size_t j=0; j<matchedIds.size(); j++){
     //LogTrace("TrackAssociator") << "now matchedId=" << matchedIds[j].first;

@@ -8,7 +8,7 @@ from Validation.RecoHI.HLTValidationHeavyIons_cff import *
 validationHI = cms.Sequence(hiBasicGenTest
                             *globaldigisanalyze
                             *globalhitsanalyze
-#                            *globalrechitsanalyze # N.B. this has been taken out because rec hits are no longer put in crossing frames
+                            *globalrechitsanalyze
                             *globalValidationHI
                             *hltValidationHI
                             )

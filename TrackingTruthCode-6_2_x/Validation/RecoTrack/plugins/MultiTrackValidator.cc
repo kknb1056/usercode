@@ -250,8 +250,8 @@ void MultiTrackValidator::analyze(const edm::Event& event, const edm::EventSetup
       for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ //loop over TPs collection for tracking efficiency
 	TrackingParticleRef tpr(TPCollectionHeff, i);
 	TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
-	TrackingParticle::Vector momentumTP; 
-	TrackingParticle::Point vertexTP;
+	ParticleBase::Vector momentumTP; 
+	ParticleBase::Point vertexTP;
 	double dxySim(0);
 	double dzSim(0);
 	
@@ -263,8 +263,8 @@ void MultiTrackValidator::analyze(const edm::Event& event, const edm::EventSetup
 	    momentumTP = tp->momentum();
 	    vertexTP = tp->vertex();
 	    //Calcualte the impact parameters w.r.t. PCA
-	    TrackingParticle::Vector momentum = parametersDefinerTP->momentum(event,setup,*tp);
-	    TrackingParticle::Point vertex = parametersDefinerTP->vertex(event,setup,*tp);
+	    ParticleBase::Vector momentum = parametersDefinerTP->momentum(event,setup,*tp);
+	    ParticleBase::Point vertex = parametersDefinerTP->vertex(event,setup,*tp);
 	    dxySim = (-vertex.x()*sin(momentum.phi())+vertex.y()*cos(momentum.phi()));
 	    dzSim = vertex.z() - (vertex.x()*momentum.x()+vertex.y()*momentum.y())/sqrt(momentum.perp2()) 
 	      * momentum.z()/sqrt(momentum.perp2());
@@ -321,7 +321,8 @@ void MultiTrackValidator::analyze(const edm::Event& event, const edm::EventSetup
 
 	
 
-        int nSimHits = tp->numberOfTrackerHits();
+	std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);
+        int nSimHits = simhits.end()-simhits.begin();
 
         double vtx_z_PU = vertexTP.z();
         for (size_t j = 0; j < tv.size(); j++) {
@@ -395,7 +396,8 @@ void MultiTrackValidator::analyze(const edm::Event& event, const edm::EventSetup
 	if(recSimColl.find(track) != recSimColl.end()){
 	  tp = recSimColl[track];
 	  if (tp.size()!=0) {
-	    nSimHits = tp[0].first->numberOfTrackerHits();
+	    std::vector<PSimHit> simhits=tp[0].first->trackPSimHit(DetId::Tracker);
+            nSimHits = simhits.end()-simhits.begin();
             sharedFraction = tp[0].second;
 	    isSimMatched = true;
         if (tp[0].first->charge() != track->charge()) isChargeMatched = false;
@@ -453,8 +455,8 @@ void MultiTrackValidator::analyze(const edm::Event& event, const edm::EventSetup
 
 	  
 	//Get tracking particle parameters at point of closest approach to the beamline
-	TrackingParticle::Vector momentumTP = parametersDefinerTP->momentum(event,setup,*(tpr.get()));
-	TrackingParticle::Point vertexTP = parametersDefinerTP->vertex(event,setup,*(tpr.get()));		 	 
+	ParticleBase::Vector momentumTP = parametersDefinerTP->momentum(event,setup,*(tpr.get()));
+	ParticleBase::Point vertexTP = parametersDefinerTP->vertex(event,setup,*(tpr.get()));		 	 
 	int chargeTP = tpr->charge();
 
 	histoProducerAlgo_->fill_ResoAndPull_recoTrack_histos(w,momentumTP,vertexTP,chargeTP,
