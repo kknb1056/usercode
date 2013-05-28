@@ -1,3 +1,7 @@
+<flags CXXFLAGS="-O0 -g -DDEBUG"/>
 <use name="MarksStuff/MenuGeneration"/>
+<use name="root"/>
+<use name="UserCode/L1TriggerDPG"/>
+<use name="FWCore/FWLite"/>
 <include_path path="../interface"/>
 <bin name="L1MenuTest" file="L1MenuTest.cpp"/>

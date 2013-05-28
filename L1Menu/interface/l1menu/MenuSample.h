@@ -5,9 +5,9 @@
 #include <memory>
 
 // Forward declarations
-namespace L1Analysis
+namespace l1menu
 {
-	class L1AnalysisDataFormat;
+	class IEvent;
 }
 
 
@@ -20,11 +20,13 @@ namespace l1menu
 		MenuSample();
 		virtual ~MenuSample();
 		MenuSample( const MenuSample& otherMenuSample );
+		MenuSample( MenuSample&& otherMenuSample ) noexcept;
 		MenuSample& operator=( const MenuSample& otherMenuSample );
+		MenuSample& operator=( MenuSample&& otherMenuSample ) noexcept;
 
 		void loadFile( const std::string& filename );
 		size_t numberOfEvents() const;
-		const L1Analysis::L1AnalysisDataFormat& getEvent( size_t eventNumber ) const;
+		const l1menu::IEvent& getEvent( size_t eventNumber ) const;
 	private:
 		class MenuSamplePrivateMembers* pImple_;
 	}; // end of class MenuSample

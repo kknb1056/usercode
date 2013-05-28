@@ -1,11 +1,10 @@
+<flags CXXFLAGS="-O0 -g -DDEBUG"/>
+<flags ADD_SUBDIR="1"/>
 <use name="root"/>
 <use name="UserCode/L1TriggerDPG"/>
 <include_path path="interface"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerUpgrade/macros"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerUpgrade/interface"/>
 <include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerDPG/interface"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerDPG/macros/L1Rates/toolbox"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerDPG/macros"/>
+<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerUpgrade/interface"/>
 <flags LDFLAGS="-lGpad"/>
 <export>
 	<use name="UserCode/L1TriggerDPG"/>

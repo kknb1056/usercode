@@ -23,6 +23,7 @@ namespace l1menu
 		{
 		public:
 			DoubleMu();
+
 			virtual const std::string name() const;
 			virtual const std::vector<std::string> parameterNames() const;
 			virtual float& parameter( const std::string& parameterName );
@@ -42,7 +43,7 @@ namespace l1menu
 		{
 		public:
 			virtual unsigned int version() const;
-			virtual bool apply( const L1Analysis::L1AnalysisDataFormat& event ) const;
+			virtual bool apply( const l1menu::IEvent& event ) const;
 		}; // end of version 0 class
 
 	} // end of namespace triggers

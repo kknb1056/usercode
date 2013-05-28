@@ -8,8 +8,10 @@
 
 namespace // Use the unnamed namespace for things only used in this file
 {
+	/// ASCII codes of characters that are considered whitespace (space, tab, carriage return, line feed).
     const char* whitespace="\x20\x09\x0D\x0A";
 
+    /** @brief Converts the entire string to a float or throws an exception. */
     float convertStringToFloat( const std::string& string )
     {
     	float returnValue;
@@ -19,6 +21,7 @@ namespace // Use the unnamed namespace for things only used in this file
         return returnValue;
     }
 
+    /** @brief Splits a string into individual parts delimited by whitespace. */
     std::vector<std::string> splitByWhitespace( const std::string& stringToSplit )
     {
     	std::vector<std::string> returnValue;
@@ -31,7 +34,7 @@ namespace // Use the unnamed namespace for things only used in this file
             size_t nextElementStart=stringToSplit.find_first_not_of( whitespace, currentPosition );
             if( nextElementStart!=std::string::npos ) currentPosition=nextElementStart;
 
-            // Find the next whitespace or comma and subtract everything up to that point
+            // Find the next whitespace and subtract everything up to that point
             nextDelimeter=stringToSplit.find_first_of( whitespace, currentPosition );
             std::string element=stringToSplit.substr( currentPosition, nextDelimeter-currentPosition );
             returnValue.push_back(element);
@@ -49,58 +52,52 @@ namespace // Use the unnamed namespace for things only used in this file
 } // end of the unnamed namespace
 
 
-l1menu::TriggerMenu::TriggerMenu( const TriggerTable& table ) : triggerTable_(table)
+l1menu::TriggerMenu::TriggerMenu() : triggerTable_( l1menu::TriggerTable::instance() )
 {
 	// No operation besides the initialiser list
 }
 
 l1menu::TriggerMenu::~TriggerMenu()
 {
-	// Because I've just held on to the raw pointers, I need to run through
-	// and delete them all.
-	for( std::vector<l1menu::ITrigger*>::iterator iTrigger=triggers_.begin(); iTrigger!=triggers_.end(); ++iTrigger )
-	{
-		delete *iTrigger;
-	}
+	// No operation since I switched from raw pointers to unique_ptr.
 }
 
-l1menu::TriggerMenu::TriggerMenu( const l1menu::TriggerMenu& otherTriggerMenu )
+l1menu::TriggerMenu::TriggerMenu( const TriggerMenu& otherTriggerMenu )
 	: triggerTable_(otherTriggerMenu.triggerTable_)
 {
-	for( std::vector<l1menu::ITrigger*>::const_iterator iTrigger=otherTriggerMenu.triggers_.begin(); iTrigger!=otherTriggerMenu.triggers_.end(); ++iTrigger )
+	for( std::vector< std::unique_ptr<l1menu::ITrigger> >::const_iterator iTrigger=otherTriggerMenu.triggers_.begin(); iTrigger!=otherTriggerMenu.triggers_.end(); ++iTrigger )
 	{
 		l1menu::ITrigger& sourceTrigger=**iTrigger;
 
-		std::auto_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.copyTrigger( sourceTrigger );
-		triggers_.push_back( pNewTrigger.release() );
+		triggers_.push_back( std::move(triggerTable_.copyTrigger(sourceTrigger)) );
 	}
 
 	// Make sure triggerResults_ is always the same size as triggers_
 	triggerResults_.resize( triggers_.size() );
 }
 
+l1menu::TriggerMenu::TriggerMenu( TriggerMenu&& otherTriggerMenu ) noexcept
+	: triggerTable_(otherTriggerMenu.triggerTable_), triggers_( std::move(otherTriggerMenu.triggers_) ),
+	  triggerResults_( std::move(otherTriggerMenu.triggerResults_) )
+{
+	// No operation besides the initialiser list
+}
+
 l1menu::TriggerMenu& l1menu::TriggerMenu::operator=( const l1menu::TriggerMenu& otherTriggerMenu )
 {
-	triggerTable_=otherTriggerMenu.triggerTable_;
-
 	//
 	// First clean up whatever triggers I had before
 	//
-	for( std::vector<l1menu::ITrigger*>::iterator iTrigger=triggers_.begin(); iTrigger!=triggers_.end(); ++iTrigger )
-	{
-		delete *iTrigger;
-	}
 	triggers_.clear();
 
 	//
 	// Now copy the triggers from the other menu
 	//
-	for( std::vector<l1menu::ITrigger*>::const_iterator iTrigger=otherTriggerMenu.triggers_.begin(); iTrigger!=otherTriggerMenu.triggers_.end(); ++iTrigger )
+	for( std::vector< std::unique_ptr<l1menu::ITrigger> >::const_iterator iTrigger=otherTriggerMenu.triggers_.begin(); iTrigger!=otherTriggerMenu.triggers_.end(); ++iTrigger )
 	{
 		l1menu::ITrigger& sourceTrigger=**iTrigger;
 
-		std::auto_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.copyTrigger( sourceTrigger );
-		triggers_.push_back( pNewTrigger.release() );
+		triggers_.push_back( std::move(triggerTable_.copyTrigger(sourceTrigger)) );
 	}
 
 	// Make sure triggerResults_ is always the same size as triggers_
@@ -109,17 +106,20 @@ l1menu::TriggerMenu& l1menu::TriggerMenu::operator=( const l1menu::TriggerMenu& 
 	return *this;
 }
 
+l1menu::TriggerMenu& l1menu::TriggerMenu::operator=( l1menu::TriggerMenu&& otherTriggerMenu ) noexcept
+{
+	triggers_=std::move( otherTriggerMenu.triggers_ );
+	triggerResults_=std::move(otherTriggerMenu.triggerResults_);
+
+	return *this;
+}
+
 bool l1menu::TriggerMenu::addTrigger( const std::string& triggerName )
 {
-	std::auto_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.getTrigger( triggerName );
+	std::unique_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.getTrigger( triggerName );
 	if( pNewTrigger.get()==NULL ) return false;
 
-	triggers_.push_back( pNewTrigger.get() );
-
-	// If everything has gone okay so far, the pointer will be in the vector
-	// and I can get rid of the auto_ptr. The destructor of this class will
-	// take care of deleting the pointers.
-	pNewTrigger.release();
+	triggers_.push_back( std::move(pNewTrigger) );
 
 	// Make sure triggerResults_ is always the same size as triggers_
 	triggerResults_.resize( triggers_.size() );
@@ -128,15 +128,10 @@ bool l1menu::TriggerMenu::addTrigger( const std::string& triggerName )
 
 bool l1menu::TriggerMenu::addTrigger( const std::string& triggerName, unsigned int version )
 {
-	std::auto_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.getTrigger( triggerName, version );
+	std::unique_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.getTrigger( triggerName, version );
 	if( pNewTrigger.get()==NULL ) return false;
 
-	triggers_.push_back( pNewTrigger.get() );
-
-	// If everything has gone okay so far, the pointer will be in the vector
-	// and I can get rid of the auto_ptr. The destructor of this class will
-	// take care of deleting the pointers.
-	pNewTrigger.release();
+	triggers_.push_back( std::move(pNewTrigger) );
 
 	// Make sure triggerResults_ is always the same size as triggers_
 	triggerResults_.resize( triggers_.size() );
@@ -162,7 +157,14 @@ const l1menu::ITrigger& l1menu::TriggerMenu::getTrigger( size_t position ) const
 	return *triggers_[position];
 }
 
-bool l1menu::TriggerMenu::apply( const L1Analysis::L1AnalysisDataFormat& event ) const
+std::unique_ptr<l1menu::ITrigger> l1menu::TriggerMenu::getTriggerCopy( size_t position ) const
+{
+	if( position>triggers_.size() ) throw std::range_error( "Trigger requested that does not exist in the menu" );
+
+	return triggerTable_.copyTrigger(*triggers_[position]);
+}
+
+bool l1menu::TriggerMenu::apply( const l1menu::IEvent& event ) const
 {
 	bool atLeastOneTriggerHasFired=false;
 
@@ -207,6 +209,8 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 			{
 				if( addTrigger( tableColumns[0] ) ) // Try and create a trigger with the name supplied
 				{
+					std::cout << "Added trigger \"" << tableColumns[0] << "\"" << std::endl;
+
 					l1menu::ITrigger& newTrigger=*(triggers_.back());
 
 					// Try and set all of the relevant parameters. I know not all triggers have these parameters

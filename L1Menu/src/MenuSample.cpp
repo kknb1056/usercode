@@ -7,6 +7,33 @@
 #include <TSystem.h>
 #include "UserCode/L1TriggerUpgrade/macros/L1UpgradeNtuple.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
+#include "l1menu/IEvent.h"
+
+// I'll use the unnamed namespace for things that are only used in this file
+namespace
+{
+	/** Implementation of the l1menu::IEvent interface.
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 21/May/2013
+	 */
+	class EventImplementation : public l1menu::IEvent
+	{
+	public:
+		//
+		// These are the methods required by the IEvent interface
+		//
+		virtual L1Analysis::L1AnalysisDataFormat& rawEvent() { return rawEvent_; }
+		virtual const L1Analysis::L1AnalysisDataFormat& rawEvent() const { return rawEvent_; }
+		virtual bool* physicsBits() { return physicsBits_; }
+		virtual const bool* physicsBits() const { return physicsBits_; }
+		virtual float weight() const { return 1; }
+	protected:
+		L1Analysis::L1AnalysisDataFormat rawEvent_;
+		bool physicsBits_[128];
+	}; // end of the EventImplementation class
+
+} // end of the unnamed namespace
 
 namespace l1menu
 {
@@ -25,8 +52,9 @@ namespace l1menu
 		double calculateHTM( const L1Analysis::L1AnalysisDataFormat& event );
 	public:
 		void fillDataStructure( int selectDataInput );
+		void fillL1Bits();
 		L1UpgradeNtuple inputNtuple;
-		L1Analysis::L1AnalysisDataFormat currentEvent;
+		::EventImplementation currentEvent;
 	};
 }
 
@@ -115,12 +143,15 @@ double l1menu::MenuSamplePrivateMembers::calculateHTM( const L1Analysis::L1Analy
 
 void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 {
-	currentEvent.Reset();
+	// Use a reference for ease of use
+	L1Analysis::L1AnalysisDataFormat& analysisDataFormat=currentEvent.rawEvent();
+
+	analysisDataFormat.Reset();
 
 	// Grab standard event information
-	currentEvent.Run=inputNtuple.event_->run;
-	currentEvent.LS=inputNtuple.event_->lumi;
-	currentEvent.Event=inputNtuple.event_->event;
+	analysisDataFormat.Run=inputNtuple.event_->run;
+	analysisDataFormat.LS=inputNtuple.event_->lumi;
+	analysisDataFormat.Event=inputNtuple.event_->event;
 
 	/* =======================================================================================================
 	 /    Select the input source information
@@ -146,10 +177,10 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 			for( unsigned int i=0; i<inputNtuple.l1upgrade_->nEG; i++ )
 			{
 
-				currentEvent.Bxel.push_back( inputNtuple.l1upgrade_->egBx.at( i ) );
-				currentEvent.Etel.push_back( inputNtuple.l1upgrade_->egEt.at( i ) );
-				currentEvent.Phiel.push_back( phiINjetCoord( inputNtuple.l1upgrade_->egPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
-				currentEvent.Etael.push_back( etaINjetCoord( inputNtuple.l1upgrade_->egEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
+				analysisDataFormat.Bxel.push_back( inputNtuple.l1upgrade_->egBx.at( i ) );
+				analysisDataFormat.Etel.push_back( inputNtuple.l1upgrade_->egEt.at( i ) );
+				analysisDataFormat.Phiel.push_back( phiINjetCoord( inputNtuple.l1upgrade_->egPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
+				analysisDataFormat.Etael.push_back( etaINjetCoord( inputNtuple.l1upgrade_->egEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
 
 				// Check whether this EG is located in the isolation list
 				bool isolated=false;
@@ -165,8 +196,8 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 					}
 					isoEG++;
 				}
-				currentEvent.Isoel.push_back( isolated );
-				currentEvent.Nele++;
+				analysisDataFormat.Isoel.push_back( isolated );
+				analysisDataFormat.Nele++;
 			}
 
 			// Note:  Taus are in the jet list.  Decide what to do with them. For now
@@ -190,35 +221,35 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 
 				if( !duplicate )
 				{
-					currentEvent.Bxjet.push_back( inputNtuple.l1upgrade_->jetBx.at( i ) );
-					currentEvent.Etjet.push_back( inputNtuple.l1upgrade_->jetEt.at( i ) );
-					currentEvent.Phijet.push_back( phiINjetCoord( inputNtuple.l1upgrade_->jetPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
-					currentEvent.Etajet.push_back( etaINjetCoord( inputNtuple.l1upgrade_->jetEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
-					currentEvent.Taujet.push_back( false );
-					currentEvent.isoTaujet.push_back( false );
-					//currentEvent.Fwdjet.push_back(false); //COMMENT OUT IF JET ETA FIX
+					analysisDataFormat.Bxjet.push_back( inputNtuple.l1upgrade_->jetBx.at( i ) );
+					analysisDataFormat.Etjet.push_back( inputNtuple.l1upgrade_->jetEt.at( i ) );
+					analysisDataFormat.Phijet.push_back( phiINjetCoord( inputNtuple.l1upgrade_->jetPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
+					analysisDataFormat.Etajet.push_back( etaINjetCoord( inputNtuple.l1upgrade_->jetEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
+					analysisDataFormat.Taujet.push_back( false );
+					analysisDataFormat.isoTaujet.push_back( false );
+					//analysisDataFormat.Fwdjet.push_back(false); //COMMENT OUT IF JET ETA FIX
 
-					//if(fabs(inputNtuple.l1upgrade_->jetEta.at(i))>=3.0) printf("Et %f  Eta  %f  iEta  %f Phi %f  iPhi  %f \n",currentEvent.Etjet.at(currentEvent.Njet),inputNtuple.l1upgrade_->jetEta.at(i),currentEvent.Etajet.at(currentEvent.Njet),inputNtuple.l1upgrade_->jetPhi.at(i),currentEvent.Phijet.at(currentEvent.Njet));
+					//if(fabs(inputNtuple.l1upgrade_->jetEta.at(i))>=3.0) printf("Et %f  Eta  %f  iEta  %f Phi %f  iPhi  %f \n",analysisDataFormat.Etjet.at(analysisDataFormat.Njet),inputNtuple.l1upgrade_->jetEta.at(i),analysisDataFormat.Etajet.at(analysisDataFormat.Njet),inputNtuple.l1upgrade_->jetPhi.at(i),analysisDataFormat.Phijet.at(analysisDataFormat.Njet));
 					//  Eta Jet Fix.  Some Jets with eta>3 has appeared in central jet list.  Move them by hand
 					//  This is a problem in Stage 2 Jet code.
-					(fabs( inputNtuple.l1upgrade_->jetEta.at( i ) )>=3.0) ? currentEvent.Fwdjet.push_back( true ) : currentEvent.Fwdjet.push_back( false );
+					(fabs( inputNtuple.l1upgrade_->jetEta.at( i ) )>=3.0) ? analysisDataFormat.Fwdjet.push_back( true ) : analysisDataFormat.Fwdjet.push_back( false );
 
-					currentEvent.Njet++;
+					analysisDataFormat.Njet++;
 				}
 			}
 
 			for( unsigned int i=0; i<inputNtuple.l1upgrade_->nFwdJets; i++ )
 			{
 
-				currentEvent.Bxjet.push_back( inputNtuple.l1upgrade_->fwdJetBx.at( i ) );
-				currentEvent.Etjet.push_back( inputNtuple.l1upgrade_->fwdJetEt.at( i ) );
-				currentEvent.Phijet.push_back( phiINjetCoord( inputNtuple.l1upgrade_->fwdJetPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
-				currentEvent.Etajet.push_back( etaINjetCoord( inputNtuple.l1upgrade_->fwdJetEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
-				currentEvent.Taujet.push_back( false );
-				currentEvent.isoTaujet.push_back( false );
-				currentEvent.Fwdjet.push_back( true );
+				analysisDataFormat.Bxjet.push_back( inputNtuple.l1upgrade_->fwdJetBx.at( i ) );
+				analysisDataFormat.Etjet.push_back( inputNtuple.l1upgrade_->fwdJetEt.at( i ) );
+				analysisDataFormat.Phijet.push_back( phiINjetCoord( inputNtuple.l1upgrade_->fwdJetPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
+				analysisDataFormat.Etajet.push_back( etaINjetCoord( inputNtuple.l1upgrade_->fwdJetEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
+				analysisDataFormat.Taujet.push_back( false );
+				analysisDataFormat.isoTaujet.push_back( false );
+				analysisDataFormat.Fwdjet.push_back( true );
 
-				currentEvent.Njet++;
+				analysisDataFormat.Njet++;
 			}
 
 			// NOTES:  Stage 1 has Tau Relaxed and TauIsolated.  The isolated Tau are a subset of the Relaxed.
@@ -243,12 +274,12 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 
 				if( !duplicate )
 				{
-					currentEvent.Bxjet.push_back( inputNtuple.l1upgrade_->tauBx.at( i ) );
-					currentEvent.Etjet.push_back( inputNtuple.l1upgrade_->tauEt.at( i ) );
-					currentEvent.Phijet.push_back( phiINjetCoord( inputNtuple.l1upgrade_->tauPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
-					currentEvent.Etajet.push_back( etaINjetCoord( inputNtuple.l1upgrade_->tauEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
-					currentEvent.Taujet.push_back( true );
-					currentEvent.Fwdjet.push_back( false );
+					analysisDataFormat.Bxjet.push_back( inputNtuple.l1upgrade_->tauBx.at( i ) );
+					analysisDataFormat.Etjet.push_back( inputNtuple.l1upgrade_->tauEt.at( i ) );
+					analysisDataFormat.Phijet.push_back( phiINjetCoord( inputNtuple.l1upgrade_->tauPhi.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with phiINjetCoord
+					analysisDataFormat.Etajet.push_back( etaINjetCoord( inputNtuple.l1upgrade_->tauEta.at( i ) ) ); //PROBLEM: real value, trigger wants bin convert with etaINjetCoord
+					analysisDataFormat.Taujet.push_back( true );
+					analysisDataFormat.Fwdjet.push_back( false );
 
 					bool isolated=false;
 					bool fnd=false;
@@ -263,9 +294,9 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 						}
 						isoTau++;
 					}
-					currentEvent.isoTaujet.push_back( isolated );
+					analysisDataFormat.isoTaujet.push_back( isolated );
 
-					currentEvent.Njet++;
+					analysisDataFormat.Njet++;
 				} // duplicate check
 			}
 
@@ -273,35 +304,35 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 			for( unsigned int i=0; i<inputNtuple.l1upgrade_->nMet; i++ )
 			{
 				//if(inputNtuple.l1upgrade_->metBx.at(i)==0) {
-				currentEvent.ETT=inputNtuple.l1upgrade_->et.at( i );
-				currentEvent.ETM=inputNtuple.l1upgrade_->met.at( i );
-				currentEvent.PhiETM=inputNtuple.l1upgrade_->metPhi.at( i );
+				analysisDataFormat.ETT=inputNtuple.l1upgrade_->et.at( i );
+				analysisDataFormat.ETM=inputNtuple.l1upgrade_->met.at( i );
+				analysisDataFormat.PhiETM=inputNtuple.l1upgrade_->metPhi.at( i );
 			}
-			currentEvent.OvETT=0; //not available in l1extra
-			currentEvent.OvETM=0; //not available in l1extra
+			analysisDataFormat.OvETT=0; //not available in l1extra
+			analysisDataFormat.OvETM=0; //not available in l1extra
 
 			for( unsigned int i=0; i<inputNtuple.l1upgrade_->nMht; i++ )
 			{
 				if( inputNtuple.l1upgrade_->mhtBx.at( i )==0 )
 				{
-					currentEvent.HTT=calculateHTT( currentEvent ); //inputNtuple.l1upgrade_->ht.at(i) ;
-					currentEvent.HTM=calculateHTM( currentEvent ); //inputNtuple.l1upgrade_->mht.at(i) ;
-					currentEvent.PhiHTM=0.; //inputNtuple.l1upgrade_->mhtPhi.at(i) ;
+					analysisDataFormat.HTT=calculateHTT( analysisDataFormat ); //inputNtuple.l1upgrade_->ht.at(i) ;
+					analysisDataFormat.HTM=calculateHTM( analysisDataFormat ); //inputNtuple.l1upgrade_->mht.at(i) ;
+					analysisDataFormat.PhiHTM=0.; //inputNtuple.l1upgrade_->mhtPhi.at(i) ;
 				}
 			}
-			currentEvent.OvHTM=0; //not available in l1extra
-			currentEvent.OvHTT=0; //not available in l1extra
+			analysisDataFormat.OvHTM=0; //not available in l1extra
+			analysisDataFormat.OvHTT=0; //not available in l1extra
 
 			// Get the muon information  from reEmul GMT
 			for( int i=0; i<inputNtuple.gmtEmu_->N; i++ )
 			{
 
-				currentEvent.Bxmu.push_back( inputNtuple.gmtEmu_->CandBx[i] );
-				currentEvent.Ptmu.push_back( inputNtuple.gmtEmu_->Pt[i] );
-				currentEvent.Phimu.push_back( inputNtuple.gmtEmu_->Phi[i] );
-				currentEvent.Etamu.push_back( inputNtuple.gmtEmu_->Eta[i] );
-				currentEvent.Qualmu.push_back( inputNtuple.gmtEmu_->Qual[i] );
-				currentEvent.Isomu.push_back( false );
+				analysisDataFormat.Bxmu.push_back( inputNtuple.gmtEmu_->CandBx[i] );
+				analysisDataFormat.Ptmu.push_back( inputNtuple.gmtEmu_->Pt[i] );
+				analysisDataFormat.Phimu.push_back( inputNtuple.gmtEmu_->Phi[i] );
+				analysisDataFormat.Etamu.push_back( inputNtuple.gmtEmu_->Eta[i] );
+				analysisDataFormat.Qualmu.push_back( inputNtuple.gmtEmu_->Qual[i] );
+				analysisDataFormat.Isomu.push_back( false );
 			}
 
 		break;
@@ -314,6 +345,34 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 
 	return;
 }
+
+void l1menu::MenuSamplePrivateMembers::fillL1Bits()
+{
+	bool* PhysicsBits=currentEvent.physicsBits();
+
+	// I really don't think this if statement is correct. Surely it
+	// should be "if( gt_ )"? - M. Grimes.
+	if( !inputNtuple.gt_ )
+	{
+		for( Int_t ibit=0; ibit<128; ibit++ )
+		{
+			PhysicsBits[ibit]=0;
+			if( ibit<64 )
+			{
+				PhysicsBits[ibit]=(inputNtuple.gt_->tw1[2]>>ibit)&1;
+			}
+			else
+			{
+				PhysicsBits[ibit]=(inputNtuple.gt_->tw2[2]>>(ibit-64))&1;
+			}
+		}
+	}
+	else
+	{
+		PhysicsBits[0]=1; //set zero bias on if no gt information
+	}
+}
+
 
 l1menu::MenuSample::MenuSample()
 	: pImple_( new MenuSamplePrivateMembers )
@@ -330,12 +389,24 @@ l1menu::MenuSample::MenuSample( const l1menu::MenuSample& otherMenuSample )
 	: pImple_( new MenuSamplePrivateMembers(*otherMenuSample.pImple_) )
 {
 	// No operation besides the initialiser list
-	gSystem->Load("libFWCoreFWLite.so");
+}
+
+l1menu::MenuSample::MenuSample( l1menu::MenuSample&& otherMenuSample ) noexcept
+	: pImple_( otherMenuSample.pImple_ )
+{
+	otherMenuSample.pImple_=NULL;
 }
 
 l1menu::MenuSample& l1menu::MenuSample::operator=( const l1menu::MenuSample& otherMenuSample )
 {
 	*pImple_=*otherMenuSample.pImple_;
+	return *this;
+}
+
+l1menu::MenuSample& l1menu::MenuSample::operator=( l1menu::MenuSample&& otherMenuSample ) noexcept
+{
+	pImple_=otherMenuSample.pImple_;
+	otherMenuSample.pImple_=NULL;
 	return *this;
 }
 
@@ -349,7 +420,7 @@ size_t l1menu::MenuSample::numberOfEvents() const
 	return static_cast<size_t>( pImple_->inputNtuple.GetEntries() );
 }
 
-const L1Analysis::L1AnalysisDataFormat& l1menu::MenuSample::getEvent( size_t eventNumber ) const
+const l1menu::IEvent& l1menu::MenuSample::getEvent( size_t eventNumber ) const
 {
 	// Make sure the event number requested is valid. Use static_cast to get rid
 	// of the "comparison between signed and unsigned" compiler warning.
@@ -359,6 +430,7 @@ const L1Analysis::L1AnalysisDataFormat& l1menu::MenuSample::getEvent( size_t eve
 	pImple_->inputNtuple.GetEntry(eventNumber);
 	// This next call fills pImple_->currentEvent with the information in pImple_->inputNtuple
 	pImple_->fillDataStructure( 22 );
+	pImple_->fillL1Bits();
 
 	return pImple_->currentEvent;
 }
