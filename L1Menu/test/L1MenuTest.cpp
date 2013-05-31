@@ -5,6 +5,8 @@
 #include "l1menu/TriggerTable.h"
 #include "l1menu/ITrigger.h"
 #include "l1menu/MenuRatePlots.h"
+#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/IReducedEvent.h"
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -52,11 +54,27 @@ int main( int argc, char* argv[] )
 		l1menu::MenuSample mySample;
 		mySample.loadFile(ntupleFilename);
 
-		l1menu::MenuRatePlots rateVersusThresholdPlots( myMenu );
-//		l1menu::TriggerRatePlot doubleJetRate( *pMyTrigger );
-//
-		std::cout << "There are " << mySample.numberOfEvents() << " events." << std::endl;
+		l1menu::ReducedMenuSample myReducedSample( mySample, myMenu );
+		myReducedSample.saveToFile( "reducedSample.proto" );
+
 		size_t eventNumber;
+
+		pMyTrigger->initiateForReducedSample( myReducedSample );
+
+		l1menu::MenuRatePlots reducedRateVersusThresholdPlots( myMenu );
+		reducedRateVersusThresholdPlots.initiateForReducedSample(myReducedSample);
+		for( eventNumber=0; eventNumber<myReducedSample.numberOfEvents(); ++eventNumber )
+		{
+			//if( eventNumber>5 ) break;
+			const l1menu::IReducedEvent& event=myReducedSample.getEvent( eventNumber );
+			reducedRateVersusThresholdPlots.addEvent( event );
+			//std::cout << eventNumber << " trigger=" << pMyTrigger->apply(event) << " Parameters: " << event.parameterValue(0) << "," << event.parameterValue(0)  << std::endl;
+		}
+		std::cout << "Finished reduced test" << std::endl;
+
+		l1menu::MenuRatePlots rateVersusThresholdPlots( myMenu );
+
+		std::cout << "There are " << mySample.numberOfEvents() << " events." << std::endl;
 		for( eventNumber=0; eventNumber<mySample.numberOfEvents(); ++eventNumber )
 		{
 			//if( eventNumber>5 ) break;
@@ -67,12 +85,34 @@ int main( int argc, char* argv[] )
 		std::cout << "Finished processing " << eventNumber << " events." << std::endl;
 
 		// Save the histogram
-		std::unique_ptr<TFile> pMyRootFile( new TFile( "rateHistograms.root", "RECREATE" ) );
+		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "rateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
 		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
 		// If I don't do this the plots will be deleted twice - once by the MenuRatePlots and once by the TTree.
 		rateVersusThresholdPlots.relinquishOwnershipOfPlots();
-		pMyRootFile->Write();
-		pMyRootFile->Close();
+
+		TDirectory* pSubDirectory=pMyRootFile->mkdir("reduced");
+		reducedRateVersusThresholdPlots.setDirectory(pSubDirectory);
+		reducedRateVersusThresholdPlots.relinquishOwnershipOfPlots();
+
+		const auto& fullPlots=rateVersusThresholdPlots.getPlots();
+		const auto& reducedPlots=reducedRateVersusThresholdPlots.getPlots();
+
+		pSubDirectory=pMyRootFile->mkdir("differences");
+
+		for( auto iFullPlot=fullPlots.begin(), iReducedPlot=reducedPlots.begin();
+				iFullPlot!=fullPlots.end() && iReducedPlot!=reducedPlots.end();
+				++iFullPlot, ++iReducedPlot )
+		{
+			TAxis* pAxis=(*iFullPlot)->GetXaxis();
+			TH1* pNewPlot=new TH1F( (std::string( (*iFullPlot)->GetName() )+"_difference").c_str(), (*iFullPlot)->GetTitle(), pAxis->GetNbins(), pAxis->GetXmin(), pAxis->GetXmax() );
+			pNewPlot->SetDirectory( pSubDirectory );
+
+			for( int binNumber=1; binNumber<=pAxis->GetNbins(); ++binNumber )
+			{
+				pNewPlot->SetBinContent( binNumber, (*iFullPlot)->GetBinContent(binNumber)-(*iReducedPlot)->GetBinContent(binNumber) );
+			}
+		}
+
 
 	}
 	catch( std::exception& error )

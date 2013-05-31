@@ -2,6 +2,8 @@
 
 #include "l1menu/RegisterTriggerMacro.h"
 #include "l1menu/IEvent.h"
+#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/IReducedEvent.h"
 
 #include <stdexcept>
 #include "L1AnalysisDataFormat.h"
@@ -60,9 +62,28 @@ bool l1menu::triggers::DoubleJetCentral_v0::apply( const l1menu::IEvent& event )
 	return ok;
 }
 
+
 unsigned int l1menu::triggers::DoubleJetCentral_v0::version() const
 {
 	return 0;
+}
+
+void l1menu::triggers::DoubleJetCentral::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
+{
+	const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers( *this );
+
+	std::map<std::string,IReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
+	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "DoubleJetCentral::initiateForReducedSample() - something went wrong, \"threshold1\" wasn't stored in the sample" );
+	else reducedSampleParameterID_threshold1_=iFindResult->second;
+
+	iFindResult=parameterIdentifiers.find("threshold2");
+	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "DoubleJetCentral::initiateForReducedSample() - something went wrong, \"threshold2\" wasn't stored in the sample" );
+	else reducedSampleParameterID_threshold2_=iFindResult->second;
+}
+
+bool l1menu::triggers::DoubleJetCentral::apply( const l1menu::IReducedEvent& event ) const
+{
+	return ( threshold1_<=event.parameterValue(reducedSampleParameterID_threshold1_) ) && ( threshold2_<=event.parameterValue(reducedSampleParameterID_threshold2_) );
 }
 
 l1menu::triggers::DoubleJetCentral::DoubleJetCentral()

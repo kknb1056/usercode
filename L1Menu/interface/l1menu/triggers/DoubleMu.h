@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include "l1menu/IReducedEvent.h"
 
 namespace l1menu
 {
@@ -28,10 +29,15 @@ namespace l1menu
 			virtual const std::vector<std::string> parameterNames() const;
 			virtual float& parameter( const std::string& parameterName );
 			virtual const float& parameter( const std::string& parameterName ) const;
+
+			virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
+			virtual bool apply( const l1menu::IReducedEvent& event ) const;
 		protected:
 			float threshold1_;
 			float threshold2_;
 			float muonQuality_;
+			IReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
+			IReducedEvent::ParameterID reducedSampleParameterID_threshold2_;
 		}; // end of the DoubleMu base class
 
 		/** @brief First version of the DoubleMu trigger.

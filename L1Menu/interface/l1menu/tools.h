@@ -26,13 +26,27 @@ namespace l1menu
 	 * etcetera for when I get around to implementing the cross triggers.
 	 *
 	 * @param[in] trigger    The trigger to check.
-	 * @return               A std::vector of strings for all of the valued parameter names that
+	 * @return               A std::vector of strings for all of the value parameter names that
 	 *                       refer to thresholds.
 	 *
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 28/May/2013
 	 */
 	std::vector<std::string> getThresholdNames( const l1menu::ITrigger& trigger );
+
+	/** @brief Finds all of the parameter names that don't refer to thresholds.
+	 *
+	 * Does the opposite of getThresholdNames, so returns all parameter names that getThresholdNames
+	 * doesn't.
+	 *
+	 * @param[in] trigger    The trigger to check.
+	 * @return               A std::vector of strings for all of the valued parameter names that
+	 *                       don't refer to thresholds.
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 30/May/2013
+	 */
+	std::vector<std::string> getNonThresholdParameterNames( const l1menu::ITrigger& trigger );
 
 	/** @brief Sets all of the thresholds in the supplied trigger as tight as possible but still passing the supplied event.
 	 *

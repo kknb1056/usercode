@@ -10,10 +10,13 @@
 // Forward declarations
 //
 class TDirectory;
+class TH1;
 namespace l1menu
 {
 	class TriggerMenu;
 	class IEvent;
+	class ReducedMenuSample;
+	class IReducedEvent;
 }
 
 
@@ -45,8 +48,13 @@ namespace l1menu
 
 		void addEvent( const l1menu::IEvent& event );
 
+		void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
+		void addEvent( const l1menu::IReducedEvent& event );
+
 		/** @brief Set the root TDirectory where the histograms will reside. */
 		void setDirectory( TDirectory* pDirectory );
+
+		std::vector<TH1*> getPlots();
 
 		/** @brief Relinquish ownership of all the root TH1 plots.
 		 *

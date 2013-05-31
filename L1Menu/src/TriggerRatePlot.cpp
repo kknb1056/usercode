@@ -3,6 +3,8 @@
 #include "l1menu/ITrigger.h"
 #include "l1menu/IEvent.h"
 #include "l1menu/TriggerTable.h"
+#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/IReducedEvent.h"
 #include <TH1F.h>
 #include <iostream>
 #include <sstream>
@@ -16,7 +18,7 @@ l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::
 
 	// Make sure the versusParameter_ supplied is valid. If it's not then this call will
 	// throw an exception.
-	pTrigger_->parameter(versusParameter_);
+	pParameter_=&pTrigger_->parameter(versusParameter_);
 
 	// I want to make a note of the other parameters set for the trigger. As far as I know TH1
 	// has no way of adding annotations so I'll tag it on the end of the title.
@@ -41,7 +43,8 @@ l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::
 
 l1menu::TriggerRatePlot::TriggerRatePlot( l1menu::TriggerRatePlot&& otherTriggerRatePlot ) noexcept
 	: pTrigger_( std::move(otherTriggerRatePlot.pTrigger_) ), pHistogram_( std::move(otherTriggerRatePlot.pHistogram_) ),
-	  versusParameter_( std::move(otherTriggerRatePlot.versusParameter_) ), histogramOwnedByMe_(histogramOwnedByMe_)
+	  versusParameter_( std::move(otherTriggerRatePlot.versusParameter_) ), pParameter_(otherTriggerRatePlot.pParameter_),
+	  histogramOwnedByMe_(histogramOwnedByMe_)
 {
 	// No operation besides the initaliser list
 }
@@ -57,7 +60,8 @@ l1menu::TriggerRatePlot& l1menu::TriggerRatePlot::operator=( l1menu::TriggerRate
 	pTrigger_=std::move(otherTriggerRatePlot.pTrigger_);
 	pHistogram_=std::move(otherTriggerRatePlot.pHistogram_);
 	versusParameter_=std::move(otherTriggerRatePlot.versusParameter_);
-	histogramOwnedByMe_=histogramOwnedByMe_;
+	pParameter_=otherTriggerRatePlot.pParameter_;
+	histogramOwnedByMe_=otherTriggerRatePlot.histogramOwnedByMe_;
 
 	return *this;
 }
@@ -72,24 +76,42 @@ l1menu::TriggerRatePlot::~TriggerRatePlot()
 	}
 }
 
-void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event ) const
+void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event )
 {
-	float& threshold1=pTrigger_->parameter(versusParameter_);
-
 	// loop over all of the bins in the histogram, and see if the trigger passes
 	// for the value at the center of the bin.
 	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
 	{
-		threshold1=pHistogram_->GetBinCenter(binNumber);
+		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
 		if( pTrigger_->apply( event ) )
 		{
-			pHistogram_->Fill( threshold1, event.weight() );
+			pHistogram_->Fill( (*pParameter_), event.weight() );
 		}
 		// could put an "else break" in here, but I don't know if triggers
 		// will run their thresholds the other way. E.g. a trigger could require
 		// a minimum amount of energy in the event, in which case the higher
 		// bins will pass.
 	}
+}
+
+void l1menu::TriggerRatePlot::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
+{
+	pTrigger_->initiateForReducedSample( sample );
+}
+
+void l1menu::TriggerRatePlot::addEvent( const l1menu::IReducedEvent& event )
+{
+	// Basically exactly the same as for the l1menu::IEvent version. I
+	// should probably template this.
+	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
+	{
+		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
+		if( pTrigger_->apply( event ) )
+		{
+			pHistogram_->Fill( (*pParameter_), event.weight() );
+		}
+	}
+
 }
 
 TH1* l1menu::TriggerRatePlot::getPlot()

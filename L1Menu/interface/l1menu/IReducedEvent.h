@@ -1,6 +1,13 @@
 #ifndef l1menu_IReducedEvent_h
 #define l1menu_IReducedEvent_h
 
+//
+// Forward declarations
+//
+namespace l1menu
+{
+	class ITrigger;
+}
 
 namespace l1menu
 {
@@ -12,9 +19,10 @@ namespace l1menu
 	class IReducedEvent
 	{
 	public:
+		typedef size_t ParameterID;
+	public:
 		virtual ~IReducedEvent() {}
-		virtual float parameterValue( size_t parameterNumber ) = 0;
-		virtual size_t parameterNumber( const l1menu::ITrigger& trigger, const std::string& parameterName ) = 0;
+		virtual float parameterValue( ParameterID parameterNumber ) const = 0;
 		virtual float weight() const = 0; ///< @brief The weighting this event has been given
 	};
 

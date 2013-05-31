@@ -1,0 +1,28 @@
+// Compile this with: "$CMSSW_RELEASE_BASE/../../../external/protobuf/2.4.1/bin/protoc -I $CMSSW_BASE/src/MarksStuff/MenuGeneration/src/protobuf --cpp_out=$CMSSW_BASE/src/MarksStuff/MenuGeneration/src/protobuf $CMSSW_BASE/src/MarksStuff/MenuGeneration/src/protobuf/l1menu.proto"
+package l1menuprotobuf;
+
+message Trigger
+{
+	message TriggerParameter
+	{
+		required string name = 1;
+		required float value = 2;
+	}
+	
+	required string name = 1;
+	required int32 version = 2;
+	repeated TriggerParameter parameter = 3;
+	repeated string threshold = 4;
+}
+
+message Event
+{
+	repeated float threshold = 1;
+	optional float weight = 2;
+}
+
+message Sample
+{
+	repeated Trigger trigger = 1;
+	repeated Event event = 2;
+}

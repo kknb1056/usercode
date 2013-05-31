@@ -1,11 +1,12 @@
 #include "l1menu/MenuRatePlots.h"
 
 #include <sstream>
-#include <iostream>
 #include "l1menu/ITrigger.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/TriggerRatePlot.h"
 #include "l1menu/tools.h"
+#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/IReducedEvent.h"
 #include <TH1F.h>
 
 l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory )
@@ -30,8 +31,6 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 		// I want a plot for each of the thresholds, so I'll loop over the threshold names
 		for( std::vector<std::string>::const_iterator iThresholdName=thresholdNames.begin(); iThresholdName!=thresholdNames.end(); ++iThresholdName )
 		{
-			std::cout << "** Adding plot for " << *iThresholdName << " in trigger " << pTrigger->name() << std::endl;
-
 			unsigned int numberOfBins=100;
 			float lowerEdge=0;
 			float upperEdge=100;
@@ -55,19 +54,47 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 void l1menu::MenuRatePlots::addEvent( const l1menu::IEvent& event )
 {
 	// Loop over each of the TriggerRatePlots and add the event to each of them.
-	for( std::vector<l1menu::TriggerRatePlot>::iterator iRatePlot=triggerPlots_.begin(); iRatePlot!=triggerPlots_.end(); ++iRatePlot )
+	for( auto& ratePlot : triggerPlots_ )
 	{
-		iRatePlot->addEvent( event );
+		ratePlot.addEvent( event );
+	}
+}
+
+void l1menu::MenuRatePlots::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
+{
+	// Loop over each of the TriggerRatePlots and delegate the call to them.
+	for( auto& ratePlot : triggerPlots_ )
+	{
+		ratePlot.initiateForReducedSample( sample );
+	}
+}
+
+void l1menu::MenuRatePlots::addEvent( const l1menu::IReducedEvent& event )
+{
+	// Loop over each of the TriggerRatePlots and add the event to each of them.
+	for( auto& ratePlot : triggerPlots_ )
+	{
+		ratePlot.addEvent( event );
 	}
 }
 
 void l1menu::MenuRatePlots::setDirectory( TDirectory* pDirectory )
 {
 	// Loop over each of the TriggerRatePlots and individually set the directory.
-	for( std::vector<l1menu::TriggerRatePlot>::iterator iRatePlot=triggerPlots_.begin(); iRatePlot!=triggerPlots_.end(); ++iRatePlot )
+	for( auto& ratePlot : triggerPlots_ )
 	{
-		iRatePlot->getPlot()->SetDirectory( pDirectory );
+		ratePlot.getPlot()->SetDirectory( pDirectory );
 	}
+}
+
+std::vector<TH1*> l1menu::MenuRatePlots::getPlots()
+{
+	std::vector<TH1*> returnValue;
+	for( auto& ratePlot : triggerPlots_ )
+	{
+		returnValue.push_back( ratePlot.getPlot() );
+	}
+	return returnValue;
 }
 
 void l1menu::MenuRatePlots::relinquishOwnershipOfPlots()

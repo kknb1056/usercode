@@ -12,6 +12,8 @@ namespace l1menu
 {
 	class ITrigger;
 	class IEvent;
+	class ReducedMenuSample;
+	class IReducedEvent;
 }
 
 
@@ -39,6 +41,8 @@ namespace l1menu
 		 * @param[in] versusParameter  The trigger parameter to plot along the x-axis. Defaults to "threshold1".
 		 */
 		TriggerRatePlot( const l1menu::ITrigger& trigger, std::unique_ptr<TH1> pHistogram, const std::string versusParameter="threshold1" );
+		TriggerRatePlot( l1menu::TriggerRatePlot& otherTriggerRatePlot ) = delete;
+		TriggerRatePlot& operator=( l1menu::TriggerRatePlot& otherTriggerRatePlot ) = delete;
 
 		/** @brief Explicit rvalue constructor to allow moving of TriggerRatePlot objects. */
 		TriggerRatePlot( l1menu::TriggerRatePlot&& otherTriggerRatePlot ) noexcept;
@@ -46,7 +50,10 @@ namespace l1menu
 		TriggerRatePlot& operator=( l1menu::TriggerRatePlot&& otherTriggerRatePlot ) noexcept;
 
 		virtual ~TriggerRatePlot();
-		void addEvent( const l1menu::IEvent& event ) const;
+		void addEvent( const l1menu::IEvent& event );
+
+		void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
+		void addEvent( const l1menu::IReducedEvent& event );
 
 		/** @brief Returns the internal pointer to the root histogram. Ownership is retained by TriggerRatePlot. */
 		TH1* getPlot();
@@ -62,6 +69,8 @@ namespace l1menu
 		std::unique_ptr<TH1> pHistogram_;
 		/// The parameter to plot against, usually "threshold1";
 		std::string versusParameter_;
+		/// Pointer to the versusParameter_ reference in pTrigger_ to avoid expensive string comparison look ups
+		float* pParameter_;
 		/// Flag to say whether the histogram should be deleted when this instance goes out of scope.
 		bool histogramOwnedByMe_;
 	};

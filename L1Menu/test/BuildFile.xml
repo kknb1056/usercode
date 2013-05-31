@@ -5,3 +5,4 @@
 <use name="FWCore/FWLite"/>
 <include_path path="../interface"/>
 <bin name="L1MenuTest" file="L1MenuTest.cpp"/>
+<bin name="LoadReducedSampleFromFile" file="LoadReducedSampleFromFile.cpp"/>

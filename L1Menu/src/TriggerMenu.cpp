@@ -209,7 +209,7 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 			{
 				if( addTrigger( tableColumns[0] ) ) // Try and create a trigger with the name supplied
 				{
-					std::cout << "Added trigger \"" << tableColumns[0] << "\"" << std::endl;
+					//std::cout << "Added trigger \"" << tableColumns[0] << "\"" << std::endl;
 
 					l1menu::ITrigger& newTrigger=*(triggers_.back());
 

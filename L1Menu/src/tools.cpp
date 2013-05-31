@@ -4,6 +4,7 @@
 #include <exception>
 #include <map>
 #include <stdexcept>
+#include <algorithm>
 #include "l1menu/ITrigger.h"
 #include "l1menu/IEvent.h"
 #include "l1menu/TriggerTable.h"
@@ -47,6 +48,26 @@ std::vector<std::string> l1menu::getThresholdNames( const l1menu::ITrigger& trig
 			// need to continue.
 			if( thresholdNumber==1 ) break;
 		}
+	}
+
+	return returnValue;
+}
+
+std::vector<std::string> l1menu::getNonThresholdParameterNames( const l1menu::ITrigger& trigger )
+{
+	std::vector<std::string> returnValue;
+
+	// It'll be easier to get the threshold names and then copy
+	// everything that's not in there to the return value.
+	std::vector<std::string> allParameterNames=trigger.parameterNames();
+	std::vector<std::string> thresholdNames=getThresholdNames(trigger);
+
+	for( const auto& parameterName : allParameterNames )
+	{
+		const auto& iFindResult=std::find( thresholdNames.begin(), thresholdNames.end(), parameterName );
+		// If the current parameter name isn't one of the thresholds add
+		// it the vector which I'm going to return.
+		if( iFindResult==thresholdNames.end() ) returnValue.push_back(parameterName);
 	}
 
 	return returnValue;
