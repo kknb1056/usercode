@@ -55,6 +55,9 @@ namespace l1menu
 		void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
 		void addEvent( const l1menu::IReducedEvent& event );
 
+		/** @brief Returns the trigger being used to create the plot. */
+		const l1menu::ITrigger& getTrigger() const;
+
 		/** @brief Returns the internal pointer to the root histogram. Ownership is retained by TriggerRatePlot. */
 		TH1* getPlot();
 

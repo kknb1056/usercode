@@ -69,11 +69,14 @@ void l1menu::MenuRatePlots::initiateForReducedSample( const l1menu::ReducedMenuS
 	}
 }
 
+#include <iostream>
 void l1menu::MenuRatePlots::addEvent( const l1menu::IReducedEvent& event )
 {
+	std::cout << "New event" << std::endl;
 	// Loop over each of the TriggerRatePlots and add the event to each of them.
 	for( auto& ratePlot : triggerPlots_ )
 	{
+		std::cout << "Trigger " << ratePlot.getTrigger().name() << std::endl;
 		ratePlot.addEvent( event );
 	}
 }

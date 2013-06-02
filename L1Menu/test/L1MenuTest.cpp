@@ -31,8 +31,8 @@ int main( int argc, char* argv[] )
 	std::string ntupleFilename=argv[1];
 	std::string menuFilename =argv[2];
 
-	try
-	{
+//	try
+//	{
 		l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
 
 		std::cout << "------ Available triggers ------" << std::endl;
@@ -114,9 +114,9 @@ int main( int argc, char* argv[] )
 		}
 
 
-	}
-	catch( std::exception& error )
-	{
-		std::cerr << "Exception caught: " << error.what() << std::endl;
-	}
+//	}
+//	catch( std::exception& error )
+//	{
+//		std::cerr << "Exception caught: " << error.what() << std::endl;
+//	}
 }

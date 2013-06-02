@@ -94,6 +94,11 @@ void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event )
 	}
 }
 
+const l1menu::ITrigger& l1menu::TriggerRatePlot::getTrigger() const
+{
+	return *pTrigger_;
+}
+
 void l1menu::TriggerRatePlot::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
 {
 	pTrigger_->initiateForReducedSample( sample );

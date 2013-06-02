@@ -52,17 +52,21 @@ namespace l1menu
 	};
 }
 
+#include <iostream>
 l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
 {
 	size_t numberOfEvents=originalSample.numberOfEvents();
 	// Need to find out how many parameters there are for each event. Basically the sum
 	// of the number of thresholds for all triggers.
 	size_t numberOfParameters=0;
+std::cout << "Creating sample" << std::endl;
 	for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
 	{
 		const l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
+std::cout << "Trigger. " << trigger.name() << std::endl;
 		numberOfParameters+=l1menu::getThresholdNames(trigger).size();
 	}
+std::cout << "Done. " << numberOfParameters << std::endl;
 
 	// Now I know how many events there are and how many parameters, I can create the pimple
 	// with the correct parameters.
