@@ -29,7 +29,10 @@ namespace l1menu
 		/** @brief Load from a file in protobuf format. */
 		ReducedMenuSample( const std::string& filename );
 		ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu );
+		ReducedMenuSample( const l1menu::TriggerMenu& triggerMenu );
 		virtual ~ReducedMenuSample();
+
+		void addSample( const l1menu::MenuSample& originalSample );
 
 		/** @brief Save to a file in protobuf format (protobuf in src/protobuf/l1menu.proto). */
 		void saveToFile( const std::string& filename ) const;

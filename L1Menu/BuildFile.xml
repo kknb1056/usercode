@@ -4,8 +4,8 @@
 <use name="protobuf"/>
 <use name="UserCode/L1TriggerDPG"/>
 <include_path path="interface"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerDPG/interface"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerUpgrade/interface"/>
+<include_path path="/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerDPG/interface"/>
+<include_path path="/users/phmag/CMSSW/CMSSW_6_0_1_PostLS1v2_patch4/src/UserCode/L1TriggerUpgrade/interface"/>
 <flags LDFLAGS="-lGpad"/>
 <export>
 	<use name="UserCode/L1TriggerDPG"/>

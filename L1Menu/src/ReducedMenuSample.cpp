@@ -10,6 +10,8 @@
 #include "l1menu/tools.h"
 #include "protobuf/l1menu.pb.h"
 
+#include <iostream>
+
 namespace // unnamed namespace
 {
 	class ReducedEventImplementation : public l1menu::IReducedEvent
@@ -34,25 +36,27 @@ namespace l1menu
 	class ReducedMenuSamplePrivateMembers
 	{
 	public:
-		ReducedMenuSamplePrivateMembers( size_t newNumberOfEvents, size_t numberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
+		ReducedMenuSamplePrivateMembers( size_t newNumberOfEvents, size_t newNumberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
 			: thresholdsForAllEvents( newNumberOfEvents, std::vector<float>(numberOfParameters) ),
-			  weights( newNumberOfEvents ), numberOfEvents( newNumberOfEvents ), triggerMenu( newTriggerMenu )
+			  weights( newNumberOfEvents, 1 ), numberOfEvents( newNumberOfEvents ), triggerMenu( newTriggerMenu ),
+			  numberOfParameters( newNumberOfParameters )
 		{
-			// Run through every event and default every weight to 1.
-			for( auto& eventWeight : weights )
-			{
-				eventWeight=1;
-			}
+			std::cout << __LINE__ << std::endl;
+		}
+		ReducedMenuSamplePrivateMembers( size_t newNumberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
+			: numberOfEvents( 0 ), triggerMenu( newTriggerMenu ), numberOfParameters( newNumberOfParameters )
+		{
+			std::cout << __LINE__ << std::endl;
 		}
 		std::vector< std::vector<float> > thresholdsForAllEvents;
 		std::vector<float> weights;
 		::ReducedEventImplementation event;
 		size_t numberOfEvents;
 		const l1menu::TriggerMenu triggerMenu;
+		const size_t numberOfParameters;
 	};
 }
 
-#include <iostream>
 l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
 {
 	size_t numberOfEvents=originalSample.numberOfEvents();
@@ -110,11 +114,82 @@ l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& original
 	} // end of loop over events
 }
 
+l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::TriggerMenu& triggerMenu )
+{
+	// Need to find out how many parameters there are for each event. Basically the sum
+	// of the number of thresholds for all triggers.
+	size_t numberOfParameters=0;
+	for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
+	{
+		const l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
+		numberOfParameters+=l1menu::getThresholdNames(trigger).size();
+	}
+std::cout << __LINE__ << std::endl;
+	// Now I know how many events there are and how many parameters, I can create the pimple
+	// with the correct parameters.
+	// I get a bad_alloc exception if I pass 0 numberOfEvents, so I'll
+	pImple_.reset( new l1menu::ReducedMenuSamplePrivateMembers( numberOfParameters, triggerMenu ) );
+std::cout << __LINE__ << std::endl;
+}
+
 l1menu::ReducedMenuSample::~ReducedMenuSample()
 {
 	// No operation. Just need one defined otherwise the default one messes up
 	// the unique_ptr deletion because ReducedMenuSamplePrivateMembers isn't
 	// defined elsewhere.
+}
+
+void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSample )
+{
+	size_t oldNumberEvents=pImple_->numberOfEvents;
+	pImple_->numberOfEvents=oldNumberEvents+originalSample.numberOfEvents();
+
+	// Resize the containers to make space for the new events
+	pImple_->thresholdsForAllEvents.resize( pImple_->numberOfEvents, std::vector<float>(pImple_->numberOfParameters) );
+	pImple_->weights.resize( pImple_->numberOfEvents, 1 );
+
+	//
+	// Now I've set the storage to the correct size, run through each event
+	// and fill with the correct values.
+	//
+	for( size_t eventNumber=0; eventNumber<originalSample.numberOfEvents(); ++eventNumber )
+	{
+		size_t bufferEventNumber=eventNumber+oldNumberEvents;
+
+		const l1menu::IEvent& event=originalSample.getEvent( eventNumber );
+		std::vector<float>& parameters=pImple_->thresholdsForAllEvents[bufferEventNumber];
+
+		size_t parameterNumber=0;
+		// Loop over all of the triggers
+		for( size_t triggerNumber=0; triggerNumber<pImple_->triggerMenu.numberOfTriggers(); ++triggerNumber )
+		{
+			std::unique_ptr<l1menu::ITrigger> pTrigger=pImple_->triggerMenu.getTriggerCopy(triggerNumber);
+			std::vector<std::string> thresholdNames=getThresholdNames(*pTrigger);
+
+			try
+			{
+				setTriggerThresholdsAsTightAsPossible( event, *pTrigger, 0.001 );
+				// Set all of the parameters to match the thresholds in the trigger
+				for( const auto& thresholdName : thresholdNames )
+				{
+					parameters[parameterNumber]=pTrigger->parameter(thresholdName);
+					++parameterNumber;
+				}
+			}
+			catch( std::exception& error )
+			{
+				// setTriggerThresholdsAsTightAsPossible() couldn't find thresholds so record
+				// -1 for everything.
+				for( size_t index=0; index<thresholdNames.size(); ++index )
+				{
+					parameters[parameterNumber]=-1;
+					++parameterNumber;
+				}
+			} // end of try block that sets the trigger thresholds
+
+		} // end of loop over triggers
+	} // end of loop over events
+
 }
 
 l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
