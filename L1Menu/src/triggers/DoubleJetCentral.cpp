@@ -1,5 +1,3 @@
-#include "l1menu/triggers/DoubleJetCentral.h"
-
 #include "l1menu/RegisterTriggerMacro.h"
 #include "l1menu/IEvent.h"
 #include "l1menu/ReducedMenuSample.h"
@@ -8,10 +6,56 @@
 #include <stdexcept>
 #include "L1AnalysisDataFormat.h"
 
+#include "l1menu/ITrigger.h"
+
+#include <string>
+#include <vector>
+#include "l1menu/IReducedEvent.h"
+
 namespace l1menu
 {
 	namespace triggers
 	{
+		/** @brief Base class for all versions of the DoubleJetCentral trigger.
+		 *
+		 * Note that this class is abstract because it doesn't implement the "version"
+		 * and "apply" methods. That's left up to the implementations of the different
+		 * versions.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 02/Jun/2013
+		 */
+		class DoubleJetCentral : public l1menu::ITrigger
+		{
+		public:
+			DoubleJetCentral();
+
+			virtual const std::string name() const;
+			virtual const std::vector<std::string> parameterNames() const;
+			virtual float& parameter( const std::string& parameterName );
+			virtual const float& parameter( const std::string& parameterName ) const;
+
+			virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
+			virtual bool apply( const l1menu::IReducedEvent& event ) const;
+		protected:
+			float threshold1_;
+			float threshold2_;
+			IReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
+			IReducedEvent::ParameterID reducedSampleParameterID_threshold2_;
+		}; // end of the DoubleJetCentral base class
+
+		/** @brief First version of the DoubleJetCentral trigger.
+		 *
+		 * @author probably Brian Winer
+		 * @date sometime
+		 */
+		class DoubleJetCentral_v0 : public DoubleJetCentral
+		{
+		public:
+			virtual unsigned int version() const;
+			virtual bool apply( const l1menu::IEvent& event ) const;
+		}; // end of version 0 class
+
 
 		/* The REGISTER_TRIGGER macro will make sure that the given trigger is registered in the
 		 * l1menu::TriggerTable when the program starts. I also want to provide some suggested binning
@@ -30,8 +74,20 @@ namespace l1menu
 			} // End of customisation lambda function
 		) // End of REGISTER_TRIGGER_AND_CUSTOMISE macro call
 
+
 	} // end of namespace triggers
+
 } // end of namespace l1menu
+
+
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+//---------------  Definitions below         ---------------------------------------------
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+
 
 bool l1menu::triggers::DoubleJetCentral_v0::apply( const l1menu::IEvent& event ) const
 {
@@ -73,17 +129,18 @@ void l1menu::triggers::DoubleJetCentral::initiateForReducedSample( const l1menu:
 	const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers( *this );
 
 	std::map<std::string,IReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
-	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "DoubleJetCentral::initiateForReducedSample() - something went wrong, \"threshold1\" wasn't stored in the sample" );
+	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "DoubleJetCentral::initiateForReducedSample() - it appears this reduced sample wasn't created with this trigger. You can only run over a l1menu::ReducedMenuSample with triggers that were on when the sample was created." );
 	else reducedSampleParameterID_threshold1_=iFindResult->second;
 
 	iFindResult=parameterIdentifiers.find("threshold2");
-	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "DoubleJetCentral::initiateForReducedSample() - something went wrong, \"threshold2\" wasn't stored in the sample" );
+	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "DoubleJetCentral::initiateForReducedSample() - it appears this reduced sample wasn't created with this trigger. You can only run over a l1menu::ReducedMenuSample with triggers that were on when the sample was created." );
 	else reducedSampleParameterID_threshold2_=iFindResult->second;
 }
 
 bool l1menu::triggers::DoubleJetCentral::apply( const l1menu::IReducedEvent& event ) const
 {
-	return ( threshold1_<=event.parameterValue(reducedSampleParameterID_threshold1_) ) && ( threshold2_<=event.parameterValue(reducedSampleParameterID_threshold2_) );
+	return ( threshold1_<=event.parameterValue(reducedSampleParameterID_threshold1_) )
+		&& ( threshold2_<=event.parameterValue(reducedSampleParameterID_threshold2_) );
 }
 
 l1menu::triggers::DoubleJetCentral::DoubleJetCentral()
@@ -94,7 +151,7 @@ l1menu::triggers::DoubleJetCentral::DoubleJetCentral()
 
 const std::string l1menu::triggers::DoubleJetCentral::name() const
 {
-	return "L1_DoubleJet"; // I don't know why this doesn't have "Central" in the name
+	return "L1_DoubleJet";
 }
 
 const std::vector<std::string> l1menu::triggers::DoubleJetCentral::parameterNames() const
