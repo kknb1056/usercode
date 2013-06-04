@@ -13,6 +13,54 @@ namespace cbcanalyser
 	DEFINE_FWK_MODULE(AnalyseCBCOutput);
 }
 
+namespace // Use the unnamed namespace for things only used in this file
+{
+	/** @brief Simple utility class to unpack the bits from the CBC1 and present the result has a 128 bool vector.
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 28/May/2013
+	 */
+	class CBCChannelUnpacker
+	{
+	public:
+		CBCChannelUnpacker( const sistrip::FEDChannel& fedChannel );
+		const std::vector<bool>& hits() const;
+		bool hasData() const;
+	private:
+		bool hasData_;
+		std::vector<bool> hits_;
+	};
+
+	CBCChannelUnpacker::CBCChannelUnpacker( const sistrip::FEDChannel& fedChannel )
+		: hits_(128,false)
+	{
+		sistrip::FEDZSChannelUnpacker unpacker=sistrip::FEDZSChannelUnpacker::zeroSuppressedModeUnpacker(fedChannel);
+
+		hasData_=unpacker.hasData();
+
+		while( unpacker.hasData() )
+		{
+			if( unpacker.adc()>0 ) // A "1" seems to be encoded with "243", and "0" either absent or with "0"
+			{
+				hits_[unpacker.sampleNumber()]=true;
+			}
+			unpacker++;
+		}
+	}
+
+	const std::vector<bool>& CBCChannelUnpacker::hits() const
+	{
+		return hits_;
+	}
+
+	bool CBCChannelUnpacker::hasData() const
+	{
+		return hasData_;
+	}
+
+} // end of the unnamed namespace
+
+
 cbcanalyser::AnalyseCBCOutput::AnalyseCBCOutput( const edm::ParameterSet& config )
 {
 //	std::cout << "cbcanalyser::AnalyseCBCOutput::AnalyseCBCOutput()" << std::endl;
@@ -31,35 +79,6 @@ void cbcanalyser::AnalyseCBCOutput::fillDescriptions( edm::ConfigurationDescript
 void cbcanalyser::AnalyseCBCOutput::beginJob()
 {
 //	std::cout << "cbcanalyser::AnalyseCBCOutput::beginJob()" << std::endl;
-}
-
-class CBCChannelUnpacker
-{
-public:
-	CBCChannelUnpacker( const sistrip::FEDChannel& fedChannel );
-	const std::vector<bool>& hits() const;
-private:
-	std::vector<bool> hits_;
-};
-
-CBCChannelUnpacker::CBCChannelUnpacker( const sistrip::FEDChannel& fedChannel )
-	: hits_(128,false)
-{
-	sistrip::FEDZSChannelUnpacker unpacker=sistrip::FEDZSChannelUnpacker::zeroSuppressedModeUnpacker(fedChannel);
-
-	while( unpacker.hasData() )
-	{
-		if( unpacker.adc()>0 ) // A "1" seems to be encoded with "243", and "0" either absent or with "0"
-		{
-			hits_[unpacker.sampleNumber()]=true;
-		}
-		unpacker++;
-	}
-}
-
-const std::vector<bool>& CBCChannelUnpacker::hits() const
-{
-	return hits_;
 }
 
 void cbcanalyser::AnalyseCBCOutput::analyze( const edm::Event& event, const edm::EventSetup& setup )
@@ -93,13 +112,17 @@ void cbcanalyser::AnalyseCBCOutput::analyze( const edm::Event& event, const edm:
 				{
 					if( !myBuffer.fePresent(feIndex) ) continue;
 
-					for ( uint16_t channelInFe = 0; channelInFe < sistrip::FEDCH_PER_FEUNIT*sistrip::FEUNITS_PER_FED; ++channelInFe )
+					for ( uint16_t channelInFe = 0; channelInFe < sistrip::FEDCH_PER_FEUNIT; ++channelInFe )
 					{
-						const uint16_t channelIndex=feIndex*channelInFe;
+						const uint16_t channelIndex=feIndex*sistrip::FEDCH_PER_FEUNIT+channelInFe;
 						const sistrip::FEDChannel& channel=myBuffer.channel(channelIndex);
 
-						CBCChannelUnpacker unpacker(channel);
+						::CBCChannelUnpacker unpacker(channel);
+						if( !unpacker.hasData() ) continue;
+
 						const std::vector<bool>& hits=unpacker.hits();
+
+						// For testing I'll just output the results to std::cout
 						for( std::vector<bool>::const_iterator iHit=hits.begin(); iHit!=hits.end(); ++iHit )
 						{
 							if( *iHit==true ) std::cout << "1";

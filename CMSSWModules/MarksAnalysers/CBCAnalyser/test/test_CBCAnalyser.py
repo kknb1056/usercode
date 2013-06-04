@@ -32,8 +32,8 @@ process.source = cms.Source("NewEventStreamFileReader",
     	#'file:/home/xtaldaq/data/closed/outputFrom_piste.txt_.dat',
     	#'file:/home/xtaldaq/data/closed/outputFrom_marksTest.txt_.dat'
     	#'file:/tmp/memDump.dat',
-    	'file:/home/xtaldaq/data/closed/outputFrom_pistes.txt_.dat',
-    	#'file:/home/xtaldaq/data/closed/USC.00000001.0001.A.storageManager.00.0000.dat'
+    	#'file:/home/xtaldaq/data/closed/outputFrom_pistes.txt_.dat',
+    	'file:/home/xtaldaq/data/closed/USC.00000001.0001.A.storageManager.00.0000.dat'
     	)
 )
 
@@ -43,7 +43,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.381.2.11 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('test nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
