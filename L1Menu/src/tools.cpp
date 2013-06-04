@@ -33,6 +33,7 @@ std::vector<std::string> l1menu::getThresholdNames( const l1menu::ITrigger& trig
 				if( legNumber!=0 ) stringConverter << "leg" << legNumber; // For triggers with only one leg I don't want to prefix anything.
 
 				stringConverter << "threshold" << thresholdNumber;
+
 				trigger.parameter(stringConverter.str());
 				// If the threshold doesn't exist the statement above will throw an exception, so
 				// I've reached this far then the threshold name must exist.
@@ -46,7 +47,7 @@ std::vector<std::string> l1menu::getThresholdNames( const l1menu::ITrigger& trig
 			// exist, so I know I've finished. If it isn't from the first threshold then there could be
 			// other prefixes (e.g. "leg2") that have thresholds that can be modified, in which case I
 			// need to continue.
-			if( thresholdNumber==1 ) break;
+			if( thresholdNumber==1 && legNumber!=0 ) break;
 		}
 	}
 

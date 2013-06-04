@@ -16,7 +16,7 @@ namespace // unnamed namespace
 	{
 	public:
 		virtual ~ReducedEventImplementation() {}
-		virtual float parameterValue( size_t parameterNumber ) const { return pThresholdValues->at(parameterNumber); }
+		virtual float parameterValue( size_t parameterNumber ) const {  return pThresholdValues->at(parameterNumber); }
 		virtual float weight() const { return *pWeight; }
 		void setWeight( float newWeight ) { *pWeight=newWeight; }
 		std::vector<float>* pThresholdValues;
@@ -59,14 +59,11 @@ l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& original
 	// Need to find out how many parameters there are for each event. Basically the sum
 	// of the number of thresholds for all triggers.
 	size_t numberOfParameters=0;
-std::cout << "Creating sample" << std::endl;
 	for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
 	{
 		const l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
-std::cout << "Trigger. " << trigger.name() << std::endl;
 		numberOfParameters+=l1menu::getThresholdNames(trigger).size();
 	}
-std::cout << "Done. " << numberOfParameters << std::endl;
 
 	// Now I know how many events there are and how many parameters, I can create the pimple
 	// with the correct parameters.
@@ -151,7 +148,7 @@ l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
 		}
 
 		// I should probably check the threshold names exist. At the moment I just see how
-		// many there are so that can initialise the buffer that holds the event data.
+		// many there are so that I can initialise the buffer that holds the event data.
 		totalNumberOfThresholds+=inputTrigger.threshold_size();
 	}
 
@@ -190,8 +187,10 @@ void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
 		pOutputTrigger->set_name( trigger.name() );
 		pOutputTrigger->set_version( trigger.version() );
 
-		// For the parameters that aren't thresholds, record the name and value.
-		const auto parameterNames=l1menu::getNonThresholdParameterNames(trigger);
+		// Record all of the parameters. It's not strictly necessary to record the values
+		// of the parameters that are recorded for each event, but I might as well so that
+		// the trigger menu is loaded exactly as it was saved.
+		const auto parameterNames=trigger.parameterNames();
 		for( const auto& parameterName : parameterNames )
 		{
 			l1menuprotobuf::Trigger_TriggerParameter* pOutputParameter=pOutputTrigger->add_parameter();
@@ -199,8 +198,7 @@ void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
 			pOutputParameter->set_value( trigger.parameter(parameterName) );
 		}
 
-		// For the parameters that are thresholds, just record the name. The value is
-		// recorded in each event.
+		// Make a note of the names of the parameters that are recorded for each event.
 		const auto thresholdNames=l1menu::getThresholdNames(trigger);
 		for( const auto& thresholdName : thresholdNames ) pOutputTrigger->add_threshold(thresholdName);
 
@@ -334,7 +332,7 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 			}
 		}
 
-		std::vector<std::string> thresholdNames=l1menu::getThresholdNames(trigger);
+		std::vector<std::string> thresholdNames=l1menu::getThresholdNames(triggerInMenu);
 		if( triggerWasFound )
 		{
 			for( const auto& thresholdName : thresholdNames )

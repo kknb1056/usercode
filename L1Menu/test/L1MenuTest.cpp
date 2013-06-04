@@ -8,6 +8,7 @@
 #include "l1menu/ReducedMenuSample.h"
 #include "l1menu/IReducedEvent.h"
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <stdexcept>
 
@@ -36,12 +37,18 @@ int main( int argc, char* argv[] )
 		l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
 
 		std::cout << "------ Available triggers ------" << std::endl;
+		std::cout << std::left << std::setw(25) << "Name" << "Version" << "\n";
+		std::cout << "--------------------------------" << std::endl;
 		std::vector<l1menu::TriggerTable::TriggerDetails> listOfTriggers=triggerTable.listTriggers();
 		for( std::vector<l1menu::TriggerTable::TriggerDetails>::const_iterator iTriggerEntry=listOfTriggers.begin(); iTriggerEntry!=listOfTriggers.end(); ++iTriggerEntry )
 		{
-			std::cout << "Name: \"" << iTriggerEntry->name << "\" version " << iTriggerEntry->version << std::endl;
+			std::cout << std::left << std::setw(25) << iTriggerEntry->name << iTriggerEntry->version << "\n";
 		}
 		std::cout << "------- End of triggers -------" << std::endl;
+
+		// Open a file to save the histograms that will automatically
+		// save if it goes out of scope (i.e. if an exception is thrown).
+		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "rateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
 
 		std::unique_ptr<l1menu::ITrigger> pMyTrigger=triggerTable.getTrigger("L1_DoubleJet");
 		if( pMyTrigger.get()==NULL ) throw std::runtime_error( "The trigger was not in the trigger table" );
@@ -62,6 +69,10 @@ int main( int argc, char* argv[] )
 		pMyTrigger->initiateForReducedSample( myReducedSample );
 
 		l1menu::MenuRatePlots reducedRateVersusThresholdPlots( myMenu );
+		TDirectory* pSubDirectory=pMyRootFile->mkdir("reduced");
+		reducedRateVersusThresholdPlots.setDirectory(pSubDirectory);
+		reducedRateVersusThresholdPlots.relinquishOwnershipOfPlots();
+
 		reducedRateVersusThresholdPlots.initiateForReducedSample(myReducedSample);
 		for( eventNumber=0; eventNumber<myReducedSample.numberOfEvents(); ++eventNumber )
 		{
@@ -73,6 +84,8 @@ int main( int argc, char* argv[] )
 		std::cout << "Finished reduced test" << std::endl;
 
 		l1menu::MenuRatePlots rateVersusThresholdPlots( myMenu );
+		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
+		rateVersusThresholdPlots.relinquishOwnershipOfPlots(); // If I don't do this the plots will be deleted twice.
 
 		std::cout << "There are " << mySample.numberOfEvents() << " events." << std::endl;
 		for( eventNumber=0; eventNumber<mySample.numberOfEvents(); ++eventNumber )
@@ -84,15 +97,7 @@ int main( int argc, char* argv[] )
 		}
 		std::cout << "Finished processing " << eventNumber << " events." << std::endl;
 
-		// Save the histogram
-		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "rateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
-		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
-		// If I don't do this the plots will be deleted twice - once by the MenuRatePlots and once by the TTree.
-		rateVersusThresholdPlots.relinquishOwnershipOfPlots();
 
-		TDirectory* pSubDirectory=pMyRootFile->mkdir("reduced");
-		reducedRateVersusThresholdPlots.setDirectory(pSubDirectory);
-		reducedRateVersusThresholdPlots.relinquishOwnershipOfPlots();
 
 		const auto& fullPlots=rateVersusThresholdPlots.getPlots();
 		const auto& reducedPlots=reducedRateVersusThresholdPlots.getPlots();

@@ -1,7 +1,3 @@
-// This trigger was created programatically. I need to check everything over before
-// I can use it properly so I'll disable it with this ifdef until I can do that.
-#ifdef TRIGGER_HASNT_BEEN_CHECKED_YET
-
 #include "l1menu/RegisterTriggerMacro.h"
 #include "l1menu/IEvent.h"
 #include "l1menu/ReducedMenuSample.h"
@@ -49,6 +45,7 @@ namespace l1menu
 			float muonQuality_;
 			float etaCut_;
 			float regionCut_;
+			float numberOfJets_;
 			IReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
 			IReducedEvent::ParameterID reducedSampleParameterID_threshold2_;
 			IReducedEvent::ParameterID reducedSampleParameterID_threshold3_;
@@ -107,6 +104,36 @@ bool l1menu::triggers::MultiJet_v0::apply( const l1menu::IEvent& event ) const
 	const L1Analysis::L1AnalysisDataFormat& analysisDataFormat=event.rawEvent();
 	const bool* PhysicsBits=event.physicsBits();
 
+	bool raw = PhysicsBits[0];   // ZeroBias
+	if (! raw) return false;
+
+	int n1=0;
+	int n2=0;
+	int n3=0;
+	int n4=0;
+
+	int Nj = analysisDataFormat.Njet ;
+	for (int ue=0; ue < Nj; ue++) {
+		int bx = analysisDataFormat.Bxjet[ue];
+		if (bx != 0) continue;
+		bool isFwdJet = analysisDataFormat.Fwdjet[ue];
+		if (isFwdJet) continue;
+		bool isTauJet = analysisDataFormat.Taujet[ue];
+		if (isTauJet) continue;
+
+		float eta = analysisDataFormat.Etajet[ue];
+		if (eta < regionCut_ || eta > 21.-regionCut_) continue;
+
+		float rank = analysisDataFormat.Etjet[ue];
+		float pt = rank; //CorrectedL1JetPtByGCTregions(analysisDataFormat.Etajet[ue],rank*4.,theL1JetCorrection);
+		if (pt >= threshold1_) n1++;
+		if (pt >= threshold2_) n2++;
+		if (pt >= threshold3_) n3++;
+		if (pt >= threshold4_) n4++;
+	}
+
+	bool ok = ( n1 >=1 && n2 >= 2 && n3 >= 3 && n4 >= numberOfJets_);
+	return ok;
 }
 
 
@@ -145,7 +172,7 @@ bool l1menu::triggers::MultiJet::apply( const l1menu::IReducedEvent& event ) con
 }
 
 l1menu::triggers::MultiJet::MultiJet()
-	: threshold1_(20), threshold2_(20), threshold3_(20), threshold4_(20), muonQuality_(4), etaCut_(2.1), regionCut_(4.5)
+	: threshold1_(20), threshold2_(20), threshold3_(20), threshold4_(20), muonQuality_(4), etaCut_(2.1), regionCut_(4.5), numberOfJets_(6)
 {
 	// No operation other than the initialiser list
 }
@@ -191,5 +218,3 @@ const float& l1menu::triggers::MultiJet::parameter( const std::string& parameter
 	else if( parameterName=="regionCut" ) return regionCut_;
 	else throw std::logic_error( "Not a valid parameter name" );
 }
-
-#endif // End of the ifdef that stops this code compiling until I've checked it over.

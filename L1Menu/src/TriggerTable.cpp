@@ -2,7 +2,6 @@
 
 #include "l1menu/ITrigger.h"
 
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
@@ -150,9 +149,6 @@ std::vector<l1menu::TriggerTable::TriggerDetails> l1menu::TriggerTable::listTrig
 
 void l1menu::TriggerTable::registerTrigger( const std::string& name, unsigned int version, std::unique_ptr<l1menu::ITrigger> (*creationFunctionPointer)() )
 {
-	// TODO - remove this printout once everything is working reliably
-	std::cout << "Registering trigger \"" << name << "\" in the trigger table with version " << version << std::endl;
-
 	TriggerDetails newTriggerDetails{ name, version };
 
 	// First make sure there is not a trigger with the same name and version already registered
