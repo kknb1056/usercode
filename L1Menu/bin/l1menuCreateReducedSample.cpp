@@ -2,18 +2,12 @@
 #include "FWCore/FWLite/interface/AutoLibraryLoader.h"
 #include "l1menu/MenuSample.h"
 #include "l1menu/TriggerMenu.h"
-#include "l1menu/TriggerTable.h"
-#include "l1menu/ITrigger.h"
-#include "l1menu/MenuRatePlots.h"
 #include "l1menu/ReducedMenuSample.h"
-#include "l1menu/IReducedEvent.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <stdexcept>
 
-#include <TFile.h>
-#include <TH1.h>
 
 int main( int argc, char* argv[] )
 {
@@ -41,8 +35,6 @@ int main( int argc, char* argv[] )
 
 	try
 	{
-		l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
-
 		std::cout << "Loading menu from file " << menuFilename << std::endl;
 		l1menu::TriggerMenu myMenu;
 		myMenu.loadMenuFromFile( menuFilename );

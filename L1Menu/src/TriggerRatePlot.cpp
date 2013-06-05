@@ -6,7 +6,6 @@
 #include "l1menu/ReducedMenuSample.h"
 #include "l1menu/IReducedEvent.h"
 #include <TH1F.h>
-#include <iostream>
 #include <sstream>
 
 l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::unique_ptr<TH1> pHistogram, const std::string versusParameter )

@@ -44,7 +44,6 @@ namespace l1menu
 //----------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------
 
-#include <iostream>
 bool l1menu::triggers::SingleMuEta_v0::apply( const l1menu::IEvent& event ) const
 {
 	const L1Analysis::L1AnalysisDataFormat& analysisDataFormat=event.rawEvent();
@@ -58,6 +57,11 @@ bool l1menu::triggers::SingleMuEta_v0::apply( const l1menu::IEvent& event ) cons
 	int Nmu = analysisDataFormat.Nmu;
 	for (int imu=0; imu < Nmu; imu++) {
 		int bx = analysisDataFormat.Bxmu.at(imu);
+		// This next comment line is copied from the original SingleIsoMuEta. It's commented out
+		// in that trigger which leaves SingleMuEta and SingleIsoMuEta the same. I've set up
+		// SingleIsoMuEta essentially as an alias for this trigger, but I'll leave this comment
+		// in for reference in case I ever have to add the functionality back. MG 05/Jun/2013.
+		//if (bx != 0 || !analysisDataFormat.Isomu.at(imu)) continue;
 		if (bx != 0) continue;
 		float pt = analysisDataFormat.Ptmu.at(imu);
 		int qual = analysisDataFormat.Qualmu.at(imu);

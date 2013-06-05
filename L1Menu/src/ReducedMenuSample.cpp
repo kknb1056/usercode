@@ -10,8 +10,6 @@
 #include "l1menu/tools.h"
 #include "protobuf/l1menu.pb.h"
 
-#include <iostream>
-
 namespace // unnamed namespace
 {
 	class ReducedEventImplementation : public l1menu::IReducedEvent
@@ -37,23 +35,23 @@ namespace l1menu
 	{
 	public:
 		ReducedMenuSamplePrivateMembers( size_t newNumberOfEvents, size_t newNumberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
-			: thresholdsForAllEvents( newNumberOfEvents, std::vector<float>(numberOfParameters) ),
-			  weights( newNumberOfEvents, 1 ), numberOfEvents( newNumberOfEvents ), triggerMenu( newTriggerMenu ),
-			  numberOfParameters( newNumberOfParameters )
+			: numberOfEvents( newNumberOfEvents ), numberOfParameters( newNumberOfParameters ),
+			  thresholdsForAllEvents( numberOfEvents, std::vector<float>(numberOfParameters) ),
+			  weights( newNumberOfEvents, 1 ), triggerMenu( newTriggerMenu )
 		{
-			std::cout << __LINE__ << std::endl;
+			// No operation besides the initialiser list
 		}
 		ReducedMenuSamplePrivateMembers( size_t newNumberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
-			: numberOfEvents( 0 ), triggerMenu( newTriggerMenu ), numberOfParameters( newNumberOfParameters )
+			: numberOfEvents( 0 ), numberOfParameters( newNumberOfParameters ), triggerMenu( newTriggerMenu )
 		{
-			std::cout << __LINE__ << std::endl;
+			// No operation besides the initialiser list
 		}
+		size_t numberOfEvents;
+		const size_t numberOfParameters;
 		std::vector< std::vector<float> > thresholdsForAllEvents;
 		std::vector<float> weights;
 		::ReducedEventImplementation event;
-		size_t numberOfEvents;
 		const l1menu::TriggerMenu triggerMenu;
-		const size_t numberOfParameters;
 	};
 }
 
@@ -124,12 +122,11 @@ l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::TriggerMenu& trigger
 		const l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
 		numberOfParameters+=l1menu::getThresholdNames(trigger).size();
 	}
-std::cout << __LINE__ << std::endl;
+
 	// Now I know how many events there are and how many parameters, I can create the pimple
 	// with the correct parameters.
 	// I get a bad_alloc exception if I pass 0 numberOfEvents, so I'll
 	pImple_.reset( new l1menu::ReducedMenuSamplePrivateMembers( numberOfParameters, triggerMenu ) );
-std::cout << __LINE__ << std::endl;
 }
 
 l1menu::ReducedMenuSample::~ReducedMenuSample()
@@ -226,6 +223,7 @@ l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
 		// many there are so that I can initialise the buffer that holds the event data.
 		totalNumberOfThresholds+=inputTrigger.threshold_size();
 	}
+
 
 	// Now I have the menu set up as much as I need it (thresholds aren't set
 	// but I don't care about those). I can initialise the ReducedMenuSamplePrivateMembers

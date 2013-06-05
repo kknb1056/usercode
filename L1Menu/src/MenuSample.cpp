@@ -1,6 +1,5 @@
 #include "l1menu/MenuSample.h"
 
-#include <iostream>
 #include <stdexcept>
 #include <cmath>
 
@@ -333,12 +332,13 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 				analysisDataFormat.Etamu.push_back( inputNtuple.gmtEmu_->Eta[i] );
 				analysisDataFormat.Qualmu.push_back( inputNtuple.gmtEmu_->Qual[i] );
 				analysisDataFormat.Isomu.push_back( false );
+				analysisDataFormat.Nmu++;
 			}
 
 		break;
 
 		default:
-			std::cout << "---Not a valid input source FULL STOP! " << std::endl;
+			throw std::runtime_error( "---Not a valid input source FULL STOP! " );
 
 		break;
 	}
