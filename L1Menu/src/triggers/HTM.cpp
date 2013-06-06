@@ -5,7 +5,7 @@
 #include "l1menu/IEvent.h"
 #include "l1menu/ReducedMenuSample.h"
 #include "l1menu/IReducedEvent.h"
-#include "L1AnalysisDataFormat.h"
+#include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 
 
 namespace l1menu

@@ -4,7 +4,7 @@
 #include "l1menu/IReducedEvent.h"
 
 #include <stdexcept>
-#include "L1AnalysisDataFormat.h"
+#include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 
 #include "l1menu/ITrigger.h"
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdexcept>
 #include <fstream>
+#include <algorithm>
 #include "l1menu/IReducedEvent.h"
 #include "l1menu/MenuSample.h"
 #include "l1menu/TriggerMenu.h"
@@ -16,11 +17,10 @@ namespace // unnamed namespace
 	{
 	public:
 		virtual ~ReducedEventImplementation() {}
-		virtual float parameterValue( size_t parameterNumber ) const {  return pThresholdValues->at(parameterNumber); }
-		virtual float weight() const { return *pWeight; }
-		void setWeight( float newWeight ) { *pWeight=newWeight; }
-		std::vector<float>* pThresholdValues;
-		float* pWeight;
+		virtual float parameterValue( size_t parameterNumber ) const {  return pProtobufEvent->threshold(parameterNumber); }
+		virtual float weight() const { if( pProtobufEvent->has_weight() ) return pProtobufEvent->weight(); else return 1; }
+		void setWeight( float newWeight ) { pProtobufEvent->set_weight(newWeight); }
+		l1menuprotobuf::Event* pProtobufEvent;
 	};
 }
 
@@ -33,100 +33,98 @@ namespace l1menu
 	 */
 	class ReducedMenuSamplePrivateMembers
 	{
+	private:
+		l1menu::TriggerMenu mutableTriggerMenu_;
 	public:
-		ReducedMenuSamplePrivateMembers( size_t newNumberOfEvents, size_t newNumberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
-			: numberOfEvents( newNumberOfEvents ), numberOfParameters( newNumberOfParameters ),
-			  thresholdsForAllEvents( numberOfEvents, std::vector<float>(numberOfParameters) ),
-			  weights( newNumberOfEvents, 1 ), triggerMenu( newTriggerMenu )
-		{
-			// No operation besides the initialiser list
-		}
-		ReducedMenuSamplePrivateMembers( size_t newNumberOfParameters, const l1menu::TriggerMenu newTriggerMenu )
-			: numberOfEvents( 0 ), numberOfParameters( newNumberOfParameters ), triggerMenu( newTriggerMenu )
-		{
-			// No operation besides the initialiser list
-		}
-		size_t numberOfEvents;
-		const size_t numberOfParameters;
-		std::vector< std::vector<float> > thresholdsForAllEvents;
-		std::vector<float> weights;
+		ReducedMenuSamplePrivateMembers( const l1menu::TriggerMenu& newTriggerMenu );
+		ReducedMenuSamplePrivateMembers( const std::string& filename );
+		void copyMenuToProtobufSample();
 		::ReducedEventImplementation event;
-		const l1menu::TriggerMenu triggerMenu;
+		const l1menu::TriggerMenu& triggerMenu;
+		l1menuprotobuf::Sample protobufSample;
 	};
 }
 
-l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
+l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::TriggerMenu& newTriggerMenu )
+	: mutableTriggerMenu_( newTriggerMenu ), triggerMenu( mutableTriggerMenu_ )
 {
-	size_t numberOfEvents=originalSample.numberOfEvents();
-	// Need to find out how many parameters there are for each event. Basically the sum
-	// of the number of thresholds for all triggers.
-	size_t numberOfParameters=0;
+	GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+	// I need to copy the details of the trigger menu into the protobuf storage.
+	// This means I'm holding a duplicate, but I need it to write the Sample message
+	// so I might as well do it now.
 	for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
 	{
 		const l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
-		numberOfParameters+=l1menu::getThresholdNames(trigger).size();
+
+		l1menuprotobuf::Trigger* pProtobufTrigger=protobufSample.add_trigger();
+		pProtobufTrigger->set_name( trigger.name() );
+		pProtobufTrigger->set_version( trigger.version() );
+
+		// Record all of the parameters. It's not strictly necessary to record the values
+		// of the parameters that are recorded for each event, but I might as well so that
+		// the trigger menu is loaded exactly as it was saved.
+		const auto parameterNames=trigger.parameterNames();
+		for( const auto& parameterName : parameterNames )
+		{
+			l1menuprotobuf::Trigger_TriggerParameter* pProtobufParameter=pProtobufTrigger->add_parameter();
+			pProtobufParameter->set_name(parameterName);
+			pProtobufParameter->set_value( trigger.parameter(parameterName) );
+		}
+
+		// Make a note of the names of the parameters that are recorded for each event. For this
+		// I'm just recording the parameters that refer to the thresholds.
+		const auto thresholdNames=l1menu::getThresholdNames(trigger);
+		for( const auto& thresholdName : thresholdNames ) pProtobufTrigger->add_threshold(thresholdName);
+
+	} // end of loop over triggers
+
+}
+
+l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const std::string& filename )
+	: triggerMenu(mutableTriggerMenu_)
+{
+	GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+	{ // new block to limit scope of variables, so that the file is closed immediately after reading
+		std::ifstream inputFile( filename );
+		protobufSample.ParseFromIstream( &inputFile );
 	}
 
-	// Now I know how many events there are and how many parameters, I can create the pimple
-	// with the correct parameters.
-	pImple_.reset( new l1menu::ReducedMenuSamplePrivateMembers( numberOfEvents, numberOfParameters, triggerMenu ) );
 
-	//
-	// Now I've set the storage to the correct size, run through each event
-	// and fill with the correct values.
-	//
-	for( size_t eventNumber=0; eventNumber<numberOfEvents; ++eventNumber )
+	// I have all of the information in the protobuf Sample, but I also need the trigger information
+	// in the form of l1menu::TriggerMenu. Copy out the required information.
+	for( int triggerNumber=0; triggerNumber<protobufSample.trigger_size(); ++triggerNumber )
 	{
-		const l1menu::IEvent& event=originalSample.getEvent( eventNumber );
-		std::vector<float>& parameters=pImple_->thresholdsForAllEvents[eventNumber];
+		const l1menuprotobuf::Trigger& inputTrigger=protobufSample.trigger(triggerNumber);
 
-		size_t parameterNumber=0;
-		// Loop over all of the triggers
-		for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
+		mutableTriggerMenu_.addTrigger( inputTrigger.name(), inputTrigger.version() );
+		// Get a reference to the trigger I just created
+		l1menu::ITrigger& trigger=mutableTriggerMenu_.getTrigger(triggerNumber);
+
+		// Run through all of the parameters and set them to what they were
+		// when the sample was made.
+		for( int parameterNumber=0; parameterNumber<inputTrigger.parameter_size(); ++parameterNumber )
 		{
-			std::unique_ptr<l1menu::ITrigger> pTrigger=triggerMenu.getTriggerCopy(triggerNumber);
-			std::vector<std::string> thresholdNames=getThresholdNames(*pTrigger);
+			const auto& inputParameter=inputTrigger.parameter(parameterNumber);
+			trigger.parameter(inputParameter.name())=inputParameter.value();
+		}
 
-			try
-			{
-				setTriggerThresholdsAsTightAsPossible( event, *pTrigger, 0.001 );
-				// Set all of the parameters to match the thresholds in the trigger
-				for( const auto& thresholdName : thresholdNames )
-				{
-					parameters[parameterNumber]=pTrigger->parameter(thresholdName);
-					++parameterNumber;
-				}
-			}
-			catch( std::exception& error )
-			{
-				// setTriggerThresholdsAsTightAsPossible() couldn't find thresholds so record
-				// -1 for everything.
-				for( size_t index=0; index<thresholdNames.size(); ++index )
-				{
-					parameters[parameterNumber]=-1;
-					++parameterNumber;
-				}
-			} // end of try block that sets the trigger thresholds
+		// I should probably check the threshold names exist. I'll do it another time.
+	}
 
-		} // end of loop over triggers
-	} // end of loop over events
+}
+
+l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
+	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( triggerMenu ) )
+{
+	addSample( originalSample );
 }
 
 l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::TriggerMenu& triggerMenu )
+	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( triggerMenu ) )
 {
-	// Need to find out how many parameters there are for each event. Basically the sum
-	// of the number of thresholds for all triggers.
-	size_t numberOfParameters=0;
-	for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
-	{
-		const l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
-		numberOfParameters+=l1menu::getThresholdNames(trigger).size();
-	}
-
-	// Now I know how many events there are and how many parameters, I can create the pimple
-	// with the correct parameters.
-	// I get a bad_alloc exception if I pass 0 numberOfEvents, so I'll
-	pImple_.reset( new l1menu::ReducedMenuSamplePrivateMembers( numberOfParameters, triggerMenu ) );
+	// No operation besides the initialiser list
 }
 
 l1menu::ReducedMenuSample::~ReducedMenuSample()
@@ -138,25 +136,11 @@ l1menu::ReducedMenuSample::~ReducedMenuSample()
 
 void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSample )
 {
-	size_t oldNumberEvents=pImple_->numberOfEvents;
-	pImple_->numberOfEvents=oldNumberEvents+originalSample.numberOfEvents();
-
-	// Resize the containers to make space for the new events
-	pImple_->thresholdsForAllEvents.resize( pImple_->numberOfEvents, std::vector<float>(pImple_->numberOfParameters) );
-	pImple_->weights.resize( pImple_->numberOfEvents, 1 );
-
-	//
-	// Now I've set the storage to the correct size, run through each event
-	// and fill with the correct values.
-	//
 	for( size_t eventNumber=0; eventNumber<originalSample.numberOfEvents(); ++eventNumber )
 	{
-		size_t bufferEventNumber=eventNumber+oldNumberEvents;
-
 		const l1menu::IEvent& event=originalSample.getEvent( eventNumber );
-		std::vector<float>& parameters=pImple_->thresholdsForAllEvents[bufferEventNumber];
+		l1menuprotobuf::Event* pProtobufEvent=pImple_->protobufSample.add_event();
 
-		size_t parameterNumber=0;
 		// Loop over all of the triggers
 		for( size_t triggerNumber=0; triggerNumber<pImple_->triggerMenu.numberOfTriggers(); ++triggerNumber )
 		{
@@ -169,158 +153,42 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 				// Set all of the parameters to match the thresholds in the trigger
 				for( const auto& thresholdName : thresholdNames )
 				{
-					parameters[parameterNumber]=pTrigger->parameter(thresholdName);
-					++parameterNumber;
+					pProtobufEvent->add_threshold( pTrigger->parameter(thresholdName) );
 				}
 			}
 			catch( std::exception& error )
 			{
 				// setTriggerThresholdsAsTightAsPossible() couldn't find thresholds so record
 				// -1 for everything.
-				for( size_t index=0; index<thresholdNames.size(); ++index )
-				{
-					parameters[parameterNumber]=-1;
-					++parameterNumber;
-				}
+				// Range based for loop gives me a warning because I don't use the thresholdName.
+				for( size_t index=0; index<thresholdNames.size(); ++index ) pProtobufEvent->add_threshold(-1);
 			} // end of try block that sets the trigger thresholds
 
 		} // end of loop over triggers
-	} // end of loop over events
 
+	} // end of loop over events
 }
 
 l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
+	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( filename ) )
 {
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-	l1menuprotobuf::Sample inputSample;
-	{ // new block to limit scope of variables
-		std::ifstream inputFile( filename );
-		inputSample.ParseFromIstream( &inputFile );
-	}
-
-	l1menu::TriggerMenu triggerMenu;
-
-	size_t totalNumberOfThresholds=0;
-
-	for( int triggerNumber=0; triggerNumber<inputSample.trigger_size(); ++triggerNumber )
-	{
-		const l1menuprotobuf::Trigger& inputTrigger=inputSample.trigger(triggerNumber);
-
-		triggerMenu.addTrigger( inputTrigger.name(), inputTrigger.version() );
-		// Get a reference to the trigger I just created
-		l1menu::ITrigger& trigger=triggerMenu.getTrigger(triggerNumber);
-
-		// Run through all of the parameters and set them to what they were
-		// when the sample was made.
-		for( int parameterNumber=0; parameterNumber<inputTrigger.parameter_size(); ++parameterNumber )
-		{
-			const auto& inputParameter=inputTrigger.parameter(parameterNumber);
-			trigger.parameter(inputParameter.name())=inputParameter.value();
-		}
-
-		// I should probably check the threshold names exist. At the moment I just see how
-		// many there are so that I can initialise the buffer that holds the event data.
-		totalNumberOfThresholds+=inputTrigger.threshold_size();
-	}
-
-
-	// Now I have the menu set up as much as I need it (thresholds aren't set
-	// but I don't care about those). I can initialise the ReducedMenuSamplePrivateMembers
-	// pImple_ with the menu and the correct sizes for the data buffer.
-	pImple_.reset( new l1menu::ReducedMenuSamplePrivateMembers( inputSample.event_size(), totalNumberOfThresholds, triggerMenu ) );
-
-	// Now run over each event from the input file
-	for( int eventNumber=0; eventNumber<inputSample.event_size(); ++eventNumber )
-	{
-		auto& thresholdsForEvent=pImple_->thresholdsForAllEvents[eventNumber];
-		const auto& inputEvent=inputSample.event(eventNumber);
-
-		for( int thresholdNumber=0; thresholdNumber<inputEvent.threshold_size(); ++thresholdNumber )
-		{
-			thresholdsForEvent[thresholdNumber]=inputEvent.threshold(thresholdNumber);
-		}
-
-		// See if the weight was stored and set it if it has
-		if( inputEvent.has_weight() ) pImple_->weights[eventNumber]=inputEvent.weight();
-	}
+	// No operation except the initialiser list
 }
 
 void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
 {
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-	l1menuprotobuf::Sample outputSample;
-
-	for( size_t triggerNumber=0; triggerNumber<pImple_->triggerMenu.numberOfTriggers(); ++triggerNumber )
-	{
-		const l1menu::ITrigger& trigger=pImple_->triggerMenu.getTrigger(triggerNumber);
-
-		l1menuprotobuf::Trigger* pOutputTrigger=outputSample.add_trigger();
-		pOutputTrigger->set_name( trigger.name() );
-		pOutputTrigger->set_version( trigger.version() );
-
-		// Record all of the parameters. It's not strictly necessary to record the values
-		// of the parameters that are recorded for each event, but I might as well so that
-		// the trigger menu is loaded exactly as it was saved.
-		const auto parameterNames=trigger.parameterNames();
-		for( const auto& parameterName : parameterNames )
-		{
-			l1menuprotobuf::Trigger_TriggerParameter* pOutputParameter=pOutputTrigger->add_parameter();
-			pOutputParameter->set_name(parameterName);
-			pOutputParameter->set_value( trigger.parameter(parameterName) );
-		}
-
-		// Make a note of the names of the parameters that are recorded for each event.
-		const auto thresholdNames=l1menu::getThresholdNames(trigger);
-		for( const auto& thresholdName : thresholdNames ) pOutputTrigger->add_threshold(thresholdName);
-
-	} // end of loop over triggers
-
-	//
-	// I've done everything for what is effectively the header. I now need
-	// to run through each event and record the thresholds for each one.
-	//
-	for( const auto& thresholdsForEvent : pImple_->thresholdsForAllEvents )
-	{
-		l1menuprotobuf::Event* pOutputEvent=outputSample.add_event();
-		for( const auto& threshold : thresholdsForEvent )
-		{
-			pOutputEvent->add_threshold( threshold );
-		}
-	}
-
-	// I should have the correct number of events in the protobuf version of
-	// the sample now. I'll run through and set the event weights as well, but
-	// I'll only add it if it's different to 1. I think this saves space in
-	// the file.
-	for( int eventNumber=0; eventNumber<outputSample.event_size(); ++eventNumber )
-	{
-		if( pImple_->weights[eventNumber]!=1 )
-		{
-			l1menuprotobuf::Event* pOutputEvent=outputSample.mutable_event(eventNumber);
-			pOutputEvent->set_weight( pImple_->weights[eventNumber] );
-		}
-	}
-
-
-	//
-	// Everything should be set up in the class now, so I can open the
-	// output file and write to it.
-	//
 	std::ofstream outputFile( filename );
-	outputSample.SerializeToOstream( &outputFile );
+	pImple_->protobufSample.SerializeToOstream( &outputFile );
 }
 
 size_t l1menu::ReducedMenuSample::numberOfEvents() const
 {
-	return pImple_->numberOfEvents;
+	return pImple_->protobufSample.event_size();
 }
 
 const l1menu::IReducedEvent& l1menu::ReducedMenuSample::getEvent( size_t eventNumber ) const
 {
-	pImple_->event.pThresholdValues=&pImple_->thresholdsForAllEvents[eventNumber];
-	pImple_->event.pWeight=&pImple_->weights[eventNumber];
+	pImple_->event.pProtobufEvent=pImple_->protobufSample.mutable_event(eventNumber);
 	return pImple_->event;
 }
 

@@ -4,9 +4,15 @@
 #include <cmath>
 
 #include <TSystem.h>
-#include "UserCode/L1TriggerUpgrade/macros/L1UpgradeNtuple.h"
-#include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
+
 #include "l1menu/IEvent.h"
+#include "L1UpgradeNtuple.h"
+#include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
+#include "UserCode/L1TriggerUpgrade/interface/L1AnalysisL1ExtraUpgradeDataFormat.h"
+#include "UserCode/L1TriggerDPG/interface/L1AnalysisEventDataFormat.h"
+#include "UserCode/L1TriggerDPG/interface/L1AnalysisGTDataFormat.h"
+#include "UserCode/L1TriggerDPG/interface/L1AnalysisGMTDataFormat.h"
+
 
 // I'll use the unnamed namespace for things that are only used in this file
 namespace

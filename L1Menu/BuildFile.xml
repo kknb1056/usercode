@@ -4,10 +4,7 @@
 <use name="protobuf"/>
 <use name="UserCode/L1TriggerDPG"/>
 <include_path path="interface"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerDPG/interface"/>
-<include_path path="${CMSSW_BASE}/src/UserCode/L1TriggerUpgrade/interface"/>
 <flags LDFLAGS="-lGpad"/>
 <export>
-	<use name="UserCode/L1TriggerDPG"/>
 	<lib name="MarksStuffMenuGeneration"/>
 </export>
