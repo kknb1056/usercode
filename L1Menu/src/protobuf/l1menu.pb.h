@@ -35,7 +35,8 @@ void protobuf_ShutdownFile_l1menu_2eproto();
 class Trigger;
 class Trigger_TriggerParameter;
 class Event;
-class Sample;
+class Run;
+class SampleHeader;
 
 // ===================================================================
 
@@ -221,21 +222,21 @@ class Trigger : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger_TriggerParameter >*
       mutable_parameter();
   
-  // repeated string threshold = 4;
-  inline int threshold_size() const;
-  inline void clear_threshold();
-  static const int kThresholdFieldNumber = 4;
-  inline const ::std::string& threshold(int index) const;
-  inline ::std::string* mutable_threshold(int index);
-  inline void set_threshold(int index, const ::std::string& value);
-  inline void set_threshold(int index, const char* value);
-  inline void set_threshold(int index, const char* value, size_t size);
-  inline ::std::string* add_threshold();
-  inline void add_threshold(const ::std::string& value);
-  inline void add_threshold(const char* value);
-  inline void add_threshold(const char* value, size_t size);
-  inline const ::google::protobuf::RepeatedPtrField< ::std::string>& threshold() const;
-  inline ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_threshold();
+  // repeated string varying_parameter = 4;
+  inline int varying_parameter_size() const;
+  inline void clear_varying_parameter();
+  static const int kVaryingParameterFieldNumber = 4;
+  inline const ::std::string& varying_parameter(int index) const;
+  inline ::std::string* mutable_varying_parameter(int index);
+  inline void set_varying_parameter(int index, const ::std::string& value);
+  inline void set_varying_parameter(int index, const char* value);
+  inline void set_varying_parameter(int index, const char* value, size_t size);
+  inline ::std::string* add_varying_parameter();
+  inline void add_varying_parameter(const ::std::string& value);
+  inline void add_varying_parameter(const char* value);
+  inline void add_varying_parameter(const char* value, size_t size);
+  inline const ::google::protobuf::RepeatedPtrField< ::std::string>& varying_parameter() const;
+  inline ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_varying_parameter();
   
   // @@protoc_insertion_point(class_scope:l1menuprotobuf.Trigger)
  private:
@@ -248,7 +249,7 @@ class Trigger : public ::google::protobuf::Message {
   
   ::std::string* name_;
   ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger_TriggerParameter > parameter_;
-  ::google::protobuf::RepeatedPtrField< ::std::string> threshold_;
+  ::google::protobuf::RepeatedPtrField< ::std::string> varying_parameter_;
   ::google::protobuf::int32 version_;
   
   mutable int _cached_size_;
@@ -358,14 +359,14 @@ class Event : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class Sample : public ::google::protobuf::Message {
+class Run : public ::google::protobuf::Message {
  public:
-  Sample();
-  virtual ~Sample();
+  Run();
+  virtual ~Run();
   
-  Sample(const Sample& from);
+  Run(const Run& from);
   
-  inline Sample& operator=(const Sample& from) {
+  inline Run& operator=(const Run& from) {
     CopyFrom(from);
     return *this;
   }
@@ -379,17 +380,102 @@ class Sample : public ::google::protobuf::Message {
   }
   
   static const ::google::protobuf::Descriptor* descriptor();
-  static const Sample& default_instance();
+  static const Run& default_instance();
   
-  void Swap(Sample* other);
+  void Swap(Run* other);
   
   // implements Message ----------------------------------------------
   
-  Sample* New() const;
+  Run* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Sample& from);
-  void MergeFrom(const Sample& from);
+  void CopyFrom(const Run& from);
+  void MergeFrom(const Run& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // repeated .l1menuprotobuf.Event event = 1;
+  inline int event_size() const;
+  inline void clear_event();
+  static const int kEventFieldNumber = 1;
+  inline const ::l1menuprotobuf::Event& event(int index) const;
+  inline ::l1menuprotobuf::Event* mutable_event(int index);
+  inline ::l1menuprotobuf::Event* add_event();
+  inline const ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event >&
+      event() const;
+  inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event >*
+      mutable_event();
+  
+  // @@protoc_insertion_point(class_scope:l1menuprotobuf.Run)
+ private:
+  
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  
+  ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event > event_;
+  
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+  
+  friend void  protobuf_AddDesc_l1menu_2eproto();
+  friend void protobuf_AssignDesc_l1menu_2eproto();
+  friend void protobuf_ShutdownFile_l1menu_2eproto();
+  
+  void InitAsDefaultInstance();
+  static Run* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class SampleHeader : public ::google::protobuf::Message {
+ public:
+  SampleHeader();
+  virtual ~SampleHeader();
+  
+  SampleHeader(const SampleHeader& from);
+  
+  inline SampleHeader& operator=(const SampleHeader& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const SampleHeader& default_instance();
+  
+  void Swap(SampleHeader* other);
+  
+  // implements Message ----------------------------------------------
+  
+  SampleHeader* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const SampleHeader& from);
+  void MergeFrom(const SampleHeader& from);
   void Clear();
   bool IsInitialized() const;
   
@@ -424,35 +510,22 @@ class Sample : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger >*
       mutable_trigger();
   
-  // repeated .l1menuprotobuf.Event event = 2;
-  inline int event_size() const;
-  inline void clear_event();
-  static const int kEventFieldNumber = 2;
-  inline const ::l1menuprotobuf::Event& event(int index) const;
-  inline ::l1menuprotobuf::Event* mutable_event(int index);
-  inline ::l1menuprotobuf::Event* add_event();
-  inline const ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event >&
-      event() const;
-  inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event >*
-      mutable_event();
-  
-  // @@protoc_insertion_point(class_scope:l1menuprotobuf.Sample)
+  // @@protoc_insertion_point(class_scope:l1menuprotobuf.SampleHeader)
  private:
   
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
   
   ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger > trigger_;
-  ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event > event_;
   
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
   
   friend void  protobuf_AddDesc_l1menu_2eproto();
   friend void protobuf_AssignDesc_l1menu_2eproto();
   friend void protobuf_ShutdownFile_l1menu_2eproto();
   
   void InitAsDefaultInstance();
-  static Sample* default_instance_;
+  static SampleHeader* default_instance_;
 };
 // ===================================================================
 
@@ -650,48 +723,48 @@ Trigger::mutable_parameter() {
   return &parameter_;
 }
 
-// repeated string threshold = 4;
-inline int Trigger::threshold_size() const {
-  return threshold_.size();
+// repeated string varying_parameter = 4;
+inline int Trigger::varying_parameter_size() const {
+  return varying_parameter_.size();
 }
-inline void Trigger::clear_threshold() {
-  threshold_.Clear();
+inline void Trigger::clear_varying_parameter() {
+  varying_parameter_.Clear();
 }
-inline const ::std::string& Trigger::threshold(int index) const {
-  return threshold_.Get(index);
+inline const ::std::string& Trigger::varying_parameter(int index) const {
+  return varying_parameter_.Get(index);
 }
-inline ::std::string* Trigger::mutable_threshold(int index) {
-  return threshold_.Mutable(index);
+inline ::std::string* Trigger::mutable_varying_parameter(int index) {
+  return varying_parameter_.Mutable(index);
 }
-inline void Trigger::set_threshold(int index, const ::std::string& value) {
-  threshold_.Mutable(index)->assign(value);
+inline void Trigger::set_varying_parameter(int index, const ::std::string& value) {
+  varying_parameter_.Mutable(index)->assign(value);
 }
-inline void Trigger::set_threshold(int index, const char* value) {
-  threshold_.Mutable(index)->assign(value);
+inline void Trigger::set_varying_parameter(int index, const char* value) {
+  varying_parameter_.Mutable(index)->assign(value);
 }
-inline void Trigger::set_threshold(int index, const char* value, size_t size) {
-  threshold_.Mutable(index)->assign(
+inline void Trigger::set_varying_parameter(int index, const char* value, size_t size) {
+  varying_parameter_.Mutable(index)->assign(
     reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* Trigger::add_threshold() {
-  return threshold_.Add();
+inline ::std::string* Trigger::add_varying_parameter() {
+  return varying_parameter_.Add();
 }
-inline void Trigger::add_threshold(const ::std::string& value) {
-  threshold_.Add()->assign(value);
+inline void Trigger::add_varying_parameter(const ::std::string& value) {
+  varying_parameter_.Add()->assign(value);
 }
-inline void Trigger::add_threshold(const char* value) {
-  threshold_.Add()->assign(value);
+inline void Trigger::add_varying_parameter(const char* value) {
+  varying_parameter_.Add()->assign(value);
 }
-inline void Trigger::add_threshold(const char* value, size_t size) {
-  threshold_.Add()->assign(reinterpret_cast<const char*>(value), size);
+inline void Trigger::add_varying_parameter(const char* value, size_t size) {
+  varying_parameter_.Add()->assign(reinterpret_cast<const char*>(value), size);
 }
 inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
-Trigger::threshold() const {
-  return threshold_;
+Trigger::varying_parameter() const {
+  return varying_parameter_;
 }
 inline ::google::protobuf::RepeatedPtrField< ::std::string>*
-Trigger::mutable_threshold() {
-  return &threshold_;
+Trigger::mutable_varying_parameter() {
+  return &varying_parameter_;
 }
 
 // -------------------------------------------------------------------
@@ -747,56 +820,60 @@ inline void Event::set_weight(float value) {
 
 // -------------------------------------------------------------------
 
-// Sample
+// Run
 
-// repeated .l1menuprotobuf.Trigger trigger = 1;
-inline int Sample::trigger_size() const {
-  return trigger_.size();
-}
-inline void Sample::clear_trigger() {
-  trigger_.Clear();
-}
-inline const ::l1menuprotobuf::Trigger& Sample::trigger(int index) const {
-  return trigger_.Get(index);
-}
-inline ::l1menuprotobuf::Trigger* Sample::mutable_trigger(int index) {
-  return trigger_.Mutable(index);
-}
-inline ::l1menuprotobuf::Trigger* Sample::add_trigger() {
-  return trigger_.Add();
-}
-inline const ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger >&
-Sample::trigger() const {
-  return trigger_;
-}
-inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger >*
-Sample::mutable_trigger() {
-  return &trigger_;
-}
-
-// repeated .l1menuprotobuf.Event event = 2;
-inline int Sample::event_size() const {
+// repeated .l1menuprotobuf.Event event = 1;
+inline int Run::event_size() const {
   return event_.size();
 }
-inline void Sample::clear_event() {
+inline void Run::clear_event() {
   event_.Clear();
 }
-inline const ::l1menuprotobuf::Event& Sample::event(int index) const {
+inline const ::l1menuprotobuf::Event& Run::event(int index) const {
   return event_.Get(index);
 }
-inline ::l1menuprotobuf::Event* Sample::mutable_event(int index) {
+inline ::l1menuprotobuf::Event* Run::mutable_event(int index) {
   return event_.Mutable(index);
 }
-inline ::l1menuprotobuf::Event* Sample::add_event() {
+inline ::l1menuprotobuf::Event* Run::add_event() {
   return event_.Add();
 }
 inline const ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event >&
-Sample::event() const {
+Run::event() const {
   return event_;
 }
 inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Event >*
-Sample::mutable_event() {
+Run::mutable_event() {
   return &event_;
+}
+
+// -------------------------------------------------------------------
+
+// SampleHeader
+
+// repeated .l1menuprotobuf.Trigger trigger = 1;
+inline int SampleHeader::trigger_size() const {
+  return trigger_.size();
+}
+inline void SampleHeader::clear_trigger() {
+  trigger_.Clear();
+}
+inline const ::l1menuprotobuf::Trigger& SampleHeader::trigger(int index) const {
+  return trigger_.Get(index);
+}
+inline ::l1menuprotobuf::Trigger* SampleHeader::mutable_trigger(int index) {
+  return trigger_.Mutable(index);
+}
+inline ::l1menuprotobuf::Trigger* SampleHeader::add_trigger() {
+  return trigger_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger >&
+SampleHeader::trigger() const {
+  return trigger_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::l1menuprotobuf::Trigger >*
+SampleHeader::mutable_trigger() {
+  return &trigger_;
 }
 
 

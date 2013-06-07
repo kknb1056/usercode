@@ -26,9 +26,12 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* Event_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   Event_reflection_ = NULL;
-const ::google::protobuf::Descriptor* Sample_descriptor_ = NULL;
+const ::google::protobuf::Descriptor* Run_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
-  Sample_reflection_ = NULL;
+  Run_reflection_ = NULL;
+const ::google::protobuf::Descriptor* SampleHeader_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  SampleHeader_reflection_ = NULL;
 
 }  // namespace
 
@@ -44,7 +47,7 @@ void protobuf_AssignDesc_l1menu_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Trigger, name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Trigger, version_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Trigger, parameter_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Trigger, threshold_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Trigger, varying_parameter_),
   };
   Trigger_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -89,22 +92,36 @@ void protobuf_AssignDesc_l1menu_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(Event));
-  Sample_descriptor_ = file->message_type(2);
-  static const int Sample_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Sample, trigger_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Sample, event_),
+  Run_descriptor_ = file->message_type(2);
+  static const int Run_offsets_[1] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Run, event_),
   };
-  Sample_reflection_ =
+  Run_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
-      Sample_descriptor_,
-      Sample::default_instance_,
-      Sample_offsets_,
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Sample, _has_bits_[0]),
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Sample, _unknown_fields_),
+      Run_descriptor_,
+      Run::default_instance_,
+      Run_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Run, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Run, _unknown_fields_),
       -1,
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
-      sizeof(Sample));
+      sizeof(Run));
+  SampleHeader_descriptor_ = file->message_type(3);
+  static const int SampleHeader_offsets_[1] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SampleHeader, trigger_),
+  };
+  SampleHeader_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      SampleHeader_descriptor_,
+      SampleHeader::default_instance_,
+      SampleHeader_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SampleHeader, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SampleHeader, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(SampleHeader));
 }
 
 namespace {
@@ -124,7 +141,9 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     Event_descriptor_, &Event::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-    Sample_descriptor_, &Sample::default_instance());
+    Run_descriptor_, &Run::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    SampleHeader_descriptor_, &SampleHeader::default_instance());
 }
 
 }  // namespace
@@ -136,8 +155,10 @@ void protobuf_ShutdownFile_l1menu_2eproto() {
   delete Trigger_TriggerParameter_reflection_;
   delete Event::default_instance_;
   delete Event_reflection_;
-  delete Sample::default_instance_;
-  delete Sample_reflection_;
+  delete Run::default_instance_;
+  delete Run_reflection_;
+  delete SampleHeader::default_instance_;
+  delete SampleHeader_reflection_;
 }
 
 void protobuf_AddDesc_l1menu_2eproto() {
@@ -147,25 +168,27 @@ void protobuf_AddDesc_l1menu_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014l1menu.proto\022\016l1menuprotobuf\"\251\001\n\007Trigg"
+    "\n\014l1menu.proto\022\016l1menuprotobuf\"\261\001\n\007Trigg"
     "er\022\014\n\004name\030\001 \002(\t\022\017\n\007version\030\002 \002(\005\022;\n\tpar"
     "ameter\030\003 \003(\0132(.l1menuprotobuf.Trigger.Tr"
-    "iggerParameter\022\021\n\tthreshold\030\004 \003(\t\032/\n\020Tri"
-    "ggerParameter\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030\002 \002"
-    "(\002\"*\n\005Event\022\021\n\tthreshold\030\001 \003(\002\022\016\n\006weight"
-    "\030\002 \001(\002\"X\n\006Sample\022(\n\007trigger\030\001 \003(\0132\027.l1me"
-    "nuprotobuf.Trigger\022$\n\005event\030\002 \003(\0132\025.l1me"
-    "nuprotobuf.Event", 336);
+    "iggerParameter\022\031\n\021varying_parameter\030\004 \003("
+    "\t\032/\n\020TriggerParameter\022\014\n\004name\030\001 \002(\t\022\r\n\005v"
+    "alue\030\002 \002(\002\"*\n\005Event\022\021\n\tthreshold\030\001 \003(\002\022\016"
+    "\n\006weight\030\002 \001(\002\"+\n\003Run\022$\n\005event\030\001 \003(\0132\025.l"
+    "1menuprotobuf.Event\"8\n\014SampleHeader\022(\n\007t"
+    "rigger\030\001 \003(\0132\027.l1menuprotobuf.Trigger", 357);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "l1menu.proto", &protobuf_RegisterTypes);
   Trigger::default_instance_ = new Trigger();
   Trigger_TriggerParameter::default_instance_ = new Trigger_TriggerParameter();
   Event::default_instance_ = new Event();
-  Sample::default_instance_ = new Sample();
+  Run::default_instance_ = new Run();
+  SampleHeader::default_instance_ = new SampleHeader();
   Trigger::default_instance_->InitAsDefaultInstance();
   Trigger_TriggerParameter::default_instance_->InitAsDefaultInstance();
   Event::default_instance_->InitAsDefaultInstance();
-  Sample::default_instance_->InitAsDefaultInstance();
+  Run::default_instance_->InitAsDefaultInstance();
+  SampleHeader::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_l1menu_2eproto);
 }
 
@@ -446,7 +469,7 @@ void Trigger_TriggerParameter::Swap(Trigger_TriggerParameter* other) {
 const int Trigger::kNameFieldNumber;
 const int Trigger::kVersionFieldNumber;
 const int Trigger::kParameterFieldNumber;
-const int Trigger::kThresholdFieldNumber;
+const int Trigger::kVaryingParameterFieldNumber;
 #endif  // !_MSC_VER
 
 Trigger::Trigger()
@@ -512,7 +535,7 @@ void Trigger::Clear() {
     version_ = 0;
   }
   parameter_.Clear();
-  threshold_.Clear();
+  varying_parameter_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
@@ -566,24 +589,24 @@ bool Trigger::MergePartialFromCodedStream(
           goto handle_uninterpreted;
         }
         if (input->ExpectTag(26)) goto parse_parameter;
-        if (input->ExpectTag(34)) goto parse_threshold;
+        if (input->ExpectTag(34)) goto parse_varying_parameter;
         break;
       }
       
-      // repeated string threshold = 4;
+      // repeated string varying_parameter = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_threshold:
+         parse_varying_parameter:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->add_threshold()));
+                input, this->add_varying_parameter()));
           ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-            this->threshold(0).data(), this->threshold(0).length(),
+            this->varying_parameter(0).data(), this->varying_parameter(0).length(),
             ::google::protobuf::internal::WireFormat::PARSE);
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(34)) goto parse_threshold;
+        if (input->ExpectTag(34)) goto parse_varying_parameter;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -626,13 +649,13 @@ void Trigger::SerializeWithCachedSizes(
       3, this->parameter(i), output);
   }
   
-  // repeated string threshold = 4;
-  for (int i = 0; i < this->threshold_size(); i++) {
+  // repeated string varying_parameter = 4;
+  for (int i = 0; i < this->varying_parameter_size(); i++) {
   ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-    this->threshold(i).data(), this->threshold(i).length(),
+    this->varying_parameter(i).data(), this->varying_parameter(i).length(),
     ::google::protobuf::internal::WireFormat::SERIALIZE);
     ::google::protobuf::internal::WireFormatLite::WriteString(
-      4, this->threshold(i), output);
+      4, this->varying_parameter(i), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -665,13 +688,13 @@ void Trigger::SerializeWithCachedSizes(
         3, this->parameter(i), target);
   }
   
-  // repeated string threshold = 4;
-  for (int i = 0; i < this->threshold_size(); i++) {
+  // repeated string varying_parameter = 4;
+  for (int i = 0; i < this->varying_parameter_size(); i++) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->threshold(i).data(), this->threshold(i).length(),
+      this->varying_parameter(i).data(), this->varying_parameter(i).length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     target = ::google::protobuf::internal::WireFormatLite::
-      WriteStringToArray(4, this->threshold(i), target);
+      WriteStringToArray(4, this->varying_parameter(i), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -708,11 +731,11 @@ int Trigger::ByteSize() const {
         this->parameter(i));
   }
   
-  // repeated string threshold = 4;
-  total_size += 1 * this->threshold_size();
-  for (int i = 0; i < this->threshold_size(); i++) {
+  // repeated string varying_parameter = 4;
+  total_size += 1 * this->varying_parameter_size();
+  for (int i = 0; i < this->varying_parameter_size(); i++) {
     total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
-      this->threshold(i));
+      this->varying_parameter(i));
   }
   
   if (!unknown_fields().empty()) {
@@ -741,7 +764,7 @@ void Trigger::MergeFrom(const ::google::protobuf::Message& from) {
 void Trigger::MergeFrom(const Trigger& from) {
   GOOGLE_CHECK_NE(&from, this);
   parameter_.MergeFrom(from.parameter_);
-  threshold_.MergeFrom(from.threshold_);
+  varying_parameter_.MergeFrom(from.varying_parameter_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_name()) {
       set_name(from.name());
@@ -779,7 +802,7 @@ void Trigger::Swap(Trigger* other) {
     std::swap(name_, other->name_);
     std::swap(version_, other->version_);
     parameter_.Swap(&other->parameter_);
-    threshold_.Swap(&other->threshold_);
+    varying_parameter_.Swap(&other->varying_parameter_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -1049,88 +1072,71 @@ void Event::Swap(Event* other) {
 // ===================================================================
 
 #ifndef _MSC_VER
-const int Sample::kTriggerFieldNumber;
-const int Sample::kEventFieldNumber;
+const int Run::kEventFieldNumber;
 #endif  // !_MSC_VER
 
-Sample::Sample()
+Run::Run()
   : ::google::protobuf::Message() {
   SharedCtor();
 }
 
-void Sample::InitAsDefaultInstance() {
+void Run::InitAsDefaultInstance() {
 }
 
-Sample::Sample(const Sample& from)
+Run::Run(const Run& from)
   : ::google::protobuf::Message() {
   SharedCtor();
   MergeFrom(from);
 }
 
-void Sample::SharedCtor() {
+void Run::SharedCtor() {
   _cached_size_ = 0;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
-Sample::~Sample() {
+Run::~Run() {
   SharedDtor();
 }
 
-void Sample::SharedDtor() {
+void Run::SharedDtor() {
   if (this != default_instance_) {
   }
 }
 
-void Sample::SetCachedSize(int size) const {
+void Run::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* Sample::descriptor() {
+const ::google::protobuf::Descriptor* Run::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return Sample_descriptor_;
+  return Run_descriptor_;
 }
 
-const Sample& Sample::default_instance() {
+const Run& Run::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_l1menu_2eproto();  return *default_instance_;
 }
 
-Sample* Sample::default_instance_ = NULL;
+Run* Run::default_instance_ = NULL;
 
-Sample* Sample::New() const {
-  return new Sample;
+Run* Run::New() const {
+  return new Run;
 }
 
-void Sample::Clear() {
-  trigger_.Clear();
+void Run::Clear() {
   event_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
 
-bool Sample::MergePartialFromCodedStream(
+bool Run::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!(EXPRESSION)) return false
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .l1menuprotobuf.Trigger trigger = 1;
+      // repeated .l1menuprotobuf.Event event = 1;
       case 1: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_trigger:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-                input, add_trigger()));
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(10)) goto parse_trigger;
-        if (input->ExpectTag(18)) goto parse_event;
-        break;
-      }
-      
-      // repeated .l1menuprotobuf.Event event = 2;
-      case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_event:
@@ -1139,7 +1145,7 @@ bool Sample::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_event;
+        if (input->ExpectTag(10)) goto parse_event;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -1160,18 +1166,12 @@ bool Sample::MergePartialFromCodedStream(
 #undef DO_
 }
 
-void Sample::SerializeWithCachedSizes(
+void Run::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // repeated .l1menuprotobuf.Trigger trigger = 1;
-  for (int i = 0; i < this->trigger_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      1, this->trigger(i), output);
-  }
-  
-  // repeated .l1menuprotobuf.Event event = 2;
+  // repeated .l1menuprotobuf.Event event = 1;
   for (int i = 0; i < this->event_size(); i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      2, this->event(i), output);
+      1, this->event(i), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -1180,20 +1180,13 @@ void Sample::SerializeWithCachedSizes(
   }
 }
 
-::google::protobuf::uint8* Sample::SerializeWithCachedSizesToArray(
+::google::protobuf::uint8* Run::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // repeated .l1menuprotobuf.Trigger trigger = 1;
-  for (int i = 0; i < this->trigger_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteMessageNoVirtualToArray(
-        1, this->trigger(i), target);
-  }
-  
-  // repeated .l1menuprotobuf.Event event = 2;
+  // repeated .l1menuprotobuf.Event event = 1;
   for (int i = 0; i < this->event_size(); i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        2, this->event(i), target);
+        1, this->event(i), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -1203,18 +1196,10 @@ void Sample::SerializeWithCachedSizes(
   return target;
 }
 
-int Sample::ByteSize() const {
+int Run::ByteSize() const {
   int total_size = 0;
   
-  // repeated .l1menuprotobuf.Trigger trigger = 1;
-  total_size += 1 * this->trigger_size();
-  for (int i = 0; i < this->trigger_size(); i++) {
-    total_size +=
-      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-        this->trigger(i));
-  }
-  
-  // repeated .l1menuprotobuf.Event event = 2;
+  // repeated .l1menuprotobuf.Event event = 1;
   total_size += 1 * this->event_size();
   for (int i = 0; i < this->event_size(); i++) {
     total_size +=
@@ -1233,10 +1218,10 @@ int Sample::ByteSize() const {
   return total_size;
 }
 
-void Sample::MergeFrom(const ::google::protobuf::Message& from) {
+void Run::MergeFrom(const ::google::protobuf::Message& from) {
   GOOGLE_CHECK_NE(&from, this);
-  const Sample* source =
-    ::google::protobuf::internal::dynamic_cast_if_available<const Sample*>(
+  const Run* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const Run*>(
       &from);
   if (source == NULL) {
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
@@ -1245,36 +1230,31 @@ void Sample::MergeFrom(const ::google::protobuf::Message& from) {
   }
 }
 
-void Sample::MergeFrom(const Sample& from) {
+void Run::MergeFrom(const Run& from) {
   GOOGLE_CHECK_NE(&from, this);
-  trigger_.MergeFrom(from.trigger_);
   event_.MergeFrom(from.event_);
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
 
-void Sample::CopyFrom(const ::google::protobuf::Message& from) {
+void Run::CopyFrom(const ::google::protobuf::Message& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void Sample::CopyFrom(const Sample& from) {
+void Run::CopyFrom(const Run& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool Sample::IsInitialized() const {
+bool Run::IsInitialized() const {
   
-  for (int i = 0; i < trigger_size(); i++) {
-    if (!this->trigger(i).IsInitialized()) return false;
-  }
   return true;
 }
 
-void Sample::Swap(Sample* other) {
+void Run::Swap(Run* other) {
   if (other != this) {
-    trigger_.Swap(&other->trigger_);
     event_.Swap(&other->event_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
@@ -1282,11 +1262,216 @@ void Sample::Swap(Sample* other) {
   }
 }
 
-::google::protobuf::Metadata Sample::GetMetadata() const {
+::google::protobuf::Metadata Run::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = Sample_descriptor_;
-  metadata.reflection = Sample_reflection_;
+  metadata.descriptor = Run_descriptor_;
+  metadata.reflection = Run_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int SampleHeader::kTriggerFieldNumber;
+#endif  // !_MSC_VER
+
+SampleHeader::SampleHeader()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void SampleHeader::InitAsDefaultInstance() {
+}
+
+SampleHeader::SampleHeader(const SampleHeader& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void SampleHeader::SharedCtor() {
+  _cached_size_ = 0;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+SampleHeader::~SampleHeader() {
+  SharedDtor();
+}
+
+void SampleHeader::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void SampleHeader::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* SampleHeader::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return SampleHeader_descriptor_;
+}
+
+const SampleHeader& SampleHeader::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_l1menu_2eproto();  return *default_instance_;
+}
+
+SampleHeader* SampleHeader::default_instance_ = NULL;
+
+SampleHeader* SampleHeader::New() const {
+  return new SampleHeader;
+}
+
+void SampleHeader::Clear() {
+  trigger_.Clear();
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool SampleHeader::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // repeated .l1menuprotobuf.Trigger trigger = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_trigger:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+                input, add_trigger()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(10)) goto parse_trigger;
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+      
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void SampleHeader::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // repeated .l1menuprotobuf.Trigger trigger = 1;
+  for (int i = 0; i < this->trigger_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1, this->trigger(i), output);
+  }
+  
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* SampleHeader::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // repeated .l1menuprotobuf.Trigger trigger = 1;
+  for (int i = 0; i < this->trigger_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        1, this->trigger(i), target);
+  }
+  
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int SampleHeader::ByteSize() const {
+  int total_size = 0;
+  
+  // repeated .l1menuprotobuf.Trigger trigger = 1;
+  total_size += 1 * this->trigger_size();
+  for (int i = 0; i < this->trigger_size(); i++) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        this->trigger(i));
+  }
+  
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void SampleHeader::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const SampleHeader* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const SampleHeader*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void SampleHeader::MergeFrom(const SampleHeader& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  trigger_.MergeFrom(from.trigger_);
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void SampleHeader::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void SampleHeader::CopyFrom(const SampleHeader& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SampleHeader::IsInitialized() const {
+  
+  for (int i = 0; i < trigger_size(); i++) {
+    if (!this->trigger(i).IsInitialized()) return false;
+  }
+  return true;
+}
+
+void SampleHeader::Swap(SampleHeader* other) {
+  if (other != this) {
+    trigger_.Swap(&other->trigger_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata SampleHeader::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = SampleHeader_descriptor_;
+  metadata.reflection = SampleHeader_reflection_;
   return metadata;
 }
 

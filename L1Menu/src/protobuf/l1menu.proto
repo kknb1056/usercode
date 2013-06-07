@@ -12,7 +12,7 @@ message Trigger
 	required string name = 1;
 	required int32 version = 2;
 	repeated TriggerParameter parameter = 3;
-	repeated string threshold = 4;
+	repeated string varying_parameter = 4;
 }
 
 message Event
@@ -21,8 +21,21 @@ message Event
 	optional float weight = 2;
 }
 
-message Sample
+// This idea of a run is purely a collection of events. It bares no relation
+// to what the data considers to be runs.
+message Run
+{
+	repeated Event event = 1;
+}
+
+// I was previously storing all Events in a Sample message as a repeated member.
+// Protobuf doesn't like really long messages though, to guard against maliciously
+// crafted messages bringing down servers with excessive memory allocation. To get
+// around this the file format now has SampleHeader describing currently only the
+// trigger menu (this may change in future but should be backwards compatible).
+// The Events are grouped in arbitrary numbers in Run messages which are simply
+// appended onto the file.
+message SampleHeader
 {
 	repeated Trigger trigger = 1;
-	repeated Event event = 2;
 }
