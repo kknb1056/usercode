@@ -123,6 +123,12 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 	google::protobuf::io::GzipInputStream gzipInput( &fileInput );
 	google::protobuf::io::CodedInputStream codedInput( &gzipInput );
 
+	// Disable warnings on this input stream (second parameter, -1). The
+	// first parameter is the default. I'll change this if necessary in
+	// the loop later.
+	size_t totalBytesLimit=67108864;
+	codedInput.SetTotalBytesLimit( totalBytesLimit, -1 );
+
 	// First read the magic number at the start of the file and make sure it
 	// matches what I expect. As a read buffer, I'll create a string the correct
 	// size (filled with an arbitrary character) and read straight into that.
@@ -149,6 +155,14 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 	{
 		readLimit=codedInput.PushLimit(messageSize);
 
+		// Make sure the CodedInputStream doesn't refuse to read the message because it's
+		// read too much already. I'll also add an arbitrary 50 on to always make sure
+		// I can read the next messageSize if there is one.
+		if( gzipInput.ByteCount()+messageSize+50 > totalBytesLimit )
+		{
+			totalBytesLimit+=messageSize*5; // Might as well set it a little higher than necessary while I'm at it.
+			codedInput.SetTotalBytesLimit( totalBytesLimit, -1 );
+		}
 		std::unique_ptr<l1menuprotobuf::Run> pNewRun( new l1menuprotobuf::Run );
 		if( !pNewRun->ParseFromCodedStream( &codedInput ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - some unknown error while reading run" );
 		protobufRuns.push_back( std::move( pNewRun ) );
@@ -215,7 +229,7 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 	{
 		// Split the events up into groups in arbitrary numbers. This is to get around
 		// a protobuf aversion to long messages.
-		if( pCurrentRun->event_size() > pImple_->EVENTS_PER_RUN )
+		if( pCurrentRun->event_size() >= pImple_->EVENTS_PER_RUN )
 		{
 			// Gone over the arbitrary limit, so create a new protobuf Run and start
 			// using that instead.

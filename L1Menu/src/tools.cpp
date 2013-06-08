@@ -96,6 +96,7 @@ void l1menu::setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event,
 		{
 			lowThreshold=l1menu::TriggerTable::instance().getSuggestedLowerEdge( trigger.name(), thresholdName );
 			highThreshold=l1menu::TriggerTable::instance().getSuggestedUpperEdge( trigger.name(), thresholdName );
+			highThreshold*=5; // Make sure the high threshold is very high, to catch all tails
 		}
 		catch( std::exception& error ) { /* No indication set. Do nothing and just use the defaults I set previously. */ }
 

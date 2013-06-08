@@ -40,7 +40,6 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 				numberOfBins=triggerTable.getSuggestedNumberOfBins( pTrigger->name(), *iThresholdName );
 				lowerEdge=triggerTable.getSuggestedLowerEdge( pTrigger->name(), *iThresholdName );
 				upperEdge=triggerTable.getSuggestedUpperEdge( pTrigger->name(), *iThresholdName );
-				upperEdge*=5; // I'm getting incomplete ReducedSamples, I think because there is the odd overflow event.
 			}
 			catch( std::exception& error) { /* Do nothing. If no binning suggestions have been set for this trigger use the defaults I set above. */ }
 
