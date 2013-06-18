@@ -436,3 +436,54 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 
 	return returnValue;
 }
+
+const l1menu::TriggerRates l1menu::ReducedMenuSample::rate( const l1menu::TriggerMenu& menu ) const
+{
+	// TODO make sure the TriggerMenu is valid for this sample
+
+	// I need a non-const menu, so make a copy
+	l1menu::TriggerMenu mutableMenu( menu );
+
+	// The number of events that pass each trigger
+	std::vector<size_t> numberOfEventsPassed( menu.numberOfTriggers() );
+	float numberOfEventsPassingAllTriggers;
+
+	for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
+	{
+		mutableMenu.getTrigger( triggerNumber ).initiateForReducedSample( *this );
+	}
+
+	for( size_t eventNumber=0; eventNumber<numberOfEvents(); ++eventNumber )
+	{
+		const l1menu::IReducedEvent& event=getEvent(eventNumber);
+		bool allTriggersPassed=true;
+
+		for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
+		{
+			if( mutableMenu.getTrigger( triggerNumber ).apply( event ) )
+			{
+				// If the event passes the trigger, increment the counter
+				++numberOfEventsPassed[triggerNumber];
+			}
+			else allTriggersPassed=false;
+		}
+
+		if( allTriggersPassed ) ++numberOfEventsPassingAllTriggers;
+	}
+
+	l1menu::TriggerRates rates;
+	rates.setTotalFraction( static_cast<float>(numberOfEventsPassingAllTriggers)/static_cast<float>(numberOfEvents()) );
+	std::vector<float>& fractions=rates.fractions();
+
+	for( size_t triggerNumber=0; triggerNumber<numberOfEventsPassed.size(); ++triggerNumber )
+	{
+		fractions.push_back( static_cast<float>(numberOfEventsPassed[triggerNumber])/static_cast<float>(numberOfEvents()) );
+	}
+
+	return rates;
+}
+
+const l1menu::TriggerRates l1menu::ReducedMenuSample::rate() const
+{
+	return rate( getTriggerMenu() );
+}

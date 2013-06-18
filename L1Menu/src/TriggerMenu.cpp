@@ -49,6 +49,17 @@ namespace // Use the unnamed namespace for things only used in this file
         return returnValue;
     }
 
+    /** @brief Converts a value in absolute eta to the calorimeter region. */
+    float convertEtaCutToRegionCut( float etaCut )
+    {
+    	return 0;
+    }
+
+    /** @brief Converts a value in calorimeter region to absolute eta. */
+    float convertRegionCutToEtaCut( float regionCut )
+    {
+    	return 0;
+    }
 } // end of the unnamed namespace
 
 
@@ -114,28 +125,28 @@ l1menu::TriggerMenu& l1menu::TriggerMenu::operator=( l1menu::TriggerMenu&& other
 	return *this;
 }
 
-bool l1menu::TriggerMenu::addTrigger( const std::string& triggerName )
+l1menu::ITrigger& l1menu::TriggerMenu::addTrigger( const std::string& triggerName )
 {
 	std::unique_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.getTrigger( triggerName );
-	if( pNewTrigger.get()==NULL ) return false;
+	if( pNewTrigger.get()==NULL ) throw std::range_error( "Trigger requested that does not exist" );
 
 	triggers_.push_back( std::move(pNewTrigger) );
 
 	// Make sure triggerResults_ is always the same size as triggers_
 	triggerResults_.resize( triggers_.size() );
-	return true;
+	return *triggers_.back();
 }
 
-bool l1menu::TriggerMenu::addTrigger( const std::string& triggerName, unsigned int version )
+l1menu::ITrigger& l1menu::TriggerMenu::addTrigger( const std::string& triggerName, unsigned int version )
 {
 	std::unique_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.getTrigger( triggerName, version );
-	if( pNewTrigger.get()==NULL ) return false;
+	if( pNewTrigger.get()==NULL ) throw std::range_error( "Trigger requested that does not exist" );
 
 	triggers_.push_back( std::move(pNewTrigger) );
 
 	// Make sure triggerResults_ is always the same size as triggers_
 	triggerResults_.resize( triggers_.size() );
-	return true;
+	return *triggers_.back();
 }
 
 size_t l1menu::TriggerMenu::numberOfTriggers() const
@@ -207,11 +218,12 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 			float prescale=::convertStringToFloat( tableColumns[2] );
 			if( prescale!=0 )
 			{
-				if( addTrigger( tableColumns[0] ) ) // Try and create a trigger with the name supplied
+				std::string triggerName=tableColumns[0];
+
+				try
 				{
 					//std::cout << "Added trigger \"" << tableColumns[0] << "\"" << std::endl;
-
-					l1menu::ITrigger& newTrigger=*(triggers_.back());
+					l1menu::ITrigger& newTrigger=addTrigger( triggerName ); // Try and create a trigger with the name supplied
 
 					// Try and set all of the relevant parameters. I know not all triggers have these parameters
 					// so wrap in individual try/catch blocks.
@@ -227,14 +239,41 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 					try{ newTrigger.parameter("threshold4")=::convertStringToFloat( tableColumns[6] ); }
 					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
 
-					try{ newTrigger.parameter("etaCut")=::convertStringToFloat( tableColumns[7] ); }
-					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+					float etaOrRegionCut=::convertStringToFloat( tableColumns[7] );
+					// For most triggers, I can just try and set both the etaCut and regionCut parameters
+					// with this value. If it doesn't have either of the parameters just catch the exception
+					// and nothing will happen. Some cross triggers however have both, and need to set them
+					// both from this value which requires a conversion. Most cross triggers expect this
+					// value to be the regionCut, except for L1_SingleMu_CJet which expects it as the etaCut.
+					if( triggerName=="L1_SingleMu_CJet" )
+					{
+						newTrigger.parameter("etaCut")=etaOrRegionCut;
+						newTrigger.parameter("regionCut")=convertEtaCutToRegionCut( etaOrRegionCut );
+					}
+					else if( triggerName=="L1_SingleIsoEG_CJet" )
+					{
+						newTrigger.parameter("etaCut")=etaOrRegionCut;
+						newTrigger.parameter("regionCut")=convertEtaCutToRegionCut( etaOrRegionCut );
+					}
+					else
+					{
+						// Any remaining triggers should only have one of these parameters and won't
+						// need conversion. I'll just try and set them both, not a problem if one fails.
+						try{ newTrigger.parameter("etaCut")=etaOrRegionCut; }
+						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+						try{ newTrigger.parameter("regionCut")=etaOrRegionCut; }
+						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+					}
 
 					try{ newTrigger.parameter("muonQuality")=::convertStringToFloat( tableColumns[8] ); }
 					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
 
 				} // end of "if able to add trigger"
-				else std::cout << "The trigger \"" << tableColumns[0] << "\" is not registered in the trigger table" << std::endl;
+				catch( std::exception& error )
+				{
+					std::cerr << "Unable to add trigger \"" << tableColumns[0] << "\" because: " << error.what() << std::endl;
+				}
 			} // end of "if( prescale!=0 )"
 		} // end of try block
 		catch( std::runtime_error& exception )

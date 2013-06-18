@@ -11,6 +11,8 @@
 
 l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory )
 {
+	// Before making any histograms make sure errors are done properly
+	TH1::SetDefaultSumw2();
 
 	// Loop over each of the triggers in the menu, book a histogram for it and then create
 	// a l1menu::TriggerRate plot for it.

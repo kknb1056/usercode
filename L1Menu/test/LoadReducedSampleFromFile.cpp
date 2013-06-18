@@ -6,7 +6,7 @@
 #include <TFile.h>
 #include "l1menu/ReducedMenuSample.h"
 #include "l1menu/MenuRatePlots.h"
-
+#include "l1menu/TriggerRates.h"
 
 int main( int argc, char* argv[] )
 {
@@ -28,9 +28,12 @@ int main( int argc, char* argv[] )
 //	{
 		l1menu::ReducedMenuSample mySample( sampleFilename );
 
+		std::cout << __LINE__ << std::endl;
 		l1menu::MenuRatePlots rateVersusThresholdPlots( mySample.getTriggerMenu() );
+		std::cout << __LINE__ << std::endl;
 		rateVersusThresholdPlots.initiateForReducedSample( mySample );
 
+		std::cout << "Calculating rate plots..." << std::endl;
 		for( size_t eventNumber=0; eventNumber<mySample.numberOfEvents(); ++eventNumber )
 		{
 			const l1menu::IReducedEvent& event=mySample.getEvent( eventNumber );
@@ -40,6 +43,15 @@ int main( int argc, char* argv[] )
 		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "reducedRateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
 		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
 		rateVersusThresholdPlots.relinquishOwnershipOfPlots();
+
+		std::cout << "Calculating fractions..." << std::endl;
+		const l1menu::TriggerRates rates=mySample.rate();
+
+		std::cout << "Total fraction is " << rates.totalFraction() << std::endl;
+		for( const auto& fraction : rates.fractions() )
+		{
+			std::cout << "Trigger has fraction " << fraction << std::endl;
+		}
 //	}
 //	catch( std::exception& error )
 //	{

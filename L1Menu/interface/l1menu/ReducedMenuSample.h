@@ -6,6 +6,7 @@
 #include <map>
 
 #include "l1menu/IReducedEvent.h"
+#include "l1menu/ISample.h"
 
 // Forward declarations
 namespace l1menu
@@ -23,7 +24,7 @@ namespace l1menu
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 28/May/2013
 	 */
-	class ReducedMenuSample
+	class ReducedMenuSample : public l1menu::ISample
 	{
 	public:
 		/** @brief Load from a file in protobuf format. */
@@ -43,6 +44,13 @@ namespace l1menu
 		const l1menu::TriggerMenu& getTriggerMenu() const;
 		bool containsTrigger( const l1menu::ITrigger& trigger, bool allowOlderVersion=false ) const;
 		const std::map<std::string,IReducedEvent::ParameterID> getTriggerParameterIdentifiers( const l1menu::ITrigger& trigger, bool allowOlderVersion=false ) const;
+
+		//
+		// Implementations required for the ISample interface
+		//
+		virtual const l1menu::TriggerRates rate( const l1menu::TriggerMenu& menu ) const;
+		/** Add an extra method for the full menu, i.e. a shorthand for "triggerMenu.rate( triggerMenu.getTriggerMenu() )". */
+		const l1menu::TriggerRates rate() const;
 	private:
 		std::unique_ptr<class ReducedMenuSamplePrivateMembers> pImple_;
 	}; // end of class ReducedMenuSample

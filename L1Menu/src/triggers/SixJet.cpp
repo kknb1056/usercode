@@ -11,15 +11,15 @@ namespace l1menu
 	{
 
 		/** @brief Essentially a copy of the MultiJet trigger, but overriding the name and forcing
-		 * the numberOfJets parameter to always be four.
+		 * the numberOfJets parameter to always be six.
 		 *
 		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 		 * @date 04/Jun/2013
 		 */
-		class QuadJetCentral_v0 : public l1menu::triggers::MultiJet_v0
+		class SixJet_v0 : public l1menu::triggers::MultiJet_v0
 		{
 		public:
-			QuadJetCentral_v0();
+			SixJet_v0();
 			virtual const std::string name() const;
 			virtual unsigned int version() const;
 
@@ -37,15 +37,15 @@ namespace l1menu
 		 * at program startup. The function takes no parameters and returns void. In this case I'm
 		 * giving it a lambda function.
 		 */
-		REGISTER_TRIGGER_AND_CUSTOMISE( QuadJetCentral_v0,
+		REGISTER_TRIGGER_AND_CUSTOMISE( SixJet_v0,
 			[]() // Use a lambda function to customise rather than creating a named function that never gets used again.
 			{
 				l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
-				QuadJetCentral_v0 tempTriggerInstance;
+				SixJet_v0 tempTriggerInstance;
 				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold1", 100, 0, 70 );
 				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold2", 100, 0, 50 );
 				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold3", 100, 0, 30 );
-				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold4", 100, 0, 20 );
+				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold4", 100, 0, 15 );
 			} // End of customisation lambda function
 		) // End of REGISTER_TRIGGER_AND_CUSTOMISE macro call
 
@@ -53,22 +53,22 @@ namespace l1menu
 
 } // end of namespace l1menu
 
-l1menu::triggers::QuadJetCentral_v0::QuadJetCentral_v0()
+l1menu::triggers::SixJet_v0::SixJet_v0()
 {
-	numberOfJets_=4;
+	numberOfJets_=6;
 }
 
-const std::string l1menu::triggers::QuadJetCentral_v0::name() const
+const std::string l1menu::triggers::SixJet_v0::name() const
 {
-	return "L1_QuadJetC";
+	return "L1_SixJet";
 }
 
-unsigned int l1menu::triggers::QuadJetCentral_v0::version() const
+unsigned int l1menu::triggers::SixJet_v0::version() const
 {
 	return 0;
 }
 
-const std::vector<std::string> l1menu::triggers::QuadJetCentral_v0::parameterNames() const
+const std::vector<std::string> l1menu::triggers::SixJet_v0::parameterNames() const
 {
 	std::vector<std::string> returnValue=MultiJet::parameterNames();
 
@@ -79,13 +79,13 @@ const std::vector<std::string> l1menu::triggers::QuadJetCentral_v0::parameterNam
 	return returnValue;
 }
 
-float& l1menu::triggers::QuadJetCentral_v0::parameter( const std::string& parameterName )
+float& l1menu::triggers::SixJet_v0::parameter( const std::string& parameterName )
 {
 	if( parameterName!="numberOfJets" ) return MultiJet::parameter(parameterName);
 	else throw std::logic_error( "Not a valid parameter name" );
 }
 
-const float& l1menu::triggers::QuadJetCentral_v0::parameter( const std::string& parameterName ) const
+const float& l1menu::triggers::SixJet_v0::parameter( const std::string& parameterName ) const
 {
 	if( parameterName!="numberOfJets" ) return MultiJet::parameter(parameterName);
 	else throw std::logic_error( "Not a valid parameter name" );

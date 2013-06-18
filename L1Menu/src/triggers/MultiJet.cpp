@@ -1,69 +1,17 @@
+#include "MultiJet.h"
+
+
+#include <stdexcept>
 #include "l1menu/RegisterTriggerMacro.h"
 #include "l1menu/IEvent.h"
 #include "l1menu/ReducedMenuSample.h"
-#include "l1menu/IReducedEvent.h"
-
-#include <stdexcept>
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 
-#include "l1menu/ITrigger.h"
-
-#include <string>
-#include <vector>
-#include "l1menu/IReducedEvent.h"
 
 namespace l1menu
 {
 	namespace triggers
 	{
-		/** @brief Base class for all versions of the MultiJet trigger.
-		 *
-		 * Note that this class is abstract because it doesn't implement the "version"
-		 * and "apply" methods. That's left up to the implementations of the different
-		 * versions.
-		 *
-		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
-		 * @date 02/Jun/2013
-		 */
-		class MultiJet : public l1menu::ITrigger
-		{
-		public:
-			MultiJet();
-
-			virtual const std::string name() const;
-			virtual const std::vector<std::string> parameterNames() const;
-			virtual float& parameter( const std::string& parameterName );
-			virtual const float& parameter( const std::string& parameterName ) const;
-
-			virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-			virtual bool apply( const l1menu::IReducedEvent& event ) const;
-		protected:
-			float threshold1_;
-			float threshold2_;
-			float threshold3_;
-			float threshold4_;
-			float muonQuality_;
-			float etaCut_;
-			float regionCut_;
-			float numberOfJets_;
-			IReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
-			IReducedEvent::ParameterID reducedSampleParameterID_threshold2_;
-			IReducedEvent::ParameterID reducedSampleParameterID_threshold3_;
-			IReducedEvent::ParameterID reducedSampleParameterID_threshold4_;
-		}; // end of the MultiJet base class
-
-		/** @brief First version of the MultiJet trigger.
-		 *
-		 * @author probably Brian Winer
-		 * @date sometime
-		 */
-		class MultiJet_v0 : public MultiJet
-		{
-		public:
-			virtual unsigned int version() const;
-			virtual bool apply( const l1menu::IEvent& event ) const;
-		}; // end of version 0 class
-
 
 		/* The REGISTER_TRIGGER macro will make sure that the given trigger is registered in the
 		 * l1menu::TriggerTable when the program starts. I also want to provide some suggested binning
@@ -89,14 +37,6 @@ namespace l1menu
 
 } // end of namespace l1menu
 
-
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-//---------------  Definitions below         ---------------------------------------------
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------
 
 
 bool l1menu::triggers::MultiJet_v0::apply( const l1menu::IEvent& event ) const
@@ -172,14 +112,14 @@ bool l1menu::triggers::MultiJet::apply( const l1menu::IReducedEvent& event ) con
 }
 
 l1menu::triggers::MultiJet::MultiJet()
-	: threshold1_(20), threshold2_(20), threshold3_(20), threshold4_(20), muonQuality_(4), etaCut_(2.1), regionCut_(4.5), numberOfJets_(6)
+	: threshold1_(20), threshold2_(20), threshold3_(20), threshold4_(20), regionCut_(4.5), numberOfJets_(6)
 {
 	// No operation other than the initialiser list
 }
 
 const std::string l1menu::triggers::MultiJet::name() const
 {
-	return "L1_SixJet";
+	return "L1_MultiJet";
 }
 
 const std::vector<std::string> l1menu::triggers::MultiJet::parameterNames() const
@@ -189,9 +129,8 @@ const std::vector<std::string> l1menu::triggers::MultiJet::parameterNames() cons
 	returnValue.push_back("threshold2");
 	returnValue.push_back("threshold3");
 	returnValue.push_back("threshold4");
-	returnValue.push_back("muonQuality");
-	returnValue.push_back("etaCut");
 	returnValue.push_back("regionCut");
+	returnValue.push_back("numberOfJets");
 	return returnValue;
 }
 
@@ -201,9 +140,8 @@ float& l1menu::triggers::MultiJet::parameter( const std::string& parameterName )
 	else if( parameterName=="threshold2" ) return threshold2_;
 	else if( parameterName=="threshold3" ) return threshold3_;
 	else if( parameterName=="threshold4" ) return threshold4_;
-	else if( parameterName=="muonQuality" ) return muonQuality_;
-	else if( parameterName=="etaCut" ) return etaCut_;
 	else if( parameterName=="regionCut" ) return regionCut_;
+	else if( parameterName=="numberOfJets" ) return numberOfJets_;
 	else throw std::logic_error( "Not a valid parameter name" );
 }
 
@@ -213,8 +151,7 @@ const float& l1menu::triggers::MultiJet::parameter( const std::string& parameter
 	else if( parameterName=="threshold2" ) return threshold2_;
 	else if( parameterName=="threshold3" ) return threshold3_;
 	else if( parameterName=="threshold4" ) return threshold4_;
-	else if( parameterName=="muonQuality" ) return muonQuality_;
-	else if( parameterName=="etaCut" ) return etaCut_;
 	else if( parameterName=="regionCut" ) return regionCut_;
+	else if( parameterName=="numberOfJets" ) return numberOfJets_;
 	else throw std::logic_error( "Not a valid parameter name" );
 }

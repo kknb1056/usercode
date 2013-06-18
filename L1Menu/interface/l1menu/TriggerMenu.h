@@ -24,8 +24,8 @@ namespace l1menu
 		TriggerMenu& operator=( const TriggerMenu& otherTriggerMenu );
 		TriggerMenu& operator=( TriggerMenu&& otherTriggerMenu ) noexcept;
 
-		bool addTrigger( const std::string& triggerName );
-		bool addTrigger( const std::string& triggerName, unsigned int version );
+		ITrigger& addTrigger( const std::string& triggerName );
+		ITrigger& addTrigger( const std::string& triggerName, unsigned int version );
 
 		size_t numberOfTriggers() const;
 		ITrigger& getTrigger( size_t position );
