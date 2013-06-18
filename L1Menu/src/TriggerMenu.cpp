@@ -247,13 +247,13 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 					// value to be the regionCut, except for L1_SingleMu_CJet which expects it as the etaCut.
 					if( triggerName=="L1_SingleMu_CJet" )
 					{
-						newTrigger.parameter("etaCut")=etaOrRegionCut;
-						newTrigger.parameter("regionCut")=convertEtaCutToRegionCut( etaOrRegionCut );
+						newTrigger.parameter("leg1etaCut")=etaOrRegionCut;
+						newTrigger.parameter("leg2regionCut")=convertEtaCutToRegionCut( etaOrRegionCut );
 					}
 					else if( triggerName=="L1_SingleIsoEG_CJet" )
 					{
-						newTrigger.parameter("etaCut")=etaOrRegionCut;
-						newTrigger.parameter("regionCut")=convertEtaCutToRegionCut( etaOrRegionCut );
+						newTrigger.parameter("leg1regionCut")=etaOrRegionCut;
+						newTrigger.parameter("leg2regionCut")=etaOrRegionCut;
 					}
 					else
 					{
