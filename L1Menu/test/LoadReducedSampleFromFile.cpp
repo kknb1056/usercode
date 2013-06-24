@@ -10,6 +10,8 @@
 #include "l1menu/ITriggerRate.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/ITrigger.h"
+#include "l1menu/tools/tools.h"
+#include <cmath>
 
 int main( int argc, char* argv[] )
 {
@@ -27,8 +29,9 @@ int main( int argc, char* argv[] )
 
 	std::string sampleFilename=argv[1];
 
-//	try
-//	{
+
+	try
+	{
 		const float scaleToKiloHz=1.0/1000.0;
 		const float orbitsPerSecond=11246;
 		const float bunchSpacing=50;
@@ -50,6 +53,7 @@ int main( int argc, char* argv[] )
 			rateVersusThresholdPlots.addEvent( event );
 		}
 
+		// Use a smart pointer with a custom deleter that will close the file properly.
 		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "reducedRateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
 		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
 		rateVersusThresholdPlots.relinquishOwnershipOfPlots();
@@ -66,12 +70,12 @@ int main( int argc, char* argv[] )
 		{
 			std::cout << "Trigger " << pRate->trigger().name() << " has fraction " << pRate->fraction() << " and rate " << pRate->rate() << "kHz" << std::endl;
 		}
-//	}
-//	catch( std::exception& error )
-//	{
-//		std::cerr << "Exception caught: " << error.what() << std::endl;
-//		return -1;
-//	}
+	}
+	catch( std::exception& error )
+	{
+		std::cerr << "Exception caught: " << error.what() << std::endl;
+		return -1;
+	}
 
 	return 0;
 }

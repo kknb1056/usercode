@@ -164,21 +164,20 @@ std::pair<float,float> l1menu::tools::calorimeterRegionEtaBounds( size_t calorim
 
 float l1menu::tools::convertEtaCutToRegionCut( float etaCut )
 {
-	if( etaCut<calorimeterRegionEtaBounds(0).first || etaCut>calorimeterRegionEtaBounds(21).second ) throw "Fuck";
+	if( etaCut<calorimeterRegionEtaBounds(0).first || etaCut>calorimeterRegionEtaBounds(21).second )
+			throw std::runtime_error( "l1menu::tools::convertEtaCutToRegionCut was given an eta value outside the allowed region" );
 
 	size_t caloRegion;
 	for( caloRegion=0; caloRegion<=21; ++caloRegion )
 	{
 		std::pair<float,float> regionBounds=calorimeterRegionEtaBounds( caloRegion );
-		if( regionBounds.first<etaCut && etaCut<=regionBounds.second ) break;
+		if( regionBounds.first<=etaCut && etaCut<regionBounds.second ) break;
 	}
 
 	// I should have an answer for which calorimeter region the etaCut corresponds to.
-	// I want to format the result to make sure it's in one half of the symmetric detector,
-	// and also add 0.5 so that there's no ambiguity in a comparison (i.e. I'll never
-	// be uncertain if a comparison should be less than or less than or equal).
+	// I want to format the result to make sure it's in one half of the symmetric detector.
 	if( caloRegion>10 ) caloRegion=21-caloRegion;
-	return caloRegion+0.5;
+	return caloRegion;
 }
 
 float l1menu::tools::convertRegionCutToEtaCut( float regionCut )
@@ -191,6 +190,6 @@ float l1menu::tools::convertRegionCutToEtaCut( float regionCut )
 	// The float will be truncated to an integer.
 	std::pair<float,float> regionBounds=calorimeterRegionEtaBounds( regionCut );
 
-	return regionBounds.second;
+	return std::fabs(regionBounds.second);
 }
 

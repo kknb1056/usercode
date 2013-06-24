@@ -215,19 +215,14 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 					//std::cout << "Added trigger \"" << tableColumns[0] << "\"" << std::endl;
 					l1menu::ITrigger& newTrigger=addTrigger( triggerName ); // Try and create a trigger with the name supplied
 
-					// Try and set all of the relevant parameters. I know not all triggers have these parameters
-					// so wrap in individual try/catch blocks.
-					try{ newTrigger.parameter("threshold1")=::convertStringToFloat( tableColumns[3] ); }
-					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
-
-					try{ newTrigger.parameter("threshold2")=::convertStringToFloat( tableColumns[4] ); }
-					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
-
-					try{ newTrigger.parameter("threshold3")=::convertStringToFloat( tableColumns[5] ); }
-					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
-
-					try{ newTrigger.parameter("threshold4")=::convertStringToFloat( tableColumns[6] ); }
-					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+					// Different triggers will have different numbers of thresholds, and even different names. E.g. Single triggers
+					// will have "threshold1" whereas a cross trigger will have "leg1threshold1", "leg2threshold1" etcetera. This
+					// utility function will get the threshold names in the correct order.
+					const auto& thresholdNames=l1menu::tools::getThresholdNames(newTrigger);
+					if( thresholdNames.size()>1 ) newTrigger.parameter(thresholdNames[0])=::convertStringToFloat( tableColumns[3] );
+					if( thresholdNames.size()>2 ) newTrigger.parameter(thresholdNames[1])=::convertStringToFloat( tableColumns[4] );
+					if( thresholdNames.size()>3 ) newTrigger.parameter(thresholdNames[2])=::convertStringToFloat( tableColumns[5] );
+					if( thresholdNames.size()>4 ) newTrigger.parameter(thresholdNames[3])=::convertStringToFloat( tableColumns[6] );
 
 					float etaOrRegionCut=::convertStringToFloat( tableColumns[7] );
 					// For most triggers, I can just try and set both the etaCut and regionCut parameters
@@ -240,26 +235,59 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 						newTrigger.parameter("leg1etaCut")=etaOrRegionCut;
 						newTrigger.parameter("leg2regionCut")=l1menu::tools::convertEtaCutToRegionCut( etaOrRegionCut );
 					}
-					else if( triggerName=="L1_SingleIsoEG_CJet" )
+					else if( triggerName=="L1_isoMu_EG" )
+					{
+						newTrigger.parameter("leg1etaCut")=l1menu::tools::convertRegionCutToEtaCut( etaOrRegionCut );
+						newTrigger.parameter("leg2regionCut")=etaOrRegionCut;
+					}
+					else if( triggerName=="L1_isoEG_Mu" )
 					{
 						newTrigger.parameter("leg1regionCut")=etaOrRegionCut;
+						newTrigger.parameter("leg2etaCut")=l1menu::tools::convertRegionCutToEtaCut( etaOrRegionCut );
+					}
+					else if( triggerName=="L1_isoMu_Tau" )
+					{
+						newTrigger.parameter("leg1etaCut")=l1menu::tools::convertRegionCutToEtaCut( etaOrRegionCut );
 						newTrigger.parameter("leg2regionCut")=etaOrRegionCut;
 					}
 					else
 					{
 						// Any remaining triggers should only have one of these parameters and won't
 						// need conversion. I'll just try and set them both, not a problem if one fails.
+						// The cross triggers will have e.g. "leg1" prefixed to the parameter name so I'll
+						// also try for those.
 						try{ newTrigger.parameter("etaCut")=etaOrRegionCut; }
 						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
 
 						try{ newTrigger.parameter("regionCut")=etaOrRegionCut; }
 						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+						try{ newTrigger.parameter("leg1etaCut")=etaOrRegionCut; }
+						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+						try{ newTrigger.parameter("leg1regionCut")=etaOrRegionCut; }
+						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+						try{ newTrigger.parameter("leg2etaCut")=etaOrRegionCut; }
+						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+						try{ newTrigger.parameter("leg2regionCut")=etaOrRegionCut; }
+						catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
 					}
 
+					// The trigger may or may not have a muon quality cut. I also don't know if its name
+					// is prefixed with e.g. "leg1". I'll try setting all combinations, but wrap individually
+					// in a try block so that it doesn't matter if it fails.
 					try{ newTrigger.parameter("muonQuality")=::convertStringToFloat( tableColumns[8] ); }
 					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
 
-				} // end of "if able to add trigger"
+					try{ newTrigger.parameter("leg1muonQuality")=::convertStringToFloat( tableColumns[8] ); }
+					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+					try{ newTrigger.parameter("leg2muonQuality")=::convertStringToFloat( tableColumns[8] ); }
+					catch( std::exception& error ) { } // Do nothing, just try and convert the other parameters
+
+				} // end of try block
 				catch( std::exception& error )
 				{
 					std::cerr << "Unable to add trigger \"" << tableColumns[0] << "\" because: " << error.what() << std::endl;
