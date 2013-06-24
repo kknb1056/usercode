@@ -194,6 +194,27 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 	if( fileDescriptor==0 ) throw std::runtime_error( "ReducedMenuSample initialise from file - couldn't open file" );
 	::UnixFileSentry fileSentry( fileDescriptor ); // Use this as an exception safe way of closing the input file
 	google::protobuf::io::FileInputStream fileInput( fileDescriptor );
+
+	// First read the magic number at the start of the file and make sure it
+	// matches what I expect. This is uncompressed so I'll wrap it in a block
+	// to make sure the CodedInputStream is destructed before creating a new
+	// one with gzip input.
+	{
+		google::protobuf::io::CodedInputStream codedInput( &fileInput );
+
+		// As a read buffer, I'll create a string the correct size (filled with an arbitrary
+		// character) and read straight into that.
+		std::string readMagicNumber;
+		if( !codedInput.ReadString( &readMagicNumber, FILE_FORMAT_MAGIC_NUMBER.size() ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading magic number" );
+		if( readMagicNumber!=FILE_FORMAT_MAGIC_NUMBER ) throw std::runtime_error( "ReducedMenuSample - tried to initialise with a file that is not the correct format" );
+
+		google::protobuf::uint32 fileformatVersion;
+		if( !codedInput.ReadVarint32( &fileformatVersion ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading file format version" );
+		// So far I only have (and ever expect to have) one version of the file
+		// format, imaginatively versioned "1". You never know though...
+		if( fileformatVersion>1 ) std::cerr << "Warning: Attempting to read a ReducedMenuSample with version " << fileformatVersion << " with code that only knows up to version 1." << std::endl;
+	}
+
 	google::protobuf::io::GzipInputStream gzipInput( &fileInput );
 	google::protobuf::io::CodedInputStream codedInput( &gzipInput );
 
@@ -202,19 +223,6 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 	// the loop later.
 	size_t totalBytesLimit=67108864;
 	codedInput.SetTotalBytesLimit( totalBytesLimit, -1 );
-
-	// First read the magic number at the start of the file and make sure it
-	// matches what I expect. As a read buffer, I'll create a string the correct
-	// size (filled with an arbitrary character) and read straight into that.
-	std::string readMagicNumber;
-	if( !codedInput.ReadString( &readMagicNumber, FILE_FORMAT_MAGIC_NUMBER.size() ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading magic number" );
-	if( readMagicNumber!=FILE_FORMAT_MAGIC_NUMBER ) throw std::runtime_error( "ReducedMenuSample - tried to initialise with a file that is not the correct format" );
-
-	google::protobuf::uint32 fileformatVersion;
-	if( !codedInput.ReadVarint32( &fileformatVersion ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading file format version" );
-	// So far I only have (and ever expect to have) one version of the file
-	// format, imaginatively versioned "1". You never know though...
-	if( fileformatVersion>1 ) std::cerr << "Warning: Attempting to read a ReducedMenuSample with version " << fileformatVersion << " with code that only knows up to version 1." << std::endl;
 
 	google::protobuf::uint64 messageSize;
 
@@ -358,15 +366,22 @@ void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
 
 	// Setup the protobuf file handlers
 	google::protobuf::io::FileOutputStream fileOutput( fileDescriptor );
+
+	// I want the magic number and file format identifier uncompressed, so
+	// I'll write those before switching to using gzipped output.
+	{ // Block to make sure codedOutput is destructed before the gzip version is created
+		google::protobuf::io::CodedOutputStream codedOutput( &fileOutput );
+
+		// Write a magic number at the start of all files
+		codedOutput.WriteString( pImple_->FILE_FORMAT_MAGIC_NUMBER );
+		// Write an integer that specifies what version of the file format I'm using. I
+		// have no intention of changing the format but I might as well keep the option
+		// open.
+		codedOutput.WriteVarint32( 1 );
+	}
+
 	google::protobuf::io::GzipOutputStream gzipOutput( &fileOutput );
 	google::protobuf::io::CodedOutputStream codedOutput( &gzipOutput );
-
-	// Write a magic number at the start of all files
-	codedOutput.WriteString( pImple_->FILE_FORMAT_MAGIC_NUMBER );
-	// Write an integer that specifies what version of the file format I'm using. I
-	// have no intention of changing the format but I might as well keep the option
-	// open.
-	codedOutput.WriteVarint32( 1 );
 
 	// Write the size of the header message into the file...
 	codedOutput.WriteVarint64( pImple_->protobufSampleHeader.ByteSize() );
