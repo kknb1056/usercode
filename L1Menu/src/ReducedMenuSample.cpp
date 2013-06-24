@@ -9,7 +9,9 @@
 #include "l1menu/MenuSample.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/ITrigger.h"
-#include "l1menu/tools.h"
+#include "l1menu/IMenuRate.h"
+#include "l1menu/ITriggerRate.h"
+#include "l1menu/tools/tools.h"
 #include "protobuf/l1menu.pb.h"
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/io/gzip_stream.h>
@@ -38,6 +40,77 @@ namespace // unnamed namespace
 	private:
 		int fileDescriptor_;
 	};
+
+	class MenuRateImplementation;
+
+	class TriggerRateImplementation : public l1menu::ITriggerRate
+	{
+	public:
+		TriggerRateImplementation( const l1menu::ITrigger& trigger, float fraction, const MenuRateImplementation& menuRate );
+		TriggerRateImplementation& operator=( TriggerRateImplementation&& otherTriggerRate ); // Move assignment
+		virtual ~TriggerRateImplementation();
+
+		// Methods required by the l1menu::ITriggerRate interface
+		virtual const l1menu::ITrigger& trigger() const;
+		virtual float fraction() const;
+		virtual float rate() const;
+	protected:
+		std::unique_ptr<l1menu::ITrigger> pTrigger_;
+		float fraction_;
+		const MenuRateImplementation& menuRate_;
+	};
+
+	class MenuRateImplementation : public l1menu::IMenuRate
+	{
+	public:
+		void setTotalFraction( float fraction ) { totalFraction_=fraction; }
+		void setScaling( float scaling ) { scaling_=scaling; }
+		float scaling() const { return scaling_; }
+		void addTriggerRate( const l1menu::ITrigger& trigger, float fraction ) { triggerRates_.push_back( std::move(TriggerRateImplementation(trigger,fraction,*this)) ); }
+		// Methods required by the l1menu::IMenuRate interface
+		virtual float totalFraction() const { return totalFraction_; }
+		virtual float totalRate() const { return totalFraction_*scaling_; }
+		virtual const std::vector<const l1menu::ITriggerRate*>& triggerRates() const
+		{
+			// If the sizes are the same I'll assume nothing has changed and the references
+			// are still valid. I don't expect this method to be called until the triggerRates_
+			// vector is complete anyway.
+			if( triggerRates_.size()!=baseClassReferences_.size() )
+			{
+				baseClassReferences_.clear();
+				for( const auto& triggerRate : triggerRates_ )
+				{
+					baseClassReferences_.push_back( &triggerRate );
+				}
+			}
+
+			return baseClassReferences_;
+		}
+
+	protected:
+		float totalFraction_;
+		float scaling_;
+		std::vector<TriggerRateImplementation> triggerRates_;
+		mutable std::vector<const l1menu::ITriggerRate*> baseClassReferences_;
+	};
+
+	TriggerRateImplementation::TriggerRateImplementation( const l1menu::ITrigger& trigger, float fraction, const MenuRateImplementation& menuRate )
+		: fraction_(fraction), menuRate_(menuRate)
+	{
+		pTrigger_=std::move( l1menu::TriggerTable::instance().copyTrigger(trigger) );
+	}
+	TriggerRateImplementation& TriggerRateImplementation::operator=( TriggerRateImplementation&& otherTriggerRate )
+	{
+		pTrigger_=std::move( otherTriggerRate.pTrigger_ );
+		fraction_=otherTriggerRate.fraction_;
+		// I can't change the menuRate_ reference, but that should already be set to the right one anyway.
+		return *this;
+	}
+	TriggerRateImplementation::~TriggerRateImplementation() {}
+	const l1menu::ITrigger& TriggerRateImplementation::trigger() const { return *pTrigger_; }
+	float TriggerRateImplementation::fraction() const { return fraction_; }
+	float TriggerRateImplementation::rate() const { return fraction_*menuRate_.scaling(); }
+
 }
 
 namespace l1menu
@@ -56,7 +129,8 @@ namespace l1menu
 		ReducedMenuSamplePrivateMembers( const std::string& filename );
 		void copyMenuToProtobufSample();
 		::ReducedEventImplementation event;
-		const l1menu::TriggerMenu& triggerMenu;
+		const l1menu::TriggerMenu& triggerMenu; // External const access to mutableTriggerMenu_
+		float eventRate;
 		l1menuprotobuf::SampleHeader protobufSampleHeader;
 		// Protobuf doesn't implement move semantics so I'll use pointers
 		std::vector<std::unique_ptr<l1menuprotobuf::Run> > protobufRuns;
@@ -71,7 +145,7 @@ namespace l1menu
 }
 
 l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::TriggerMenu& newTriggerMenu )
-	: mutableTriggerMenu_( newTriggerMenu ), triggerMenu( mutableTriggerMenu_ )
+	: mutableTriggerMenu_( newTriggerMenu ), triggerMenu( mutableTriggerMenu_ ), eventRate(1)
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -99,7 +173,7 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 
 		// Make a note of the names of the parameters that are recorded for each event. For this
 		// I'm just recording the parameters that refer to the thresholds.
-		const auto thresholdNames=l1menu::getThresholdNames(trigger);
+		const auto thresholdNames=l1menu::tools::getThresholdNames(trigger);
 		for( const auto& thresholdName : thresholdNames ) pProtobufTrigger->add_varying_parameter(thresholdName);
 
 	} // end of loop over triggers
@@ -245,11 +319,11 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 		for( size_t triggerNumber=0; triggerNumber<pImple_->triggerMenu.numberOfTriggers(); ++triggerNumber )
 		{
 			std::unique_ptr<l1menu::ITrigger> pTrigger=pImple_->triggerMenu.getTriggerCopy(triggerNumber);
-			std::vector<std::string> thresholdNames=getThresholdNames(*pTrigger);
+			std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames(*pTrigger);
 
 			try
 			{
-				setTriggerThresholdsAsTightAsPossible( event, *pTrigger, 0.001 );
+				l1menu::tools::setTriggerThresholdsAsTightAsPossible( event, *pTrigger, 0.001 );
 				// Set all of the parameters to match the thresholds in the trigger
 				for( const auto& thresholdName : thresholdNames )
 				{
@@ -362,7 +436,7 @@ bool l1menu::ReducedMenuSample::containsTrigger( const l1menu::ITrigger& trigger
 		// eta cuts or whatever.
 		// I don't care if the thresholds don't match because that's what's stored in the
 		// ReducedMenuSample.
-		std::vector<std::string> parameterNames=getNonThresholdParameterNames( trigger );
+		std::vector<std::string> parameterNames=l1menu::tools::getNonThresholdParameterNames( trigger );
 		bool allParametersMatch=true;
 		for( const auto& parameterName : parameterNames )
 		{
@@ -408,14 +482,14 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 		// ReducedMenuSample.
 		if( triggerWasFound ) // Trigger can still fail, but no point doing this check if it already has
 		{
-			std::vector<std::string> parameterNames=getNonThresholdParameterNames( trigger );
+			std::vector<std::string> parameterNames=l1menu::tools::getNonThresholdParameterNames( trigger );
 			for( const auto& parameterName : parameterNames )
 			{
 				if( trigger.parameter(parameterName)!=triggerInMenu.parameter(parameterName) ) triggerWasFound=false;
 			}
 		}
 
-		std::vector<std::string> thresholdNames=l1menu::getThresholdNames(triggerInMenu);
+		std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames(triggerInMenu);
 		if( triggerWasFound )
 		{
 			for( const auto& thresholdName : thresholdNames )
@@ -432,12 +506,22 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 	// (I guess - it would be a pretty pointless trigger though). To indicate the
 	// difference between that and a trigger that wasn't found I'll respectively
 	// return the empty vector or throw an exception.
-	if( !triggerWasFound ) throw std::runtime_error( "l1menu::ReducedMenuSample::getTriggerParameterIdentifiers() called for a trigger that was not used to create the sample" );
+	if( !triggerWasFound ) throw std::runtime_error( "l1menu::ReducedMenuSample::getTriggerParameterIdentifiers() called for a trigger that was not used to create the sample - "+trigger.name() );
 
 	return returnValue;
 }
 
-const l1menu::TriggerRates l1menu::ReducedMenuSample::rate( const l1menu::TriggerMenu& menu ) const
+float l1menu::ReducedMenuSample::eventRate() const
+{
+	return pImple_->eventRate;
+}
+
+void l1menu::ReducedMenuSample::setEventRate( float rate ) const
+{
+	pImple_->eventRate=rate;
+}
+
+std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const l1menu::TriggerMenu& menu ) const
 {
 	// TODO make sure the TriggerMenu is valid for this sample
 
@@ -446,7 +530,7 @@ const l1menu::TriggerRates l1menu::ReducedMenuSample::rate( const l1menu::Trigge
 
 	// The number of events that pass each trigger
 	std::vector<size_t> numberOfEventsPassed( menu.numberOfTriggers() );
-	float numberOfEventsPassingAllTriggers;
+	float numberOfEventsPassingAnyTrigger;
 
 	for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
 	{
@@ -456,7 +540,7 @@ const l1menu::TriggerRates l1menu::ReducedMenuSample::rate( const l1menu::Trigge
 	for( size_t eventNumber=0; eventNumber<numberOfEvents(); ++eventNumber )
 	{
 		const l1menu::IReducedEvent& event=getEvent(eventNumber);
-		bool allTriggersPassed=true;
+		bool anyTriggerPassed=false;
 
 		for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
 		{
@@ -464,26 +548,25 @@ const l1menu::TriggerRates l1menu::ReducedMenuSample::rate( const l1menu::Trigge
 			{
 				// If the event passes the trigger, increment the counter
 				++numberOfEventsPassed[triggerNumber];
+				anyTriggerPassed=true;
 			}
-			else allTriggersPassed=false;
 		}
 
-		if( allTriggersPassed ) ++numberOfEventsPassingAllTriggers;
+		if( anyTriggerPassed ) ++numberOfEventsPassingAnyTrigger;
 	}
 
-	l1menu::TriggerRates rates;
-	rates.setTotalFraction( static_cast<float>(numberOfEventsPassingAllTriggers)/static_cast<float>(numberOfEvents()) );
-	std::vector<float>& fractions=rates.fractions();
+	::MenuRateImplementation* pRates=new ::MenuRateImplementation;
+	pRates->setScaling( pImple_->eventRate );
+	// This is the value I want to return, but I still need access to the extended attributes of the subclass
+	std::unique_ptr<const l1menu::IMenuRate> pReturnValue( pRates );
+
+	pRates->setTotalFraction( static_cast<float>(numberOfEventsPassingAnyTrigger)/static_cast<float>(numberOfEvents()) );
 
 	for( size_t triggerNumber=0; triggerNumber<numberOfEventsPassed.size(); ++triggerNumber )
 	{
-		fractions.push_back( static_cast<float>(numberOfEventsPassed[triggerNumber])/static_cast<float>(numberOfEvents()) );
+		float fraction=static_cast<float>(numberOfEventsPassed[triggerNumber])/static_cast<float>(numberOfEvents());
+		pRates->addTriggerRate( mutableMenu.getTrigger(triggerNumber), fraction );
 	}
 
-	return rates;
-}
-
-const l1menu::TriggerRates l1menu::ReducedMenuSample::rate() const
-{
-	return rate( getTriggerMenu() );
+	return pReturnValue;
 }

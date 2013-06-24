@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include "l1menu/ITrigger.h"
+#include "l1menu/tools/tools.h"
 
 namespace // Use the unnamed namespace for things only used in this file
 {
@@ -49,17 +50,6 @@ namespace // Use the unnamed namespace for things only used in this file
         return returnValue;
     }
 
-    /** @brief Converts a value in absolute eta to the calorimeter region. */
-    float convertEtaCutToRegionCut( float etaCut )
-    {
-    	return 0;
-    }
-
-    /** @brief Converts a value in calorimeter region to absolute eta. */
-    float convertRegionCutToEtaCut( float regionCut )
-    {
-    	return 0;
-    }
 } // end of the unnamed namespace
 
 
@@ -248,7 +238,7 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 					if( triggerName=="L1_SingleMu_CJet" )
 					{
 						newTrigger.parameter("leg1etaCut")=etaOrRegionCut;
-						newTrigger.parameter("leg2regionCut")=convertEtaCutToRegionCut( etaOrRegionCut );
+						newTrigger.parameter("leg2regionCut")=l1menu::tools::convertEtaCutToRegionCut( etaOrRegionCut );
 					}
 					else if( triggerName=="L1_SingleIsoEG_CJet" )
 					{

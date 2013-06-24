@@ -4,7 +4,7 @@
 #include "l1menu/ITrigger.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/TriggerRatePlot.h"
-#include "l1menu/tools.h"
+#include "l1menu/tools/tools.h"
 #include "l1menu/ReducedMenuSample.h"
 #include "l1menu/IReducedEvent.h"
 #include <TH1F.h>
@@ -20,7 +20,7 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 	{
 		std::unique_ptr<l1menu::ITrigger> pTrigger=triggerMenu.getTriggerCopy(triggerNumber);
 		// Figure out the parameter names of all the possible thresholds.
-		const std::vector<std::string> thresholdNames= l1menu::getThresholdNames(*pTrigger);
+		const std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames(*pTrigger);
 
 		// When a threshold is tested, I want all the other thresholds to be zero. I'll run through
 		// and zero all of them now.

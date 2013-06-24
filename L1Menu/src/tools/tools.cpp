@@ -1,4 +1,4 @@
-#include "l1menu/tools.h"
+#include "l1menu/tools/tools.h"
 
 #include <sstream>
 #include <exception>
@@ -9,7 +9,7 @@
 #include "l1menu/IEvent.h"
 #include "l1menu/TriggerTable.h"
 
-std::vector<std::string> l1menu::getThresholdNames( const l1menu::ITrigger& trigger )
+std::vector<std::string> l1menu::tools::getThresholdNames( const l1menu::ITrigger& trigger )
 {
 	std::vector<std::string> returnValue;
 
@@ -54,7 +54,7 @@ std::vector<std::string> l1menu::getThresholdNames( const l1menu::ITrigger& trig
 	return returnValue;
 }
 
-std::vector<std::string> l1menu::getNonThresholdParameterNames( const l1menu::ITrigger& trigger )
+std::vector<std::string> l1menu::tools::getNonThresholdParameterNames( const l1menu::ITrigger& trigger )
 {
 	std::vector<std::string> returnValue;
 
@@ -74,9 +74,9 @@ std::vector<std::string> l1menu::getNonThresholdParameterNames( const l1menu::IT
 	return returnValue;
 }
 
-void l1menu::setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event, l1menu::ITrigger& trigger, float tolerance )
+void l1menu::tools::setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event, l1menu::ITrigger& trigger, float tolerance )
 {
-	std::vector<std::string> thresholdNames=l1menu::getThresholdNames( trigger );
+	std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames( trigger );
 	std::map<std::string,float> tightestPossibleThresholds;
 
 	// First set all of the thresholds to zero
@@ -106,7 +106,7 @@ void l1menu::setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event,
 		threshold=highThreshold;
 		bool highTest=trigger.apply( event );
 
-		if( lowTest==highTest ) std::runtime_error( "l1menu::setTriggerThresholdsAsTightAsPossible() - couldn't find a set of thresholds to pass the given event.");
+		if( lowTest==highTest ) std::runtime_error( "l1menu::tools::setTriggerThresholdsAsTightAsPossible() - couldn't find a set of thresholds to pass the given event.");
 
 		// Try and find the turn on point by bisection
 		while( highThreshold-lowThreshold > tolerance )
@@ -134,3 +134,63 @@ void l1menu::setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event,
 		trigger.parameter(parameterValuePair.first)=parameterValuePair.second;
 	}
 }
+
+std::pair<float,float> l1menu::tools::calorimeterRegionEtaBounds( size_t calorimeterRegion )
+{
+	if( calorimeterRegion==0 ) return std::make_pair( -5.0, -4.5 );
+	else if( calorimeterRegion==1 ) return std::make_pair( -4.5, -4.0 );
+	else if( calorimeterRegion==2 ) return std::make_pair( -4.0, -3.5 );
+	else if( calorimeterRegion==3 ) return std::make_pair( -3.5, -3.0 );
+	else if( calorimeterRegion==4 ) return std::make_pair( -3.0, -2.172 );
+	else if( calorimeterRegion==5 ) return std::make_pair( -2.172, -1.74 );
+	else if( calorimeterRegion==6 ) return std::make_pair( -1.74, -1.392 );
+	else if( calorimeterRegion==7 ) return std::make_pair( -1.392, -1.044 );
+	else if( calorimeterRegion==8 ) return std::make_pair( -1.044, -0.696 );
+	else if( calorimeterRegion==9 ) return std::make_pair( -0.696, -0.348 );
+	else if( calorimeterRegion==10 ) return std::make_pair( -0.348, 0 );
+	else if( calorimeterRegion==11 ) return std::make_pair( 0, 0.348 );
+	else if( calorimeterRegion==12 ) return std::make_pair( 0.348, 0.696 );
+	else if( calorimeterRegion==13 ) return std::make_pair( 0.696, 1.044 );
+	else if( calorimeterRegion==14 ) return std::make_pair( 1.044, 1.392 );
+	else if( calorimeterRegion==15 ) return std::make_pair( 1.392, 1.74 );
+	else if( calorimeterRegion==16 ) return std::make_pair( 1.74, 2.172 );
+	else if( calorimeterRegion==17 ) return std::make_pair( 2.172, 3.0 );
+	else if( calorimeterRegion==18 ) return std::make_pair( 3.0, 3.5 );
+	else if( calorimeterRegion==19 ) return std::make_pair( 3.5, 4.0 );
+	else if( calorimeterRegion==20 ) return std::make_pair( 4.0, 4.5 );
+	else if( calorimeterRegion==21 ) return std::make_pair( 4.5, 5.0 );
+	else throw std::runtime_error( "l1menu::tools::calorimeterRegionEtaBounds was given an invalid calorimeter region" );
+}
+
+float l1menu::tools::convertEtaCutToRegionCut( float etaCut )
+{
+	if( etaCut<calorimeterRegionEtaBounds(0).first || etaCut>calorimeterRegionEtaBounds(21).second ) throw "Fuck";
+
+	size_t caloRegion;
+	for( caloRegion=0; caloRegion<=21; ++caloRegion )
+	{
+		std::pair<float,float> regionBounds=calorimeterRegionEtaBounds( caloRegion );
+		if( regionBounds.first<etaCut && etaCut<=regionBounds.second ) break;
+	}
+
+	// I should have an answer for which calorimeter region the etaCut corresponds to.
+	// I want to format the result to make sure it's in one half of the symmetric detector,
+	// and also add 0.5 so that there's no ambiguity in a comparison (i.e. I'll never
+	// be uncertain if a comparison should be less than or less than or equal).
+	if( caloRegion>10 ) caloRegion=21-caloRegion;
+	return caloRegion+0.5;
+}
+
+float l1menu::tools::convertRegionCutToEtaCut( float regionCut )
+{
+	if( regionCut<0 || regionCut>21 ) throw std::runtime_error( "l1menu::tools::convertRegionCutToEtaCut was given an invalid calorimeter region" );
+
+	// Result will be absolute eta. Use the symmetry to make the comparison easier.
+	if( regionCut>10 ) regionCut=21-regionCut;
+
+	// The float will be truncated to an integer.
+	std::pair<float,float> regionBounds=calorimeterRegionEtaBounds( regionCut );
+
+	return regionBounds.second;
+}
+

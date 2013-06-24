@@ -48,9 +48,9 @@ namespace l1menu
 		//
 		// Implementations required for the ISample interface
 		//
-		virtual const l1menu::TriggerRates rate( const l1menu::TriggerMenu& menu ) const;
-		/** Add an extra method for the full menu, i.e. a shorthand for "triggerMenu.rate( triggerMenu.getTriggerMenu() )". */
-		const l1menu::TriggerRates rate() const;
+		virtual float eventRate() const;
+		virtual void setEventRate( float rate ) const;
+		virtual std::unique_ptr<const l1menu::IMenuRate> rate( const l1menu::TriggerMenu& menu ) const;
 	private:
 		std::unique_ptr<class ReducedMenuSamplePrivateMembers> pImple_;
 	}; // end of class ReducedMenuSample
