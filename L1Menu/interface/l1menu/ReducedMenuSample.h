@@ -5,7 +5,7 @@
 #include <memory>
 #include <map>
 
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 #include "l1menu/ISample.h"
 
 // Forward declarations
@@ -38,19 +38,21 @@ namespace l1menu
 		/** @brief Save to a file in protobuf format (protobuf in src/protobuf/l1menu.proto). */
 		void saveToFile( const std::string& filename ) const;
 
-		size_t numberOfEvents() const;
-		const l1menu::IReducedEvent& getEvent( size_t eventNumber ) const;
-
 		const l1menu::TriggerMenu& getTriggerMenu() const;
 		bool containsTrigger( const l1menu::ITrigger& trigger, bool allowOlderVersion=false ) const;
-		const std::map<std::string,IReducedEvent::ParameterID> getTriggerParameterIdentifiers( const l1menu::ITrigger& trigger, bool allowOlderVersion=false ) const;
+		const std::map<std::string,ReducedEvent::ParameterID> getTriggerParameterIdentifiers( const l1menu::ITrigger& trigger, bool allowOlderVersion=false ) const;
 
 		//
 		// Implementations required for the ISample interface
 		//
+		virtual size_t numberOfEvents() const;
+		virtual const l1menu::IEvent& getEvent( size_t eventNumber ) const;
+		virtual std::unique_ptr<l1menu::ICachedTrigger> createCachedTrigger( const l1menu::ITrigger& trigger ) const;
 		virtual float eventRate() const;
-		virtual void setEventRate( float rate ) const;
+		virtual void setEventRate( float rate );
+		virtual float sumOfWeights() const;
 		virtual std::unique_ptr<const l1menu::IMenuRate> rate( const l1menu::TriggerMenu& menu ) const;
+
 	private:
 		std::unique_ptr<class ReducedMenuSamplePrivateMembers> pImple_;
 	}; // end of class ReducedMenuSample

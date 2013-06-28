@@ -5,7 +5,7 @@
 
 #include <TSystem.h>
 
-#include "l1menu/IEvent.h"
+#include "l1menu/L1TriggerDPGEvent.h"
 #include "L1UpgradeNtuple.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisL1ExtraUpgradeDataFormat.h"
@@ -13,32 +13,6 @@
 #include "UserCode/L1TriggerDPG/interface/L1AnalysisGTDataFormat.h"
 #include "UserCode/L1TriggerDPG/interface/L1AnalysisGMTDataFormat.h"
 
-
-// I'll use the unnamed namespace for things that are only used in this file
-namespace
-{
-	/** Implementation of the l1menu::IEvent interface.
-	 *
-	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
-	 * @date 21/May/2013
-	 */
-	class EventImplementation : public l1menu::IEvent
-	{
-	public:
-		//
-		// These are the methods required by the IEvent interface
-		//
-		virtual L1Analysis::L1AnalysisDataFormat& rawEvent() { return rawEvent_; }
-		virtual const L1Analysis::L1AnalysisDataFormat& rawEvent() const { return rawEvent_; }
-		virtual bool* physicsBits() { return physicsBits_; }
-		virtual const bool* physicsBits() const { return physicsBits_; }
-		virtual float weight() const { return 1; }
-	protected:
-		L1Analysis::L1AnalysisDataFormat rawEvent_;
-		bool physicsBits_[128];
-	}; // end of the EventImplementation class
-
-} // end of the unnamed namespace
 
 namespace l1menu
 {
@@ -59,7 +33,7 @@ namespace l1menu
 		void fillDataStructure( int selectDataInput );
 		void fillL1Bits();
 		L1UpgradeNtuple inputNtuple;
-		::EventImplementation currentEvent;
+		l1menu::L1TriggerDPGEvent currentEvent;
 	};
 }
 
@@ -426,7 +400,7 @@ size_t l1menu::MenuSample::numberOfEvents() const
 	return static_cast<size_t>( pImple_->inputNtuple.GetEntries() );
 }
 
-const l1menu::IEvent& l1menu::MenuSample::getEvent( size_t eventNumber ) const
+const l1menu::L1TriggerDPGEvent& l1menu::MenuSample::getEvent( size_t eventNumber ) const
 {
 	// Make sure the event number requested is valid. Use static_cast to get rid
 	// of the "comparison between signed and unsigned" compiler warning.

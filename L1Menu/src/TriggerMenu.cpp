@@ -139,6 +139,18 @@ l1menu::ITrigger& l1menu::TriggerMenu::addTrigger( const std::string& triggerNam
 	return *triggers_.back();
 }
 
+l1menu::ITrigger& l1menu::TriggerMenu::addTrigger( const l1menu::ITrigger& triggerToCopy )
+{
+	std::unique_ptr<l1menu::ITrigger> pNewTrigger=triggerTable_.copyTrigger( triggerToCopy );
+	if( pNewTrigger.get()==NULL ) throw std::range_error( "Trigger requested that does not exist" );
+
+	triggers_.push_back( std::move(pNewTrigger) );
+
+	// Make sure triggerResults_ is always the same size as triggers_
+	triggerResults_.resize( triggers_.size() );
+	return *triggers_.back();
+}
+
 size_t l1menu::TriggerMenu::numberOfTriggers() const
 {
 	return triggers_.size();
@@ -165,7 +177,7 @@ std::unique_ptr<l1menu::ITrigger> l1menu::TriggerMenu::getTriggerCopy( size_t po
 	return triggerTable_.copyTrigger(*triggers_[position]);
 }
 
-bool l1menu::TriggerMenu::apply( const l1menu::IEvent& event ) const
+bool l1menu::TriggerMenu::apply( const l1menu::L1TriggerDPGEvent& event ) const
 {
 	bool atLeastOneTriggerHasFired=false;
 

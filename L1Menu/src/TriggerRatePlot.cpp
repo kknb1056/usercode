@@ -1,10 +1,12 @@
 #include "l1menu/TriggerRatePlot.h"
 
 #include "l1menu/ITrigger.h"
+#include "l1menu/ICachedTrigger.h"
+#include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/IEvent.h"
 #include "l1menu/TriggerTable.h"
 #include "l1menu/ReducedMenuSample.h"
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 #include <TH1F.h>
 #include <sstream>
 
@@ -75,7 +77,7 @@ l1menu::TriggerRatePlot::~TriggerRatePlot()
 	}
 }
 
-void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event )
+void l1menu::TriggerRatePlot::addEvent( const l1menu::L1TriggerDPGEvent& event )
 {
 	// loop over all of the bins in the histogram, and see if the trigger passes
 	// for the value at the center of the bin.
@@ -93,6 +95,33 @@ void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event )
 	}
 }
 
+void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
+{
+	float weightPerEvent=sample.eventRate()/sample.sumOfWeights();
+
+	// Create a cached trigger, which depending on the concrete type of the ISample
+	// may or may not significantly increase the speed at which this next loop happens.
+	std::unique_ptr<l1menu::ICachedTrigger> pCachedTrigger=sample.createCachedTrigger( *pTrigger_ );
+
+	for( size_t eventNumber=0; eventNumber<sample.numberOfEvents(); ++eventNumber )
+	{
+		const l1menu::IEvent& event=sample.getEvent( eventNumber );
+
+		for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
+		{
+			(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
+			if( pCachedTrigger->apply(event) ) // If the event passes the trigger
+			{
+				pHistogram_->Fill( (*pParameter_), event.weight()*weightPerEvent );
+			}
+			// could put an "else break" in here, but I don't know if triggers will
+			// run their thresholds the other way. E.g. a trigger could require
+			// a minimum amount of energy in the event, in which case the higher
+			// bins will pass.
+		} // end of loop over histogram bins
+	} // end of loop over events
+}
+
 const l1menu::ITrigger& l1menu::TriggerRatePlot::getTrigger() const
 {
 	return *pTrigger_;
@@ -103,9 +132,9 @@ void l1menu::TriggerRatePlot::initiateForReducedSample( const l1menu::ReducedMen
 	pTrigger_->initiateForReducedSample( sample );
 }
 
-void l1menu::TriggerRatePlot::addEvent( const l1menu::IReducedEvent& event )
+void l1menu::TriggerRatePlot::addEvent( const l1menu::ReducedEvent& event )
 {
-	// Basically exactly the same as for the l1menu::IEvent version. I
+	// Basically exactly the same as for the l1menu::L1TriggerDPGEvent version. I
 	// should probably template this.
 	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
 	{

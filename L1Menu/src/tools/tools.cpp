@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include "l1menu/ITrigger.h"
-#include "l1menu/IEvent.h"
+#include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/TriggerTable.h"
 
 std::vector<std::string> l1menu::tools::getThresholdNames( const l1menu::ITrigger& trigger )
@@ -74,7 +74,7 @@ std::vector<std::string> l1menu::tools::getNonThresholdParameterNames( const l1m
 	return returnValue;
 }
 
-void l1menu::tools::setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event, l1menu::ITrigger& trigger, float tolerance )
+void l1menu::tools::setTriggerThresholdsAsTightAsPossible( const l1menu::L1TriggerDPGEvent& event, l1menu::ITrigger& trigger, float tolerance )
 {
 	std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames( trigger );
 	std::map<std::string,float> tightestPossibleThresholds;

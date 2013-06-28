@@ -1,7 +1,7 @@
 #include "l1menu/RegisterTriggerMacro.h"
-#include "l1menu/IEvent.h"
+#include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/ReducedMenuSample.h"
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 
 #include <stdexcept>
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
@@ -10,7 +10,7 @@
 
 #include <string>
 #include <vector>
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 
 namespace l1menu
 {
@@ -36,10 +36,10 @@ namespace l1menu
 			virtual const float& parameter( const std::string& parameterName ) const;
 
 			virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-			virtual bool apply( const l1menu::IReducedEvent& event ) const;
+			virtual bool apply( const l1menu::ReducedEvent& event ) const;
 		protected:
 			float threshold1_;
-			IReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
+			ReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
 		}; // end of the HTT base class
 
 		/** @brief First version of the HTT trigger.
@@ -51,7 +51,7 @@ namespace l1menu
 		{
 		public:
 			virtual unsigned int version() const;
-			virtual bool apply( const l1menu::IEvent& event ) const;
+			virtual bool apply( const l1menu::L1TriggerDPGEvent& event ) const;
 		}; // end of version 0 class
 
 
@@ -86,7 +86,7 @@ namespace l1menu
 //----------------------------------------------------------------------------------------
 
 
-bool l1menu::triggers::HTT_v0::apply( const l1menu::IEvent& event ) const
+bool l1menu::triggers::HTT_v0::apply( const l1menu::L1TriggerDPGEvent& event ) const
 {
 	const L1Analysis::L1AnalysisDataFormat& analysisDataFormat=event.rawEvent();
 	const bool* PhysicsBits=event.physicsBits();
@@ -111,12 +111,12 @@ void l1menu::triggers::HTT::initiateForReducedSample( const l1menu::ReducedMenuS
 {
 	const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers( *this );
 
-	std::map<std::string,IReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
+	std::map<std::string,ReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
 	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "HTT::initiateForReducedSample() - it appears this reduced sample wasn't created with this trigger. You can only run over a l1menu::ReducedMenuSample with triggers that were on when the sample was created." );
 	else reducedSampleParameterID_threshold1_=iFindResult->second;
 }
 
-bool l1menu::triggers::HTT::apply( const l1menu::IReducedEvent& event ) const
+bool l1menu::triggers::HTT::apply( const l1menu::ReducedEvent& event ) const
 {
 	return ( threshold1_<=event.parameterValue(reducedSampleParameterID_threshold1_) );
 }

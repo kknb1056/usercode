@@ -5,7 +5,7 @@
 #include <vector>
 #include <memory>
 #include "l1menu/ITrigger.h"
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 
 namespace l1menu
 {
@@ -32,15 +32,15 @@ namespace l1menu
 			virtual const std::vector<std::string> parameterNames() const;
 			virtual float& parameter( const std::string& parameterName );
 			virtual const float& parameter( const std::string& parameterName ) const;
-			virtual bool apply( const l1menu::IEvent& event ) const;
+			virtual bool apply( const l1menu::L1TriggerDPGEvent& event ) const;
 
 			virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-			virtual bool apply( const l1menu::IReducedEvent& event ) const;
+			virtual bool apply( const l1menu::ReducedEvent& event ) const;
 		protected:
 			std::unique_ptr<l1menu::ITrigger> pLeg1_;
 			std::unique_ptr<l1menu::ITrigger> pLeg2_;
-			std::vector<l1menu::IReducedEvent::ParameterID> parameterIDs_;
-			/// Take pointers when "apply"ing IReducedEvents to avoid expensive string parameters
+			std::vector<l1menu::ReducedEvent::ParameterID> parameterIDs_;
+			/// Take pointers when "apply"ing ReducedEvents to avoid expensive string parameters
 			std::vector<float*> parameterValuePointers_;
 		};
 

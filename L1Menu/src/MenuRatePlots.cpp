@@ -6,7 +6,7 @@
 #include "l1menu/TriggerRatePlot.h"
 #include "l1menu/tools/tools.h"
 #include "l1menu/ReducedMenuSample.h"
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 #include <TH1F.h>
 
 l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory )
@@ -53,7 +53,7 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 	} // end of loop over the triggers in the menu
 }
 
-void l1menu::MenuRatePlots::addEvent( const l1menu::IEvent& event )
+void l1menu::MenuRatePlots::addEvent( const l1menu::L1TriggerDPGEvent& event )
 {
 	// Loop over each of the TriggerRatePlots and add the event to each of them.
 	for( auto& ratePlot : triggerPlots_ )
@@ -71,12 +71,21 @@ void l1menu::MenuRatePlots::initiateForReducedSample( const l1menu::ReducedMenuS
 	}
 }
 
-void l1menu::MenuRatePlots::addEvent( const l1menu::IReducedEvent& event )
+void l1menu::MenuRatePlots::addEvent( const l1menu::ReducedEvent& event )
 {
 	// Loop over each of the TriggerRatePlots and add the event to each of them.
 	for( auto& ratePlot : triggerPlots_ )
 	{
 		ratePlot.addEvent( event );
+	}
+}
+
+void l1menu::MenuRatePlots::addSample( const l1menu::ISample& sample )
+{
+	// Loop over each of the TriggerRatePlots and add the sample to each of them.
+	for( auto& ratePlot : triggerPlots_ )
+	{
+		ratePlot.addSample( sample );
 	}
 }
 

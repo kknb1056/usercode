@@ -5,10 +5,14 @@
 #include <fcntl.h>
 #include <algorithm>
 #include <iostream>
-#include "l1menu/IReducedEvent.h"
+#include <sstream>
+#include "l1menu/ReducedEvent.h"
 #include "l1menu/MenuSample.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/ITrigger.h"
+#include "l1menu/ICachedTrigger.h"
+#include "l1menu/L1TriggerDPGEvent.h"
+#include "l1menu/IEvent.h"
 #include "l1menu/IMenuRate.h"
 #include "l1menu/ITriggerRate.h"
 #include "l1menu/tools/tools.h"
@@ -18,16 +22,6 @@
 
 namespace // unnamed namespace
 {
-	class ReducedEventImplementation : public l1menu::IReducedEvent
-	{
-	public:
-		virtual ~ReducedEventImplementation() {}
-		virtual float parameterValue( size_t parameterNumber ) const {  return pProtobufEvent->threshold(parameterNumber); }
-		virtual float weight() const { if( pProtobufEvent->has_weight() ) return pProtobufEvent->weight(); else return 1; }
-		void setWeight( float newWeight ) { pProtobufEvent->set_weight(newWeight); }
-		l1menuprotobuf::Event* pProtobufEvent;
-	};
-
 	/** @brief Sentry that closes a Unix file descriptor when it goes out of scope.
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 07/Jun/2013
@@ -94,6 +88,44 @@ namespace // unnamed namespace
 		mutable std::vector<const l1menu::ITriggerRate*> baseClassReferences_;
 	};
 
+	/** @brief An object that stores pointers to trigger parameters to avoid costly string comparisons.
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 26/Jun/2013
+	 */
+	class CachedTriggerImplementation : public l1menu::ICachedTrigger
+	{
+	public:
+		CachedTriggerImplementation( const l1menu::ReducedMenuSample& sample, const l1menu::ITrigger& trigger )
+		{
+			const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers(trigger);
+
+			for( const auto& identifier : parameterIdentifiers )
+			{
+				identifiers_.push_back( std::make_pair( identifier.second, &trigger.parameter(identifier.first) ) );
+			}
+		}
+		virtual bool apply( const l1menu::IEvent& event )
+		{
+			// Not happy using a static_cast, but this method is called in many, many loops.
+			// I should probably find out how much faster this is than a dynamic_cast, maybe
+			// it's not even worth it. Anyway, I'm banking that no one will ever pass an
+			// event that wasn't created with the same sample that this proxy was created
+			// with.
+			const l1menu::ReducedEvent* pEvent=static_cast<const l1menu::ReducedEvent*>(&event);
+			for( const auto& identifier : identifiers_ )
+			{
+				if( pEvent->parameterValue(identifier.first) < *identifier.second ) return false;
+			}
+
+			// If control got this far then all of the thresholds passed, and
+			// I can pass the event.
+			return true;
+		}
+	protected:
+		std::vector< std::pair<l1menu::ReducedEvent::ParameterID,const float*> > identifiers_;
+	}; // end of class ReducedSampleCachedTrigger
+
 	TriggerRateImplementation::TriggerRateImplementation( const l1menu::ITrigger& trigger, float fraction, const MenuRateImplementation& menuRate )
 		: fraction_(fraction), menuRate_(menuRate)
 	{
@@ -111,6 +143,16 @@ namespace // unnamed namespace
 	float TriggerRateImplementation::fraction() const { return fraction_; }
 	float TriggerRateImplementation::rate() const { return fraction_*menuRate_.scaling(); }
 
+	float sumWeights( const l1menuprotobuf::Run& run )
+	{
+		float returnValue=0;
+		for( const auto& event : run.event() )
+		{
+			if( event.has_weight() ) returnValue+=event.weight();
+			else returnValue+=1;
+		}
+		return returnValue;
+	}
 }
 
 namespace l1menu
@@ -125,12 +167,13 @@ namespace l1menu
 	private:
 		l1menu::TriggerMenu mutableTriggerMenu_;
 	public:
-		ReducedMenuSamplePrivateMembers( const l1menu::TriggerMenu& newTriggerMenu );
-		ReducedMenuSamplePrivateMembers( const std::string& filename );
-		void copyMenuToProtobufSample();
-		::ReducedEventImplementation event;
+		ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const l1menu::TriggerMenu& newTriggerMenu );
+		ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const std::string& filename );
+		//void copyMenuToProtobufSample();
+		l1menu::ReducedEvent event;
 		const l1menu::TriggerMenu& triggerMenu; // External const access to mutableTriggerMenu_
 		float eventRate;
+		float sumOfWeights;
 		l1menuprotobuf::SampleHeader protobufSampleHeader;
 		// Protobuf doesn't implement move semantics so I'll use pointers
 		std::vector<std::unique_ptr<l1menuprotobuf::Run> > protobufRuns;
@@ -144,8 +187,8 @@ namespace l1menu
 	const std::string ReducedMenuSamplePrivateMembers::FILE_FORMAT_MAGIC_NUMBER="l1menuReducedMenuSample";
 }
 
-l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::TriggerMenu& newTriggerMenu )
-	: mutableTriggerMenu_( newTriggerMenu ), triggerMenu( mutableTriggerMenu_ ), eventRate(1)
+l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const l1menu::TriggerMenu& newTriggerMenu )
+	: mutableTriggerMenu_( newTriggerMenu ), event(thisObject), triggerMenu( mutableTriggerMenu_ ), eventRate(1), sumOfWeights(0)
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -184,8 +227,8 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 
 }
 
-l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const std::string& filename )
-	: triggerMenu(mutableTriggerMenu_)
+l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const std::string& filename )
+	: event(thisObject), triggerMenu(mutableTriggerMenu_), eventRate(1), sumOfWeights(0)
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -261,6 +304,12 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 		protobufRuns.push_back( std::move( pNewRun ) );
 	}
 
+	// Count up the sum of the weights of all events
+	for( const auto& pRun : protobufRuns )
+	{
+		sumOfWeights+=sumWeights( *pRun );
+	}
+
 	// I have all of the information in the protobuf members, but I also need the trigger information
 	// in the form of l1menu::TriggerMenu. Copy out the required information.
 	for( int triggerNumber=0; triggerNumber<protobufSampleHeader.trigger_size(); ++triggerNumber )
@@ -285,15 +334,21 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 }
 
 l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
-	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( triggerMenu ) )
+	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( *this, triggerMenu ) )
 {
 	addSample( originalSample );
 }
 
 l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::TriggerMenu& triggerMenu )
-	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( triggerMenu ) )
+	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( *this, triggerMenu ) )
 {
 	// No operation besides the initialiser list
+}
+
+l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
+	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( *this, filename ) )
+{
+	// No operation except the initialiser list
 }
 
 l1menu::ReducedMenuSample::~ReducedMenuSample()
@@ -320,7 +375,7 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 			pCurrentRun=pImple_->protobufRuns.back().get();
 		}
 
-		const l1menu::IEvent& event=originalSample.getEvent( eventNumber );
+		const l1menu::L1TriggerDPGEvent& event=originalSample.getEvent( eventNumber );
 		l1menuprotobuf::Event* pProtobufEvent=pCurrentRun->add_event();
 
 		// Loop over all of the triggers
@@ -348,13 +403,8 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 
 		} // end of loop over triggers
 
+		pImple_->sumOfWeights+=event.weight();
 	} // end of loop over events
-}
-
-l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
-	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( filename ) )
-{
-	// No operation except the initialiser list
 }
 
 void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
@@ -402,25 +452,6 @@ size_t l1menu::ReducedMenuSample::numberOfEvents() const
 	size_t numberOfEvents=0;
 	for( const auto& pRun : pImple_->protobufRuns ) numberOfEvents+=pRun->event_size();
 	return numberOfEvents;
-}
-
-const l1menu::IReducedEvent& l1menu::ReducedMenuSample::getEvent( size_t eventNumber ) const
-{
-	for( const auto& pRun : pImple_->protobufRuns )
-	{
-		if( eventNumber<static_cast<size_t>(pRun->event_size()) )
-		{
-			pImple_->event.pProtobufEvent=pRun->mutable_event(eventNumber);
-			return pImple_->event;
-		}
-		// Event must be in a later run, so reduce the number by how many events
-		// were in this run and look again.
-		eventNumber-=pRun->event_size();
-	}
-
-	// Should always find the event before getting to this point, so throw an
-	// exception if this happens.
-	throw std::runtime_error( "ReducedMenuSample::getEvent(eventNumber) was asked for an invalid eventNumber" );
 }
 
 const l1menu::TriggerMenu& l1menu::ReducedMenuSample::getTriggerMenu() const
@@ -526,14 +557,44 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 	return returnValue;
 }
 
+const l1menu::IEvent& l1menu::ReducedMenuSample::getEvent( size_t eventNumber ) const
+{
+	for( const auto& pRun : pImple_->protobufRuns )
+	{
+		if( eventNumber<static_cast<size_t>(pRun->event_size()) )
+		{
+			pImple_->event.pProtobufEvent_=pRun->mutable_event(eventNumber);
+			return pImple_->event;
+		}
+		// Event must be in a later run, so reduce the number by how many events
+		// were in this run and look again.
+		eventNumber-=pRun->event_size();
+	}
+
+	// Should always find the event before getting to this point, so throw an
+	// exception if this happens.
+	throw std::runtime_error( "ReducedMenuSample::getEvent(eventNumber) was asked for an invalid eventNumber" );
+
+}
+
+std::unique_ptr<l1menu::ICachedTrigger> l1menu::ReducedMenuSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
+{
+	return std::unique_ptr<l1menu::ICachedTrigger>( new CachedTriggerImplementation(*this,trigger) );
+}
+
 float l1menu::ReducedMenuSample::eventRate() const
 {
 	return pImple_->eventRate;
 }
 
-void l1menu::ReducedMenuSample::setEventRate( float rate ) const
+void l1menu::ReducedMenuSample::setEventRate( float rate )
 {
 	pImple_->eventRate=rate;
+}
+
+float l1menu::ReducedMenuSample::sumOfWeights() const
+{
+	return pImple_->sumOfWeights;
 }
 
 std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const l1menu::TriggerMenu& menu ) const
@@ -554,12 +615,12 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 
 	for( size_t eventNumber=0; eventNumber<numberOfEvents(); ++eventNumber )
 	{
-		const l1menu::IReducedEvent& event=getEvent(eventNumber);
+		const l1menu::IEvent& event=getEvent(eventNumber);
 		bool anyTriggerPassed=false;
 
 		for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
 		{
-			if( mutableMenu.getTrigger( triggerNumber ).apply( event ) )
+			if( event.passesTrigger( mutableMenu.getTrigger(triggerNumber) ) )
 			{
 				// If the event passes the trigger, increment the counter
 				++numberOfEventsPassed[triggerNumber];

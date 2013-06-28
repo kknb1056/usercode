@@ -14,7 +14,7 @@
 namespace l1menu
 {
 	class ITrigger;
-	class IEvent;
+	class L1TriggerDPGEvent;
 }
 
 
@@ -67,7 +67,7 @@ namespace l1menu
 		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 		 * @date 28/May/2013
 		 */
-		void setTriggerThresholdsAsTightAsPossible( const l1menu::IEvent& event, l1menu::ITrigger& trigger, float tolerance=0.01 );
+		void setTriggerThresholdsAsTightAsPossible( const l1menu::L1TriggerDPGEvent& event, l1menu::ITrigger& trigger, float tolerance=0.01 );
 
 		std::pair<float,float> calorimeterRegionEtaBounds( size_t calorimeterRegion );
 

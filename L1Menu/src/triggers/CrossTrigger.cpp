@@ -53,7 +53,7 @@ const float& l1menu::triggers::CrossTrigger::parameter( const std::string& param
 	else throw std::logic_error( "Not a valid parameter name (\""+parameterName+"\")" );
 }
 
-bool l1menu::triggers::CrossTrigger::apply( const l1menu::IEvent& event ) const
+bool l1menu::triggers::CrossTrigger::apply( const l1menu::L1TriggerDPGEvent& event ) const
 {
 	return pLeg1_->apply(event) && pLeg2_->apply(event);
 }
@@ -74,7 +74,7 @@ void l1menu::triggers::CrossTrigger::initiateForReducedSample( const l1menu::Red
 	}
 }
 
-bool l1menu::triggers::CrossTrigger::apply( const l1menu::IReducedEvent& event ) const
+bool l1menu::triggers::CrossTrigger::apply( const l1menu::ReducedEvent& event ) const
 {
 	if( parameterIDs_.empty() ) throw std::runtime_error( "CrossTrigger has not been initiated for this sample. You must call initiateForReducedSample(...) first." );
 

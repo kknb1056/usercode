@@ -14,9 +14,9 @@ class TH1;
 namespace l1menu
 {
 	class TriggerMenu;
-	class IEvent;
+	class L1TriggerDPGEvent;
 	class ReducedMenuSample;
-	class IReducedEvent;
+	class ReducedEvent;
 }
 
 
@@ -46,10 +46,12 @@ namespace l1menu
 		 */
 		MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory=NULL );
 
-		void addEvent( const l1menu::IEvent& event );
+		void addEvent( const l1menu::L1TriggerDPGEvent& event );
 
 		void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-		void addEvent( const l1menu::IReducedEvent& event );
+		void addEvent( const l1menu::ReducedEvent& event );
+
+		void addSample( const l1menu::ISample& sample );
 
 		/** @brief Set the root TDirectory where the histograms will reside. */
 		void setDirectory( TDirectory* pDirectory );

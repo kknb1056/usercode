@@ -9,7 +9,7 @@
 namespace l1menu
 {
 	class ITrigger;
-	class IEvent;
+	class L1TriggerDPGEvent;
 }
 
 namespace l1menu
@@ -26,6 +26,13 @@ namespace l1menu
 
 		ITrigger& addTrigger( const std::string& triggerName );
 		ITrigger& addTrigger( const std::string& triggerName, unsigned int version );
+		/** @brief Copies the given trigger including all parameters.
+		 *
+		 * @param[in] trigger    The trigger to copy.
+		 * @return               A reference to the trigger just added. Note that since it's copied,
+		 *                       this is not the same as the reference supplied as input.
+		 */
+		ITrigger& addTrigger( const ITrigger& triggerToCopy );
 
 		size_t numberOfTriggers() const;
 		ITrigger& getTrigger( size_t position );
@@ -33,7 +40,7 @@ namespace l1menu
 
 		std::unique_ptr<l1menu::ITrigger> getTriggerCopy( size_t position ) const;
 
-		bool apply( const l1menu::IEvent& event ) const;
+		bool apply( const l1menu::L1TriggerDPGEvent& event ) const;
 
 		void loadMenuFromFile( const std::string& filename );
 	private:

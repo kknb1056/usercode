@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include "l1menu/IEvent.h"
+#include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/ReducedMenuSample.h"
 #include "l1menu/RegisterTriggerMacro.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
@@ -45,7 +45,7 @@ namespace l1menu
 //----------------------------------------------------------------------------------------
 
 
-bool l1menu::triggers::SingleJetCentral_v0::apply( const l1menu::IEvent& event ) const
+bool l1menu::triggers::SingleJetCentral_v0::apply( const l1menu::L1TriggerDPGEvent& event ) const
 {
 	const L1Analysis::L1AnalysisDataFormat& analysisDataFormat=event.rawEvent();
 	const bool* PhysicsBits=event.physicsBits();
@@ -84,12 +84,12 @@ void l1menu::triggers::SingleJetCentral::initiateForReducedSample( const l1menu:
 {
 	const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers( *this );
 
-	std::map<std::string,IReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
+	std::map<std::string,ReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
 	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "SingleJetCentral::initiateForReducedSample() - it appears this reduced sample wasn't created with this trigger. You can only run over a l1menu::ReducedMenuSample with triggers that were on when the sample was created." );
 	else reducedSampleParameterID_threshold1_=iFindResult->second;
 }
 
-bool l1menu::triggers::SingleJetCentral::apply( const l1menu::IReducedEvent& event ) const
+bool l1menu::triggers::SingleJetCentral::apply( const l1menu::ReducedEvent& event ) const
 {
 	return ( threshold1_<=event.parameterValue(reducedSampleParameterID_threshold1_) );
 }

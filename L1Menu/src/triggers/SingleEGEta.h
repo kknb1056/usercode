@@ -4,14 +4,14 @@
 #include <string>
 #include <vector>
 #include "l1menu/ITrigger.h"
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 
 //
 // Forward declarations
 //
 namespace l1menu
 {
-	class IEvent;
+	class L1TriggerDPGEvent;
 	class ReducedMenuSample;
 }
 
@@ -39,11 +39,11 @@ namespace l1menu
 			virtual const float& parameter( const std::string& parameterName ) const;
 
 			virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-			virtual bool apply( const l1menu::IReducedEvent& event ) const;
+			virtual bool apply( const l1menu::ReducedEvent& event ) const;
 		protected:
 			float threshold1_;
 			float regionCut_;
-			IReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
+			ReducedEvent::ParameterID reducedSampleParameterID_threshold1_;
 		}; // end of the SingleEGEta base class
 
 		/** @brief First version of the SingleEGEta trigger.
@@ -55,7 +55,7 @@ namespace l1menu
 		{
 		public:
 			virtual unsigned int version() const;
-			virtual bool apply( const l1menu::IEvent& event ) const;
+			virtual bool apply( const l1menu::L1TriggerDPGEvent& event ) const;
 		}; // end of version 0 class
 
 	} // end of namespace triggers

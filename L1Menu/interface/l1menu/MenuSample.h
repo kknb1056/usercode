@@ -7,7 +7,7 @@
 // Forward declarations
 namespace l1menu
 {
-	class IEvent;
+	class L1TriggerDPGEvent;
 }
 
 
@@ -26,7 +26,7 @@ namespace l1menu
 
 		void loadFile( const std::string& filename );
 		size_t numberOfEvents() const;
-		const l1menu::IEvent& getEvent( size_t eventNumber ) const;
+		const l1menu::L1TriggerDPGEvent& getEvent( size_t eventNumber ) const;
 	private:
 		class MenuSamplePrivateMembers* pImple_;
 	}; // end of class MenuSample

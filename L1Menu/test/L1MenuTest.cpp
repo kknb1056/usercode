@@ -6,7 +6,7 @@
 #include "l1menu/ITrigger.h"
 #include "l1menu/MenuRatePlots.h"
 #include "l1menu/ReducedMenuSample.h"
-#include "l1menu/IReducedEvent.h"
+#include "l1menu/ReducedEvent.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -74,13 +74,13 @@ int main( int argc, char* argv[] )
 		reducedRateVersusThresholdPlots.relinquishOwnershipOfPlots();
 
 		reducedRateVersusThresholdPlots.initiateForReducedSample(myReducedSample);
-		for( eventNumber=0; eventNumber<myReducedSample.numberOfEvents(); ++eventNumber )
-		{
-			//if( eventNumber>5 ) break;
-			const l1menu::IReducedEvent& event=myReducedSample.getEvent( eventNumber );
-			reducedRateVersusThresholdPlots.addEvent( event );
-			//std::cout << eventNumber << " trigger=" << pMyTrigger->apply(event) << " Parameters: " << event.parameterValue(0) << "," << event.parameterValue(0)  << std::endl;
-		}
+//		for( eventNumber=0; eventNumber<myReducedSample.numberOfEvents(); ++eventNumber )
+//		{
+//			//if( eventNumber>5 ) break;
+//			const l1menu::ReducedEvent& event=myReducedSample.getEvent( eventNumber );
+//			reducedRateVersusThresholdPlots.addEvent( event );
+//			//std::cout << eventNumber << " trigger=" << pMyTrigger->apply(event) << " Parameters: " << event.parameterValue(0) << "," << event.parameterValue(0)  << std::endl;
+//		}
 		std::cout << "Finished reduced test" << std::endl;
 
 		l1menu::MenuRatePlots rateVersusThresholdPlots( myMenu );
@@ -91,7 +91,7 @@ int main( int argc, char* argv[] )
 		for( eventNumber=0; eventNumber<mySample.numberOfEvents(); ++eventNumber )
 		{
 			//if( eventNumber>5 ) break;
-			const l1menu::IEvent& event=mySample.getEvent( eventNumber );
+			const l1menu::L1TriggerDPGEvent& event=mySample.getEvent( eventNumber );
 
 			rateVersusThresholdPlots.addEvent( event );
 		}

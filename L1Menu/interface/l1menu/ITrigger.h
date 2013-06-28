@@ -7,8 +7,8 @@
 // Forward declarations
 namespace l1menu
 {
-	class IEvent;
-	class IReducedEvent;
+	class L1TriggerDPGEvent;
+	class ReducedEvent;
 	class ReducedMenuSample;
 }
 
@@ -24,10 +24,10 @@ namespace l1menu
 		virtual const std::vector<std::string> parameterNames() const = 0;
 		virtual float& parameter( const std::string& parameterName ) = 0;
 		virtual const float& parameter( const std::string& parameterName ) const = 0;
-		virtual bool apply( const l1menu::IEvent& event ) const = 0;
+		virtual bool apply( const l1menu::L1TriggerDPGEvent& event ) const = 0;
 
 		virtual void initiateForReducedSample( const l1menu::ReducedMenuSample& sample ) = 0;
-		virtual bool apply( const l1menu::IReducedEvent& event ) const = 0;
+		virtual bool apply( const l1menu::ReducedEvent& event ) const = 0;
 	};
 
 } // end of namespace l1menu

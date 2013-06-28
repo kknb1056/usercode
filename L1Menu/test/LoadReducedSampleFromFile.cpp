@@ -34,7 +34,7 @@ int main( int argc, char* argv[] )
 	{
 		const float scaleToKiloHz=1.0/1000.0;
 		const float orbitsPerSecond=11246;
-		const float bunchSpacing=50;
+		const float bunchSpacing=25;
 		float numberOfBunches;
 		if( bunchSpacing==50 ) numberOfBunches=1380;
 		else if( bunchSpacing==25 ) numberOfBunches=2760;
@@ -47,29 +47,24 @@ int main( int argc, char* argv[] )
 		rateVersusThresholdPlots.initiateForReducedSample( mySample );
 
 		std::cout << "Calculating rate plots..." << std::endl;
-		for( size_t eventNumber=0; eventNumber<mySample.numberOfEvents(); ++eventNumber )
-		{
-			const l1menu::IReducedEvent& event=mySample.getEvent( eventNumber );
-			rateVersusThresholdPlots.addEvent( event );
-		}
+		rateVersusThresholdPlots.addSample( mySample );
 
 		// Use a smart pointer with a custom deleter that will close the file properly.
 		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "reducedRateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
 		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
 		rateVersusThresholdPlots.relinquishOwnershipOfPlots();
 
-		std::cout << "Calculating fractions..." << std::endl;
-		l1menu::TriggerMenu menu;
-		menu.loadMenuFromFile( "L1Menu_test.txt" );
-
-
-		std::unique_ptr<const l1menu::IMenuRate> pRates=mySample.rate(menu);
-
-		std::cout << "Total fraction is " << pRates->totalFraction() << " and rate is " << pRates->totalRate() << "kHz"<< std::endl;
-		for( const auto& pRate : pRates->triggerRates() )
-		{
-			std::cout << "Trigger " << pRate->trigger().name() << " has fraction " << pRate->fraction() << " and rate " << pRate->rate() << "kHz" << std::endl;
-		}
+//		std::cout << "Calculating fractions..." << std::endl;
+//		l1menu::TriggerMenu menu;
+//		menu.loadMenuFromFile( "L1Menu_test.txt" );
+//
+//		std::unique_ptr<const l1menu::IMenuRate> pRates=mySample.rate(menu);
+//
+//		std::cout << "Total fraction is " << pRates->totalFraction() << " and rate is " << pRates->totalRate() << "kHz"<< std::endl;
+//		for( const auto& pRate : pRates->triggerRates() )
+//		{
+//			std::cout << "Trigger " << pRate->trigger().name() << " has fraction " << pRate->fraction() << " and rate " << pRate->rate() << "kHz" << std::endl;
+//		}
 	}
 	catch( std::exception& error )
 	{
