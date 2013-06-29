@@ -14,6 +14,9 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 	// Before making any histograms make sure errors are done properly
 	TH1::SetDefaultSumw2();
 
+	// This is always useful
+	const l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
+
 	// Loop over each of the triggers in the menu, book a histogram for it and then create
 	// a l1menu::TriggerRate plot for it.
 	for( size_t triggerNumber=0; triggerNumber<triggerMenu.numberOfTriggers(); ++triggerNumber )
@@ -21,6 +24,31 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 		std::unique_ptr<l1menu::ITrigger> pTrigger=triggerMenu.getTriggerCopy(triggerNumber);
 		// Figure out the parameter names of all the possible thresholds.
 		const std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames(*pTrigger);
+
+		//
+		// If there is more than one threshold add a plot where all of the thresholds are scaled together.
+		//
+		if( thresholdNames.size()>1 )
+		{
+			const std::string& mainThreshold=thresholdNames.front();
+			unsigned int numberOfBins=100;
+			float lowerEdge=0;
+			float upperEdge=100;
+			try
+			{
+				numberOfBins=triggerTable.getSuggestedNumberOfBins( pTrigger->name(), mainThreshold );
+				lowerEdge=triggerTable.getSuggestedLowerEdge( pTrigger->name(), mainThreshold );
+				upperEdge=triggerTable.getSuggestedUpperEdge( pTrigger->name(), mainThreshold );
+			}
+			catch( std::exception& error) { /* Do nothing. If no binning suggestions have been set for this trigger use the defaults I set above. */ }
+
+			std::unique_ptr<TH1> pHistogram( new TH1F( (pTrigger->name()+"_v_allThresholdsScaled").c_str(), "This title gets changed by TriggerRatePlot anyway", numberOfBins, lowerEdge, upperEdge ) );
+			pHistogram->SetDirectory( pDirectory );
+			// Passing thresholdNames tells the TriggerRatePlot to scale all parameters named in that
+			// vector along with mainThreshold.
+			triggerPlots_.push_back( std::move(l1menu::TriggerRatePlot(*pTrigger,std::move(pHistogram),mainThreshold,thresholdNames)) );
+
+		}
 
 		// When a threshold is tested, I want all the other thresholds to be zero. I'll run through
 		// and zero all of them now.
@@ -38,7 +66,6 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 			float upperEdge=100;
 			try
 			{
-				const l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
 				numberOfBins=triggerTable.getSuggestedNumberOfBins( pTrigger->name(), *iThresholdName );
 				lowerEdge=triggerTable.getSuggestedLowerEdge( pTrigger->name(), *iThresholdName );
 				upperEdge=triggerTable.getSuggestedUpperEdge( pTrigger->name(), *iThresholdName );

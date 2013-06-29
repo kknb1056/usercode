@@ -40,10 +40,24 @@ int main( int argc, char* argv[] )
 		else if( bunchSpacing==25 ) numberOfBunches=2760;
 		else throw std::logic_error( "The number of bunches has not been programmed for the bunch spacing selected" );
 
+		l1menu::TriggerMenu menu;
+		menu.loadMenuFromFile( "L1Menu_test.txt" );
+		for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
+		{
+			const l1menu::ITrigger& trigger=menu.getTrigger( triggerNumber );
+
+			std::cout << "After loading trigger " << trigger.name();
+			for( const auto& name : trigger.parameterNames() )
+			{
+				std::cout << " (" << name << "=" << trigger.parameter(name) << ")";
+			}
+			std::cout << "\n";
+		}
+
 		l1menu::ReducedMenuSample mySample( sampleFilename );
 		mySample.setEventRate( orbitsPerSecond*numberOfBunches*scaleToKiloHz );
 
-		l1menu::MenuRatePlots rateVersusThresholdPlots( mySample.getTriggerMenu() );
+		l1menu::MenuRatePlots rateVersusThresholdPlots( menu );//mySample.getTriggerMenu() );
 		rateVersusThresholdPlots.initiateForReducedSample( mySample );
 
 		std::cout << "Calculating rate plots..." << std::endl;
@@ -55,8 +69,6 @@ int main( int argc, char* argv[] )
 		rateVersusThresholdPlots.relinquishOwnershipOfPlots();
 
 //		std::cout << "Calculating fractions..." << std::endl;
-//		l1menu::TriggerMenu menu;
-//		menu.loadMenuFromFile( "L1Menu_test.txt" );
 //
 //		std::unique_ptr<const l1menu::IMenuRate> pRates=mySample.rate(menu);
 //

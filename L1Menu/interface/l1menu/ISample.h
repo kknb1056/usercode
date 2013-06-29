@@ -30,7 +30,7 @@ namespace l1menu
 		/** @brief The rate at which events are occurring. I.e. the trigger rate if every event passed. */
 		virtual float eventRate() const = 0;
 		virtual void setEventRate( float rate ) = 0;
-		/** @brief The sum of each event's weight. */
+		/** @brief The sum of every event's weights. */
 		virtual float sumOfWeights() const = 0;
 
 		virtual std::unique_ptr<const l1menu::IMenuRate> rate( const l1menu::TriggerMenu& menu ) const = 0;

@@ -231,10 +231,10 @@ void l1menu::TriggerMenu::loadMenuInOldFormat( std::ifstream& file )
 					// will have "threshold1" whereas a cross trigger will have "leg1threshold1", "leg2threshold1" etcetera. This
 					// utility function will get the threshold names in the correct order.
 					const auto& thresholdNames=l1menu::tools::getThresholdNames(newTrigger);
-					if( thresholdNames.size()>1 ) newTrigger.parameter(thresholdNames[0])=::convertStringToFloat( tableColumns[3] );
-					if( thresholdNames.size()>2 ) newTrigger.parameter(thresholdNames[1])=::convertStringToFloat( tableColumns[4] );
-					if( thresholdNames.size()>3 ) newTrigger.parameter(thresholdNames[2])=::convertStringToFloat( tableColumns[5] );
-					if( thresholdNames.size()>4 ) newTrigger.parameter(thresholdNames[3])=::convertStringToFloat( tableColumns[6] );
+					if( thresholdNames.size()>=1 ) newTrigger.parameter(thresholdNames[0])=::convertStringToFloat( tableColumns[3] );
+					if( thresholdNames.size()>=2 ) newTrigger.parameter(thresholdNames[1])=::convertStringToFloat( tableColumns[4] );
+					if( thresholdNames.size()>=3 ) newTrigger.parameter(thresholdNames[2])=::convertStringToFloat( tableColumns[5] );
+					if( thresholdNames.size()>=4 ) newTrigger.parameter(thresholdNames[3])=::convertStringToFloat( tableColumns[6] );
 
 					float etaOrRegionCut=::convertStringToFloat( tableColumns[7] );
 					// For most triggers, I can just try and set both the etaCut and regionCut parameters

@@ -9,8 +9,11 @@
 #include "l1menu/ReducedEvent.h"
 #include <TH1F.h>
 #include <sstream>
+#include <algorithm>
 
-l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::unique_ptr<TH1> pHistogram, const std::string versusParameter )
+#include <iostream>
+
+l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::unique_ptr<TH1> pHistogram, const std::string& versusParameter, const std::vector<std::string> scaledParameters )
 	: pHistogram_( std::move(pHistogram) ), versusParameter_(versusParameter), histogramOwnedByMe_(true)
 {
 	// Take a copy of the trigger
@@ -18,9 +21,19 @@ l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::
 	pTrigger_=table.copyTrigger( trigger );
 
 	// Make sure the versusParameter_ supplied is valid. If it's not then this call will
-	// throw an exception.
+	// throw an exception. Take a pointer to the parameter so I don't need to keep performing
+	// expensive string comparisons.
 	pParameter_=&pTrigger_->parameter(versusParameter_);
 
+	// If any parameters have been requested to be scaled along with the versusParameter, figure
+	// out what the scaling should be and take a note of pointers.
+	for( const auto& parameterToScale : scaledParameters )
+	{
+		if( parameterToScale!=versusParameter_ )
+		{
+			otherParameterScalings_.push_back( std::make_pair( &pTrigger_->parameter(parameterToScale), pTrigger_->parameter(parameterToScale)/(*pParameter_) ) );
+		}
+	}
 	// I want to make a note of the other parameters set for the trigger. As far as I know TH1
 	// has no way of adding annotations so I'll tag it on the end of the title.
 	std::stringstream description;
@@ -33,7 +46,19 @@ l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::
 	for( std::vector<std::string>::const_iterator iName=parameterNames.begin(); iName!=parameterNames.end(); ++iName )
 	{
 		if( *iName==versusParameter ) continue; // Don't bother adding the parameter I'm plotting against
-		description << *iName << "=" << pTrigger_->parameter(*iName);
+
+		// First check to see if this is one of the parameters that are being scaled
+		if( std::find(scaledParameters.begin(),scaledParameters.end(),*iName)==scaledParameters.end() )
+		{
+			// This parameter isn't being scaled, so write the absoulte value in the description
+			description << *iName << "=" << pTrigger_->parameter(*iName);
+		}
+		else
+		{
+			// This parameter is being scaled, so write what the scaling is in the description
+			description << *iName << "=x*" << pTrigger_->parameter(*iName)/(*pParameter_);
+		}
+
 		if( iName+1!=parameterNames.end() ) description << ","; // Add delimeter between parameter names
 	}
 	description << "]";
@@ -44,8 +69,8 @@ l1menu::TriggerRatePlot::TriggerRatePlot( const l1menu::ITrigger& trigger, std::
 
 l1menu::TriggerRatePlot::TriggerRatePlot( l1menu::TriggerRatePlot&& otherTriggerRatePlot ) noexcept
 	: pTrigger_( std::move(otherTriggerRatePlot.pTrigger_) ), pHistogram_( std::move(otherTriggerRatePlot.pHistogram_) ),
-	  versusParameter_( std::move(otherTriggerRatePlot.versusParameter_) ), pParameter_(otherTriggerRatePlot.pParameter_),
-	  histogramOwnedByMe_(histogramOwnedByMe_)
+	  versusParameter_( std::move(otherTriggerRatePlot.versusParameter_) ), pParameter_(&pTrigger_->parameter(versusParameter_)),
+	  otherParameterScalings_( std::move(otherTriggerRatePlot.otherParameterScalings_) ), histogramOwnedByMe_(histogramOwnedByMe_)
 {
 	// No operation besides the initaliser list
 }
@@ -61,7 +86,8 @@ l1menu::TriggerRatePlot& l1menu::TriggerRatePlot::operator=( l1menu::TriggerRate
 	pTrigger_=std::move(otherTriggerRatePlot.pTrigger_);
 	pHistogram_=std::move(otherTriggerRatePlot.pHistogram_);
 	versusParameter_=std::move(otherTriggerRatePlot.versusParameter_);
-	pParameter_=otherTriggerRatePlot.pParameter_;
+	pParameter_=&pTrigger_->parameter(versusParameter_);
+	otherParameterScalings_=std::move(otherTriggerRatePlot.otherParameterScalings_);
 	histogramOwnedByMe_=otherTriggerRatePlot.histogramOwnedByMe_;
 
 	return *this;
@@ -84,6 +110,10 @@ void l1menu::TriggerRatePlot::addEvent( const l1menu::L1TriggerDPGEvent& event )
 	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
 	{
 		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
+
+		// Scale accordingly any other parameters that should be scaled.
+		for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
+
 		if( pTrigger_->apply( event ) )
 		{
 			pHistogram_->Fill( (*pParameter_), event.weight() );
@@ -110,6 +140,10 @@ void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
 		for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
 		{
 			(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
+
+			// Scale accordingly any other parameters that should be scaled.
+			for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
+
 			if( pCachedTrigger->apply(event) ) // If the event passes the trigger
 			{
 				pHistogram_->Fill( (*pParameter_), event.weight()*weightPerEvent );
@@ -120,6 +154,7 @@ void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
 			// bins will pass.
 		} // end of loop over histogram bins
 	} // end of loop over events
+
 }
 
 const l1menu::ITrigger& l1menu::TriggerRatePlot::getTrigger() const
@@ -139,6 +174,10 @@ void l1menu::TriggerRatePlot::addEvent( const l1menu::ReducedEvent& event )
 	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
 	{
 		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
+
+		// Scale accordingly any other parameters that should be scaled.
+		for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
+
 		if( pTrigger_->apply( event ) )
 		{
 			pHistogram_->Fill( (*pParameter_), event.weight() );

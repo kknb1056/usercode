@@ -632,9 +632,10 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 	}
 
 	::MenuRateImplementation* pRates=new ::MenuRateImplementation;
-	pRates->setScaling( pImple_->eventRate );
 	// This is the value I want to return, but I still need access to the extended attributes of the subclass
 	std::unique_ptr<const l1menu::IMenuRate> pReturnValue( pRates );
+
+	pRates->setScaling( pImple_->eventRate );
 
 	pRates->setTotalFraction( static_cast<float>(numberOfEventsPassingAnyTrigger)/static_cast<float>(numberOfEvents()) );
 
