@@ -6,6 +6,8 @@
 #include <TSystem.h>
 
 #include "l1menu/L1TriggerDPGEvent.h"
+#include "l1menu/ICachedTrigger.h"
+#include "l1menu/IMenuRate.h"
 #include "L1UpgradeNtuple.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisL1ExtraUpgradeDataFormat.h"
@@ -13,6 +15,26 @@
 #include "UserCode/L1TriggerDPG/interface/L1AnalysisGTDataFormat.h"
 #include "UserCode/L1TriggerDPG/interface/L1AnalysisGMTDataFormat.h"
 
+namespace // Use the unnamed namespace for things only used in this file
+{
+	/** @brief A required implementation that just acts as a proxy.
+	 *
+	 * For some implementations of ISample, this class can speed up execution significantly. This
+	 * implementation has no improvement. An implementation is required however, so this just acts
+	 * as a proxy to the full routines.
+	 *
+	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+	 * @date 02/Jul/2013
+	 */
+	class CachedTriggerImplementation : public l1menu::ICachedTrigger
+	{
+	public:
+		CachedTriggerImplementation( const l1menu::ITrigger& trigger ) : trigger_(trigger) {}
+		virtual bool apply( const l1menu::IEvent& event ) { return event.passesTrigger( trigger_ ); }
+	protected:
+		const l1menu::ITrigger& trigger_;
+	}; // end of class CachedTriggerImplementation
+} // end of the unnamed namespace
 
 namespace l1menu
 {
@@ -30,10 +52,13 @@ namespace l1menu
 		double calculateHTT( const L1Analysis::L1AnalysisDataFormat& event );
 		double calculateHTM( const L1Analysis::L1AnalysisDataFormat& event );
 	public:
+		MenuSamplePrivateMembers( MenuSample* pThisObject ) : currentEvent(*pThisObject), sumOfWeights(-1), eventRate(1) {}
 		void fillDataStructure( int selectDataInput );
 		void fillL1Bits();
 		L1UpgradeNtuple inputNtuple;
 		l1menu::L1TriggerDPGEvent currentEvent;
+		float sumOfWeights;
+		float eventRate;
 	};
 }
 
@@ -355,7 +380,7 @@ void l1menu::MenuSamplePrivateMembers::fillL1Bits()
 
 
 l1menu::MenuSample::MenuSample()
-	: pImple_( new MenuSamplePrivateMembers )
+	: pImple_( new MenuSamplePrivateMembers( this ) )
 {
 	// No operation besides the initialiser list
 }
@@ -392,15 +417,11 @@ l1menu::MenuSample& l1menu::MenuSample::operator=( l1menu::MenuSample&& otherMen
 
 void l1menu::MenuSample::loadFile( const std::string& filename )
 {
+	pImple_->sumOfWeights=-1;
 	pImple_->inputNtuple.Open( filename );
 }
 
-size_t l1menu::MenuSample::numberOfEvents() const
-{
-	return static_cast<size_t>( pImple_->inputNtuple.GetEntries() );
-}
-
-const l1menu::L1TriggerDPGEvent& l1menu::MenuSample::getEvent( size_t eventNumber ) const
+const l1menu::L1TriggerDPGEvent& l1menu::MenuSample::getFullEvent( size_t eventNumber ) const
 {
 	// Make sure the event number requested is valid. Use static_cast to get rid
 	// of the "comparison between signed and unsigned" compiler warning.
@@ -413,4 +434,51 @@ const l1menu::L1TriggerDPGEvent& l1menu::MenuSample::getEvent( size_t eventNumbe
 	pImple_->fillL1Bits();
 
 	return pImple_->currentEvent;
+}
+
+size_t l1menu::MenuSample::numberOfEvents() const
+{
+	return static_cast<size_t>( pImple_->inputNtuple.GetEntries() );
+}
+
+const l1menu::IEvent& l1menu::MenuSample::getEvent( size_t eventNumber ) const
+{
+	// This returns a derived class so just delegate to that
+	return getFullEvent( eventNumber );
+}
+
+std::unique_ptr<l1menu::ICachedTrigger> l1menu::MenuSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
+{
+	return std::unique_ptr<l1menu::ICachedTrigger>( new CachedTriggerImplementation(trigger) );
+}
+
+float l1menu::MenuSample::eventRate() const
+{
+	return pImple_->eventRate;
+}
+
+void l1menu::MenuSample::setEventRate( float rate )
+{
+	pImple_->eventRate=rate;
+}
+
+float l1menu::MenuSample::sumOfWeights() const
+{
+	if( pImple_->sumOfWeights==-1 )
+	{
+		pImple_->sumOfWeights=0;
+		for( int eventNumber=0; eventNumber<pImple_->inputNtuple.GetEntries(); ++eventNumber )
+		{
+			pImple_->inputNtuple.LoadTree(eventNumber);
+			pImple_->inputNtuple.GetEntry(eventNumber);
+			pImple_->sumOfWeights+=pImple_->inputNtuple.event_->puWeight;
+		}
+	}
+
+	return pImple_->sumOfWeights;
+}
+
+std::unique_ptr<const l1menu::IMenuRate> l1menu::MenuSample::rate( const l1menu::TriggerMenu& menu ) const
+{
+	return std::unique_ptr<const l1menu::IMenuRate>();
 }

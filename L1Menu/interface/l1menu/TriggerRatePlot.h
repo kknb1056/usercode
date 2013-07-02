@@ -11,6 +11,7 @@
 class TH1;
 namespace l1menu
 {
+	class IEvent;
 	class ITrigger;
 	class L1TriggerDPGEvent;
 	class ReducedMenuSample;
@@ -55,11 +56,8 @@ namespace l1menu
 		TriggerRatePlot& operator=( l1menu::TriggerRatePlot&& otherTriggerRatePlot ) noexcept;
 
 		virtual ~TriggerRatePlot();
-		void addEvent( const l1menu::L1TriggerDPGEvent& event );
 
-		void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-		void addEvent( const l1menu::ReducedEvent& event );
-
+		void addEvent( const l1menu::IEvent& event );
 		void addSample( const l1menu::ISample& sample );
 
 		/** @brief Returns the trigger being used to create the plot. */

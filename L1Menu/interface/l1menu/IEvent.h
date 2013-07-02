@@ -7,6 +7,7 @@
 namespace l1menu
 {
 	class ITrigger;
+	class ISample;
 }
 
 namespace l1menu
@@ -22,6 +23,7 @@ namespace l1menu
 		virtual ~IEvent() {}
 		virtual bool passesTrigger( const l1menu::ITrigger& trigger ) const = 0;
 		virtual float weight() const = 0; ///< @brief The weighting this event has been given
+		virtual const l1menu::ISample& sample() const = 0; ///< @brief The sample that this event came from.
 	};
 
 } // end of namespace l1menu

@@ -80,25 +80,7 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 	} // end of loop over the triggers in the menu
 }
 
-void l1menu::MenuRatePlots::addEvent( const l1menu::L1TriggerDPGEvent& event )
-{
-	// Loop over each of the TriggerRatePlots and add the event to each of them.
-	for( auto& ratePlot : triggerPlots_ )
-	{
-		ratePlot.addEvent( event );
-	}
-}
-
-void l1menu::MenuRatePlots::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
-{
-	// Loop over each of the TriggerRatePlots and delegate the call to them.
-	for( auto& ratePlot : triggerPlots_ )
-	{
-		ratePlot.initiateForReducedSample( sample );
-	}
-}
-
-void l1menu::MenuRatePlots::addEvent( const l1menu::ReducedEvent& event )
+void l1menu::MenuRatePlots::addEvent( const l1menu::IEvent& event )
 {
 	// Loop over each of the TriggerRatePlots and add the event to each of them.
 	for( auto& ratePlot : triggerPlots_ )

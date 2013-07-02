@@ -16,6 +16,7 @@
 #include "l1menu/IMenuRate.h"
 #include "l1menu/ITriggerRate.h"
 #include "l1menu/tools/tools.h"
+#include "l1menu/implementation/MenuRateImplementation.h"
 #include "protobuf/l1menu.pb.h"
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/io/gzip_stream.h>
@@ -33,59 +34,6 @@ namespace // unnamed namespace
 		~UnixFileSentry() { close(fileDescriptor_); }
 	private:
 		int fileDescriptor_;
-	};
-
-	class MenuRateImplementation;
-
-	class TriggerRateImplementation : public l1menu::ITriggerRate
-	{
-	public:
-		TriggerRateImplementation( const l1menu::ITrigger& trigger, float fraction, const MenuRateImplementation& menuRate );
-		TriggerRateImplementation& operator=( TriggerRateImplementation&& otherTriggerRate ); // Move assignment
-		virtual ~TriggerRateImplementation();
-
-		// Methods required by the l1menu::ITriggerRate interface
-		virtual const l1menu::ITrigger& trigger() const;
-		virtual float fraction() const;
-		virtual float rate() const;
-	protected:
-		std::unique_ptr<l1menu::ITrigger> pTrigger_;
-		float fraction_;
-		const MenuRateImplementation& menuRate_;
-	};
-
-	class MenuRateImplementation : public l1menu::IMenuRate
-	{
-	public:
-		void setTotalFraction( float fraction ) { totalFraction_=fraction; }
-		void setScaling( float scaling ) { scaling_=scaling; }
-		float scaling() const { return scaling_; }
-		void addTriggerRate( const l1menu::ITrigger& trigger, float fraction ) { triggerRates_.push_back( std::move(TriggerRateImplementation(trigger,fraction,*this)) ); }
-		// Methods required by the l1menu::IMenuRate interface
-		virtual float totalFraction() const { return totalFraction_; }
-		virtual float totalRate() const { return totalFraction_*scaling_; }
-		virtual const std::vector<const l1menu::ITriggerRate*>& triggerRates() const
-		{
-			// If the sizes are the same I'll assume nothing has changed and the references
-			// are still valid. I don't expect this method to be called until the triggerRates_
-			// vector is complete anyway.
-			if( triggerRates_.size()!=baseClassReferences_.size() )
-			{
-				baseClassReferences_.clear();
-				for( const auto& triggerRate : triggerRates_ )
-				{
-					baseClassReferences_.push_back( &triggerRate );
-				}
-			}
-
-			return baseClassReferences_;
-		}
-
-	protected:
-		float totalFraction_;
-		float scaling_;
-		std::vector<TriggerRateImplementation> triggerRates_;
-		mutable std::vector<const l1menu::ITriggerRate*> baseClassReferences_;
 	};
 
 	/** @brief An object that stores pointers to trigger parameters to avoid costly string comparisons.
@@ -125,23 +73,6 @@ namespace // unnamed namespace
 	protected:
 		std::vector< std::pair<l1menu::ReducedEvent::ParameterID,const float*> > identifiers_;
 	}; // end of class ReducedSampleCachedTrigger
-
-	TriggerRateImplementation::TriggerRateImplementation( const l1menu::ITrigger& trigger, float fraction, const MenuRateImplementation& menuRate )
-		: fraction_(fraction), menuRate_(menuRate)
-	{
-		pTrigger_=std::move( l1menu::TriggerTable::instance().copyTrigger(trigger) );
-	}
-	TriggerRateImplementation& TriggerRateImplementation::operator=( TriggerRateImplementation&& otherTriggerRate )
-	{
-		pTrigger_=std::move( otherTriggerRate.pTrigger_ );
-		fraction_=otherTriggerRate.fraction_;
-		// I can't change the menuRate_ reference, but that should already be set to the right one anyway.
-		return *this;
-	}
-	TriggerRateImplementation::~TriggerRateImplementation() {}
-	const l1menu::ITrigger& TriggerRateImplementation::trigger() const { return *pTrigger_; }
-	float TriggerRateImplementation::fraction() const { return fraction_; }
-	float TriggerRateImplementation::rate() const { return fraction_*menuRate_.scaling(); }
 
 	float sumWeights( const l1menuprotobuf::Run& run )
 	{
@@ -375,8 +306,9 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 			pCurrentRun=pImple_->protobufRuns.back().get();
 		}
 
-		const l1menu::L1TriggerDPGEvent& event=originalSample.getEvent( eventNumber );
+		const l1menu::L1TriggerDPGEvent& event=originalSample.getFullEvent( eventNumber );
 		l1menuprotobuf::Event* pProtobufEvent=pCurrentRun->add_event();
+		if( event.weight()!=1 ) pProtobufEvent->set_weight( event.weight() );
 
 		// Loop over all of the triggers
 		for( size_t triggerNumber=0; triggerNumber<pImple_->triggerMenu.numberOfTriggers(); ++triggerNumber )
@@ -396,9 +328,9 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 			catch( std::exception& error )
 			{
 				// setTriggerThresholdsAsTightAsPossible() couldn't find thresholds so record
-				// -1 for everything.
+				// a default for everything.
 				// Range based for loop gives me a warning because I don't use the thresholdName.
-				for( size_t index=0; index<thresholdNames.size(); ++index ) pProtobufEvent->add_threshold(-1);
+				for( size_t index=0; index<thresholdNames.size(); ++index ) pProtobufEvent->add_threshold(100000);
 			} // end of try block that sets the trigger thresholds
 
 		} // end of loop over triggers
@@ -574,7 +506,6 @@ const l1menu::IEvent& l1menu::ReducedMenuSample::getEvent( size_t eventNumber ) 
 	// Should always find the event before getting to this point, so throw an
 	// exception if this happens.
 	throw std::runtime_error( "ReducedMenuSample::getEvent(eventNumber) was asked for an invalid eventNumber" );
-
 }
 
 std::unique_ptr<l1menu::ICachedTrigger> l1menu::ReducedMenuSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
@@ -601,16 +532,17 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 {
 	// TODO make sure the TriggerMenu is valid for this sample
 
-	// I need a non-const menu, so make a copy
-	l1menu::TriggerMenu mutableMenu( menu );
-
 	// The number of events that pass each trigger
 	std::vector<size_t> numberOfEventsPassed( menu.numberOfTriggers() );
 	float numberOfEventsPassingAnyTrigger;
 
+	// Using cached triggers significantly increases speed for ReducedMenuSample
+	// because it cuts out expensive string comparisons when querying the trigger
+	// parameters.
+	std::vector< std::unique_ptr<l1menu::ICachedTrigger> > cachedTriggers;
 	for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
 	{
-		mutableMenu.getTrigger( triggerNumber ).initiateForReducedSample( *this );
+		cachedTriggers.push_back( createCachedTrigger( menu.getTrigger( triggerNumber ) ) );
 	}
 
 	for( size_t eventNumber=0; eventNumber<numberOfEvents(); ++eventNumber )
@@ -618,9 +550,9 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 		const l1menu::IEvent& event=getEvent(eventNumber);
 		bool anyTriggerPassed=false;
 
-		for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
+		for( size_t triggerNumber=0; triggerNumber<cachedTriggers.size(); ++triggerNumber )
 		{
-			if( event.passesTrigger( mutableMenu.getTrigger(triggerNumber) ) )
+			if( cachedTriggers[triggerNumber]->apply(event) )
 			{
 				// If the event passes the trigger, increment the counter
 				++numberOfEventsPassed[triggerNumber];
@@ -631,7 +563,7 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 		if( anyTriggerPassed ) ++numberOfEventsPassingAnyTrigger;
 	}
 
-	::MenuRateImplementation* pRates=new ::MenuRateImplementation;
+	l1menu::implementation::MenuRateImplementation* pRates=new l1menu::implementation::MenuRateImplementation;
 	// This is the value I want to return, but I still need access to the extended attributes of the subclass
 	std::unique_ptr<const l1menu::IMenuRate> pReturnValue( pRates );
 
@@ -642,7 +574,7 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 	for( size_t triggerNumber=0; triggerNumber<numberOfEventsPassed.size(); ++triggerNumber )
 	{
 		float fraction=static_cast<float>(numberOfEventsPassed[triggerNumber])/static_cast<float>(numberOfEvents());
-		pRates->addTriggerRate( mutableMenu.getTrigger(triggerNumber), fraction );
+		pRates->addTriggerRate( menu.getTrigger(triggerNumber), fraction );
 	}
 
 	return pReturnValue;

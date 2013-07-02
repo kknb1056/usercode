@@ -38,3 +38,8 @@ float l1menu::ReducedEvent::weight() const
 	if( pProtobufEvent_->has_weight() ) return pProtobufEvent_->weight();
 	else return 1;
 }
+
+const l1menu::ISample& l1menu::ReducedEvent::sample() const
+{
+	return sample_;
+}

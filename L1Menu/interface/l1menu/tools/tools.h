@@ -1,5 +1,5 @@
-#ifndef l1menu_tools_h
-#define l1menu_tools_h
+#ifndef l1menu_tools_tools_h
+#define l1menu_tools_tools_h
 
 /** @file Miscellaneous functions that are useful.
  */

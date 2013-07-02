@@ -58,7 +58,6 @@ int main( int argc, char* argv[] )
 		mySample.setEventRate( orbitsPerSecond*numberOfBunches*scaleToKiloHz );
 
 		l1menu::MenuRatePlots rateVersusThresholdPlots( menu );//mySample.getTriggerMenu() );
-		rateVersusThresholdPlots.initiateForReducedSample( mySample );
 
 		std::cout << "Calculating rate plots..." << std::endl;
 		rateVersusThresholdPlots.addSample( mySample );

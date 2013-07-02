@@ -34,6 +34,10 @@ int main( int argc, char* argv[] )
 
 //	try
 //	{
+		const float scaleToKiloHz=1.0/1000.0;
+		const float orbitsPerSecond=11246;
+		const float numberOfBunches=2760;
+
 		l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
 
 		std::cout << "------ Available triggers ------" << std::endl;
@@ -50,9 +54,6 @@ int main( int argc, char* argv[] )
 		// save if it goes out of scope (i.e. if an exception is thrown).
 		std::unique_ptr<TFile,void(*)(TFile*)> pMyRootFile( new TFile( "rateHistograms.root", "RECREATE" ), [](TFile*p){p->Write();p->Close();delete p;} );
 
-		std::unique_ptr<l1menu::ITrigger> pMyTrigger=triggerTable.getTrigger("L1_DoubleJet");
-		if( pMyTrigger.get()==NULL ) throw std::runtime_error( "The trigger was not in the trigger table" );
-
 		std::cout << "Loading menu from file " << menuFilename << std::endl;
 		l1menu::TriggerMenu myMenu;
 		myMenu.loadMenuFromFile( menuFilename );
@@ -60,42 +61,30 @@ int main( int argc, char* argv[] )
 		std::cout << "Loading ntuple from file " << ntupleFilename << std::endl;
 		l1menu::MenuSample mySample;
 		mySample.loadFile(ntupleFilename);
+		mySample.setEventRate( orbitsPerSecond*numberOfBunches*scaleToKiloHz );
 
+		std::cout << "Creating reduced sample" << std::endl;
 		l1menu::ReducedMenuSample myReducedSample( mySample, myMenu );
+		std::cout << "Done. Saving to file." << std::endl;
 		myReducedSample.saveToFile( "reducedSample.proto" );
 
-		size_t eventNumber;
-
-		pMyTrigger->initiateForReducedSample( myReducedSample );
 
 		l1menu::MenuRatePlots reducedRateVersusThresholdPlots( myMenu );
 		TDirectory* pSubDirectory=pMyRootFile->mkdir("reduced");
 		reducedRateVersusThresholdPlots.setDirectory(pSubDirectory);
 		reducedRateVersusThresholdPlots.relinquishOwnershipOfPlots();
 
-		reducedRateVersusThresholdPlots.initiateForReducedSample(myReducedSample);
-//		for( eventNumber=0; eventNumber<myReducedSample.numberOfEvents(); ++eventNumber )
-//		{
-//			//if( eventNumber>5 ) break;
-//			const l1menu::ReducedEvent& event=myReducedSample.getEvent( eventNumber );
-//			reducedRateVersusThresholdPlots.addEvent( event );
-//			//std::cout << eventNumber << " trigger=" << pMyTrigger->apply(event) << " Parameters: " << event.parameterValue(0) << "," << event.parameterValue(0)  << std::endl;
-//		}
-		std::cout << "Finished reduced test" << std::endl;
+		std::cout << "There are " << myReducedSample.numberOfEvents() << " reduced events." << std::endl;
+		reducedRateVersusThresholdPlots.addSample(myReducedSample);
+		std::cout << "Finished processing the reduced events." << std::endl;
 
 		l1menu::MenuRatePlots rateVersusThresholdPlots( myMenu );
 		rateVersusThresholdPlots.setDirectory( pMyRootFile.get() );
 		rateVersusThresholdPlots.relinquishOwnershipOfPlots(); // If I don't do this the plots will be deleted twice.
 
-		std::cout << "There are " << mySample.numberOfEvents() << " events." << std::endl;
-		for( eventNumber=0; eventNumber<mySample.numberOfEvents(); ++eventNumber )
-		{
-			//if( eventNumber>5 ) break;
-			const l1menu::L1TriggerDPGEvent& event=mySample.getEvent( eventNumber );
-
-			rateVersusThresholdPlots.addEvent( event );
-		}
-		std::cout << "Finished processing " << eventNumber << " events." << std::endl;
+		std::cout << "There are " << mySample.numberOfEvents() << " full events." << std::endl;
+		rateVersusThresholdPlots.addSample( mySample );
+		std::cout << "Finished processing the full events." << std::endl;
 
 
 

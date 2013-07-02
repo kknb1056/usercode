@@ -28,7 +28,7 @@ namespace l1menu
 	class L1TriggerDPGEvent : public l1menu::IEvent
 	{
 	public:
-		L1TriggerDPGEvent();
+		L1TriggerDPGEvent( const l1menu::ISample& parentSample );
 		L1TriggerDPGEvent( const L1TriggerDPGEvent& otherEvent );
 		L1TriggerDPGEvent( L1TriggerDPGEvent&& otherEvent ) noexcept;
 		L1TriggerDPGEvent& operator=( const L1TriggerDPGEvent& otherEvent );
@@ -45,6 +45,7 @@ namespace l1menu
 		//
 		virtual bool passesTrigger( const l1menu::ITrigger& trigger ) const;
 		virtual float weight() const;
+		virtual const l1menu::ISample& sample() const;
 	protected:
 		/** @brief Hide implementation details in a pimple.
 		 * In particular I don't want any code that includes this file to be dependent

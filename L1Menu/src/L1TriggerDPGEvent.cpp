@@ -8,14 +8,16 @@ namespace l1menu
 	class L1TriggerDPGEventPrivateMembers
 	{
 	public:
+		L1TriggerDPGEventPrivateMembers( const l1menu::ISample* pParentSample ) : pParentSample_(pParentSample) {}
 		L1Analysis::L1AnalysisDataFormat rawEvent;
 		bool physicsBits[128];
 		float weight;
+		const l1menu::ISample* pParentSample_;
 	};
 }
 
 
-l1menu::L1TriggerDPGEvent::L1TriggerDPGEvent() : pImple_( new L1TriggerDPGEventPrivateMembers )
+l1menu::L1TriggerDPGEvent::L1TriggerDPGEvent( const l1menu::ISample& parentSample ) : pImple_( new L1TriggerDPGEventPrivateMembers(&parentSample) )
 {
 	pImple_->weight=1;
 }
@@ -78,4 +80,9 @@ bool l1menu::L1TriggerDPGEvent::passesTrigger( const l1menu::ITrigger& trigger )
 float l1menu::L1TriggerDPGEvent::weight() const
 {
 	return pImple_->weight;
+}
+
+const l1menu::ISample& l1menu::L1TriggerDPGEvent::sample() const
+{
+	return *pImple_->pParentSample_;
 }

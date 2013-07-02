@@ -3,6 +3,14 @@
 
 #include <vector>
 
+//
+// Forward declarations
+//
+namespace l1menu
+{
+	class ITrigger;
+}
+
 namespace l1menu
 {
 	/** @brief Interface to get information about the trigger rate. Read only.

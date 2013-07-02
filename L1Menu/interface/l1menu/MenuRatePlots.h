@@ -46,10 +46,7 @@ namespace l1menu
 		 */
 		MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory=NULL );
 
-		void addEvent( const l1menu::L1TriggerDPGEvent& event );
-
-		void initiateForReducedSample( const l1menu::ReducedMenuSample& sample );
-		void addEvent( const l1menu::ReducedEvent& event );
+		void addEvent( const l1menu::IEvent& event );
 
 		void addSample( const l1menu::ISample& sample );
 

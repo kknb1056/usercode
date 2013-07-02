@@ -1,6 +1,8 @@
 #ifndef l1menu_IMenuRate_h
 #define l1menu_IMenuRate_h
 
+#include <vector>
+
 //
 // Forward declarations
 //

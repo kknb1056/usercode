@@ -40,6 +40,7 @@ namespace l1menu
 		//
 		virtual bool passesTrigger( const l1menu::ITrigger& trigger ) const;
 		virtual float weight() const;
+		virtual const l1menu::ISample& sample() const;
 	private:
 		l1menuprotobuf::Event* pProtobufEvent_;
 		const l1menu::ReducedMenuSample& sample_; ///< @brief The sample that this event is from

@@ -96,9 +96,10 @@ void l1menu::tools::setTriggerThresholdsAsTightAsPossible( const l1menu::L1Trigg
 		{
 			lowThreshold=l1menu::TriggerTable::instance().getSuggestedLowerEdge( trigger.name(), thresholdName );
 			highThreshold=l1menu::TriggerTable::instance().getSuggestedUpperEdge( trigger.name(), thresholdName );
-			highThreshold*=5; // Make sure the high threshold is very high, to catch all tails
 		}
 		catch( std::exception& error ) { /* No indication set. Do nothing and just use the defaults I set previously. */ }
+		highThreshold*=5; // Make sure the high threshold is very high, to catch all tails
+
 
 		threshold=lowThreshold;
 		bool lowTest=trigger.apply( event );
@@ -106,7 +107,7 @@ void l1menu::tools::setTriggerThresholdsAsTightAsPossible( const l1menu::L1Trigg
 		threshold=highThreshold;
 		bool highTest=trigger.apply( event );
 
-		if( lowTest==highTest ) std::runtime_error( "l1menu::tools::setTriggerThresholdsAsTightAsPossible() - couldn't find a set of thresholds to pass the given event.");
+		if( lowTest==highTest ) throw std::runtime_error( "l1menu::tools::setTriggerThresholdsAsTightAsPossible() - couldn't find a set of thresholds to pass the given event.");
 
 		// Try and find the turn on point by bisection
 		while( highThreshold-lowThreshold > tolerance )

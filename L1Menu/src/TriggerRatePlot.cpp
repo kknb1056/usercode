@@ -103,10 +103,15 @@ l1menu::TriggerRatePlot::~TriggerRatePlot()
 	}
 }
 
-void l1menu::TriggerRatePlot::addEvent( const l1menu::L1TriggerDPGEvent& event )
+void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event )
 {
-	// loop over all of the bins in the histogram, and see if the trigger passes
-	// for the value at the center of the bin.
+	const l1menu::ISample& sample=event.sample();
+	float weightPerEvent=sample.eventRate()/sample.sumOfWeights();
+
+	// For some implementations of ISample, it is significantly faster to
+	// create ICachedTriggers and then loop over those.
+	std::unique_ptr<l1menu::ICachedTrigger> pCachedTrigger=sample.createCachedTrigger( *pTrigger_ );
+
 	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
 	{
 		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
@@ -114,11 +119,12 @@ void l1menu::TriggerRatePlot::addEvent( const l1menu::L1TriggerDPGEvent& event )
 		// Scale accordingly any other parameters that should be scaled.
 		for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
 
-		if( pTrigger_->apply( event ) )
+		if( pCachedTrigger->apply(event) )
 		{
-			pHistogram_->Fill( (*pParameter_), event.weight() );
+			pHistogram_->Fill( (*pParameter_), event.weight()*weightPerEvent );
 		}
-		// could put an "else break" in here, but I don't know if triggers
+		else break;
+		// Not sure if this "else break" is a good idea. I don't know if triggers
 		// will run their thresholds the other way. E.g. a trigger could require
 		// a minimum amount of energy in the event, in which case the higher
 		// bins will pass.
@@ -148,8 +154,9 @@ void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
 			{
 				pHistogram_->Fill( (*pParameter_), event.weight()*weightPerEvent );
 			}
-			// could put an "else break" in here, but I don't know if triggers will
-			// run their thresholds the other way. E.g. a trigger could require
+			else break;
+			// Not sure if this "else break" is a good idea. I don't know if triggers
+			// will run their thresholds the other way. E.g. a trigger could require
 			// a minimum amount of energy in the event, in which case the higher
 			// bins will pass.
 		} // end of loop over histogram bins
@@ -160,30 +167,6 @@ void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
 const l1menu::ITrigger& l1menu::TriggerRatePlot::getTrigger() const
 {
 	return *pTrigger_;
-}
-
-void l1menu::TriggerRatePlot::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
-{
-	pTrigger_->initiateForReducedSample( sample );
-}
-
-void l1menu::TriggerRatePlot::addEvent( const l1menu::ReducedEvent& event )
-{
-	// Basically exactly the same as for the l1menu::L1TriggerDPGEvent version. I
-	// should probably template this.
-	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
-	{
-		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
-
-		// Scale accordingly any other parameters that should be scaled.
-		for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
-
-		if( pTrigger_->apply( event ) )
-		{
-			pHistogram_->Fill( (*pParameter_), event.weight() );
-		}
-	}
-
 }
 
 TH1* l1menu::TriggerRatePlot::getPlot()
