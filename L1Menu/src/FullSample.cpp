@@ -105,7 +105,7 @@ double l1menu::FullSamplePrivateMembers::calculateHTT( const L1Analysis::L1Analy
 	// Calculate our own HT and HTM from the jets that survive the double jet removal.
 	for( int i=0; i<event.Njet; i++ )
 	{
-		if( event.Bxjet.at( i )==0 )
+		if( event.Bxjet.at( i )==0 && !event.Taujet.at(i) )
 		{
 			if( event.Etajet.at( i )>4 and event.Etajet.at( i )<17 )
 			{
@@ -126,7 +126,7 @@ double l1menu::FullSamplePrivateMembers::calculateHTM( const L1Analysis::L1Analy
 	// Calculate our own HT and HTM from the jets that survive the double jet removal.
 	for( int i=0; i<event.Njet; i++ )
 	{
-		if( event.Bxjet.at( i )==0 )
+		if( event.Bxjet.at( i )==0 && !event.Taujet.at(i) )
 		{
 			if( event.Etajet.at( i )>4 and event.Etajet.at( i )<17 )
 			{
