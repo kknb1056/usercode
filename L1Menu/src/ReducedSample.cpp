@@ -1,4 +1,4 @@
-#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/ReducedSample.h"
 
 #include <vector>
 #include <stdexcept>
@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include "l1menu/ReducedEvent.h"
-#include "l1menu/MenuSample.h"
+#include "l1menu/FullSample.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/ITrigger.h"
 #include "l1menu/ICachedTrigger.h"
@@ -44,7 +44,7 @@ namespace // unnamed namespace
 	class CachedTriggerImplementation : public l1menu::ICachedTrigger
 	{
 	public:
-		CachedTriggerImplementation( const l1menu::ReducedMenuSample& sample, const l1menu::ITrigger& trigger )
+		CachedTriggerImplementation( const l1menu::ReducedSample& sample, const l1menu::ITrigger& trigger )
 		{
 			const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers(trigger);
 
@@ -88,18 +88,18 @@ namespace // unnamed namespace
 
 namespace l1menu
 {
-	/** @brief Private members for the ReducedMenuSample class
+	/** @brief Private members for the ReducedSample class
 	 *
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 28/May/2013
 	 */
-	class ReducedMenuSamplePrivateMembers
+	class ReducedSamplePrivateMembers
 	{
 	private:
 		l1menu::TriggerMenu mutableTriggerMenu_;
 	public:
-		ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const l1menu::TriggerMenu& newTriggerMenu );
-		ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const std::string& filename );
+		ReducedSamplePrivateMembers( const l1menu::ReducedSample& thisObject, const l1menu::TriggerMenu& newTriggerMenu );
+		ReducedSamplePrivateMembers( const l1menu::ReducedSample& thisObject, const std::string& filename );
 		//void copyMenuToProtobufSample();
 		l1menu::ReducedEvent event;
 		const l1menu::TriggerMenu& triggerMenu; // External const access to mutableTriggerMenu_
@@ -113,12 +113,12 @@ namespace l1menu
 		const static std::string FILE_FORMAT_MAGIC_NUMBER;
 	};
 
-	const int ReducedMenuSamplePrivateMembers::EVENTS_PER_RUN=20000;
-	const char ReducedMenuSamplePrivateMembers::PROTOBUF_MESSAGE_DELIMETER='\n';
-	const std::string ReducedMenuSamplePrivateMembers::FILE_FORMAT_MAGIC_NUMBER="l1menuReducedMenuSample";
+	const int ReducedSamplePrivateMembers::EVENTS_PER_RUN=20000;
+	const char ReducedSamplePrivateMembers::PROTOBUF_MESSAGE_DELIMETER='\n';
+	const std::string ReducedSamplePrivateMembers::FILE_FORMAT_MAGIC_NUMBER="l1menuReducedSample";
 }
 
-l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const l1menu::TriggerMenu& newTriggerMenu )
+l1menu::ReducedSamplePrivateMembers::ReducedSamplePrivateMembers( const l1menu::ReducedSample& thisObject, const l1menu::TriggerMenu& newTriggerMenu )
 	: mutableTriggerMenu_( newTriggerMenu ), event(thisObject), triggerMenu( mutableTriggerMenu_ ), eventRate(1), sumOfWeights(0)
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -158,14 +158,14 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 
 }
 
-l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const l1menu::ReducedMenuSample& thisObject, const std::string& filename )
+l1menu::ReducedSamplePrivateMembers::ReducedSamplePrivateMembers( const l1menu::ReducedSample& thisObject, const std::string& filename )
 	: event(thisObject), triggerMenu(mutableTriggerMenu_), eventRate(1), sumOfWeights(0)
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	// Open the file with read ability
 	int fileDescriptor = open( filename.c_str(), O_RDONLY );
-	if( fileDescriptor==0 ) throw std::runtime_error( "ReducedMenuSample initialise from file - couldn't open file" );
+	if( fileDescriptor==0 ) throw std::runtime_error( "ReducedSample initialise from file - couldn't open file" );
 	::UnixFileSentry fileSentry( fileDescriptor ); // Use this as an exception safe way of closing the input file
 	google::protobuf::io::FileInputStream fileInput( fileDescriptor );
 
@@ -179,14 +179,14 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 		// As a read buffer, I'll create a string the correct size (filled with an arbitrary
 		// character) and read straight into that.
 		std::string readMagicNumber;
-		if( !codedInput.ReadString( &readMagicNumber, FILE_FORMAT_MAGIC_NUMBER.size() ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading magic number" );
-		if( readMagicNumber!=FILE_FORMAT_MAGIC_NUMBER ) throw std::runtime_error( "ReducedMenuSample - tried to initialise with a file that is not the correct format" );
+		if( !codedInput.ReadString( &readMagicNumber, FILE_FORMAT_MAGIC_NUMBER.size() ) ) throw std::runtime_error( "ReducedSample initialise from file - error reading magic number" );
+		if( readMagicNumber!=FILE_FORMAT_MAGIC_NUMBER ) throw std::runtime_error( "ReducedSample - tried to initialise with a file that is not the correct format" );
 
 		google::protobuf::uint32 fileformatVersion;
-		if( !codedInput.ReadVarint32( &fileformatVersion ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading file format version" );
+		if( !codedInput.ReadVarint32( &fileformatVersion ) ) throw std::runtime_error( "ReducedSample initialise from file - error reading file format version" );
 		// So far I only have (and ever expect to have) one version of the file
 		// format, imaginatively versioned "1". You never know though...
-		if( fileformatVersion>1 ) std::cerr << "Warning: Attempting to read a ReducedMenuSample with version " << fileformatVersion << " with code that only knows up to version 1." << std::endl;
+		if( fileformatVersion>1 ) std::cerr << "Warning: Attempting to read a ReducedSample with version " << fileformatVersion << " with code that only knows up to version 1." << std::endl;
 	}
 
 	google::protobuf::io::GzipInputStream gzipInput( &fileInput );
@@ -201,9 +201,9 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 	google::protobuf::uint64 messageSize;
 
 	// Read the size of the header message
-	if( !codedInput.ReadVarint64( &messageSize ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - error reading message size for header" );
+	if( !codedInput.ReadVarint64( &messageSize ) ) throw std::runtime_error( "ReducedSample initialise from file - error reading message size for header" );
 	google::protobuf::io::CodedInputStream::Limit readLimit=codedInput.PushLimit(messageSize);
-	if( !protobufSampleHeader.ParseFromCodedStream( &codedInput ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - some unknown error while reading header" );
+	if( !protobufSampleHeader.ParseFromCodedStream( &codedInput ) ) throw std::runtime_error( "ReducedSample initialise from file - some unknown error while reading header" );
 	codedInput.PopLimit(readLimit);
 
 	// Keep looping until there is nothing more to be read from the file.
@@ -220,7 +220,7 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 			codedInput.SetTotalBytesLimit( totalBytesLimit, -1 );
 		}
 		std::unique_ptr<l1menuprotobuf::Run> pNewRun( new l1menuprotobuf::Run );
-		if( !pNewRun->ParseFromCodedStream( &codedInput ) ) throw std::runtime_error( "ReducedMenuSample initialise from file - some unknown error while reading run" );
+		if( !pNewRun->ParseFromCodedStream( &codedInput ) ) throw std::runtime_error( "ReducedSample initialise from file - some unknown error while reading run" );
 		protobufRuns.push_back( std::move( pNewRun ) );
 
 		codedInput.PopLimit(readLimit);
@@ -264,32 +264,32 @@ l1menu::ReducedMenuSamplePrivateMembers::ReducedMenuSamplePrivateMembers( const 
 
 }
 
-l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
-	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( *this, triggerMenu ) )
+l1menu::ReducedSample::ReducedSample( const l1menu::FullSample& originalSample, const l1menu::TriggerMenu& triggerMenu )
+	: pImple_( new l1menu::ReducedSamplePrivateMembers( *this, triggerMenu ) )
 {
 	addSample( originalSample );
 }
 
-l1menu::ReducedMenuSample::ReducedMenuSample( const l1menu::TriggerMenu& triggerMenu )
-	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( *this, triggerMenu ) )
+l1menu::ReducedSample::ReducedSample( const l1menu::TriggerMenu& triggerMenu )
+	: pImple_( new l1menu::ReducedSamplePrivateMembers( *this, triggerMenu ) )
 {
 	// No operation besides the initialiser list
 }
 
-l1menu::ReducedMenuSample::ReducedMenuSample( const std::string& filename )
-	: pImple_( new l1menu::ReducedMenuSamplePrivateMembers( *this, filename ) )
+l1menu::ReducedSample::ReducedSample( const std::string& filename )
+	: pImple_( new l1menu::ReducedSamplePrivateMembers( *this, filename ) )
 {
 	// No operation except the initialiser list
 }
 
-l1menu::ReducedMenuSample::~ReducedMenuSample()
+l1menu::ReducedSample::~ReducedSample()
 {
 	// No operation. Just need one defined otherwise the default one messes up
-	// the unique_ptr deletion because ReducedMenuSamplePrivateMembers isn't
+	// the unique_ptr deletion because ReducedSamplePrivateMembers isn't
 	// defined elsewhere.
 }
 
-void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSample )
+void l1menu::ReducedSample::addSample( const l1menu::FullSample& originalSample )
 {
 	l1menuprotobuf::Run* pCurrentRun=pImple_->protobufRuns.back().get();
 
@@ -339,11 +339,11 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 	} // end of loop over events
 }
 
-void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
+void l1menu::ReducedSample::saveToFile( const std::string& filename ) const
 {
 	// Open the file. Parameters are filename, write ability and create, rw-r--r-- permissions.
 	int fileDescriptor = open( filename.c_str(), O_WRONLY | O_CREAT, 0644 );
-	if( fileDescriptor==0 ) throw std::runtime_error( "ReducedMenuSample save to file - couldn't open file" );
+	if( fileDescriptor==0 ) throw std::runtime_error( "ReducedSample save to file - couldn't open file" );
 	::UnixFileSentry fileSentry( fileDescriptor ); // Use this as an exception safe way of closing the output file
 
 	// Setup the protobuf file handlers
@@ -379,19 +379,19 @@ void l1menu::ReducedMenuSample::saveToFile( const std::string& filename ) const
 
 }
 
-size_t l1menu::ReducedMenuSample::numberOfEvents() const
+size_t l1menu::ReducedSample::numberOfEvents() const
 {
 	size_t numberOfEvents=0;
 	for( const auto& pRun : pImple_->protobufRuns ) numberOfEvents+=pRun->event_size();
 	return numberOfEvents;
 }
 
-const l1menu::TriggerMenu& l1menu::ReducedMenuSample::getTriggerMenu() const
+const l1menu::TriggerMenu& l1menu::ReducedSample::getTriggerMenu() const
 {
 	return pImple_->triggerMenu;
 }
 
-bool l1menu::ReducedMenuSample::containsTrigger( const l1menu::ITrigger& trigger, bool allowOlderVersion ) const
+bool l1menu::ReducedSample::containsTrigger( const l1menu::ITrigger& trigger, bool allowOlderVersion ) const
 {
 	// Loop over all of the triggers in the menu, and see if there is one
 	// where the name and version match.
@@ -413,7 +413,7 @@ bool l1menu::ReducedMenuSample::containsTrigger( const l1menu::ITrigger& trigger
 		// to make sure they match, i.e. make sure the ReducedSample was made with the same
 		// eta cuts or whatever.
 		// I don't care if the thresholds don't match because that's what's stored in the
-		// ReducedMenuSample.
+		// ReducedSample.
 		std::vector<std::string> parameterNames=l1menu::tools::getNonThresholdParameterNames( trigger );
 		bool allParametersMatch=true;
 		for( const auto& parameterName : parameterNames )
@@ -428,7 +428,7 @@ bool l1menu::ReducedMenuSample::containsTrigger( const l1menu::ITrigger& trigger
 	return false;
 }
 
-const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParameterIdentifiers( const l1menu::ITrigger& trigger, bool allowOlderVersion ) const
+const std::map<std::string,size_t> l1menu::ReducedSample::getTriggerParameterIdentifiers( const l1menu::ITrigger& trigger, bool allowOlderVersion ) const
 {
 	std::map<std::string,size_t> returnValue;
 
@@ -457,7 +457,7 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 		// to make sure they match, i.e. make sure the ReducedSample was made with the same
 		// eta cuts or whatever.
 		// I don't care if the thresholds don't match because that's what's stored in the
-		// ReducedMenuSample.
+		// ReducedSample.
 		if( triggerWasFound ) // Trigger can still fail, but no point doing this check if it already has
 		{
 			std::vector<std::string> parameterNames=l1menu::tools::getNonThresholdParameterNames( trigger );
@@ -484,12 +484,12 @@ const std::map<std::string,size_t> l1menu::ReducedMenuSample::getTriggerParamete
 	// (I guess - it would be a pretty pointless trigger though). To indicate the
 	// difference between that and a trigger that wasn't found I'll respectively
 	// return the empty vector or throw an exception.
-	if( !triggerWasFound ) throw std::runtime_error( "l1menu::ReducedMenuSample::getTriggerParameterIdentifiers() called for a trigger that was not used to create the sample - "+trigger.name() );
+	if( !triggerWasFound ) throw std::runtime_error( "l1menu::ReducedSample::getTriggerParameterIdentifiers() called for a trigger that was not used to create the sample - "+trigger.name() );
 
 	return returnValue;
 }
 
-const l1menu::IEvent& l1menu::ReducedMenuSample::getEvent( size_t eventNumber ) const
+const l1menu::IEvent& l1menu::ReducedSample::getEvent( size_t eventNumber ) const
 {
 	for( const auto& pRun : pImple_->protobufRuns )
 	{
@@ -505,30 +505,30 @@ const l1menu::IEvent& l1menu::ReducedMenuSample::getEvent( size_t eventNumber ) 
 
 	// Should always find the event before getting to this point, so throw an
 	// exception if this happens.
-	throw std::runtime_error( "ReducedMenuSample::getEvent(eventNumber) was asked for an invalid eventNumber" );
+	throw std::runtime_error( "ReducedSample::getEvent(eventNumber) was asked for an invalid eventNumber" );
 }
 
-std::unique_ptr<l1menu::ICachedTrigger> l1menu::ReducedMenuSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
+std::unique_ptr<l1menu::ICachedTrigger> l1menu::ReducedSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
 {
 	return std::unique_ptr<l1menu::ICachedTrigger>( new CachedTriggerImplementation(*this,trigger) );
 }
 
-float l1menu::ReducedMenuSample::eventRate() const
+float l1menu::ReducedSample::eventRate() const
 {
 	return pImple_->eventRate;
 }
 
-void l1menu::ReducedMenuSample::setEventRate( float rate )
+void l1menu::ReducedSample::setEventRate( float rate )
 {
 	pImple_->eventRate=rate;
 }
 
-float l1menu::ReducedMenuSample::sumOfWeights() const
+float l1menu::ReducedSample::sumOfWeights() const
 {
 	return pImple_->sumOfWeights;
 }
 
-std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const l1menu::TriggerMenu& menu ) const
+std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedSample::rate( const l1menu::TriggerMenu& menu ) const
 {
 	// TODO make sure the TriggerMenu is valid for this sample
 
@@ -536,7 +536,7 @@ std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedMenuSample::rate( const 
 	std::vector<size_t> numberOfEventsPassed( menu.numberOfTriggers() );
 	float numberOfEventsPassingAnyTrigger;
 
-	// Using cached triggers significantly increases speed for ReducedMenuSample
+	// Using cached triggers significantly increases speed for ReducedSample
 	// because it cuts out expensive string comparisons when querying the trigger
 	// parameters.
 	std::vector< std::unique_ptr<l1menu::ICachedTrigger> > cachedTriggers;

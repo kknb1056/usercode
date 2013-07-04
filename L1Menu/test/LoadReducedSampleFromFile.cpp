@@ -4,7 +4,7 @@
 #include <TSystem.h>
 #include <FWCore/FWLite/interface/AutoLibraryLoader.h>
 #include <TFile.h>
-#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/ReducedSample.h"
 #include "l1menu/MenuRatePlots.h"
 #include "l1menu/IMenuRate.h"
 #include "l1menu/ITriggerRate.h"
@@ -54,7 +54,7 @@ int main( int argc, char* argv[] )
 			std::cout << "\n";
 		}
 
-		l1menu::ReducedMenuSample mySample( sampleFilename );
+		l1menu::ReducedSample mySample( sampleFilename );
 		mySample.setEventRate( orbitsPerSecond*numberOfBunches*scaleToKiloHz );
 
 		l1menu::MenuRatePlots rateVersusThresholdPlots( menu );//mySample.getTriggerMenu() );

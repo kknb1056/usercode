@@ -14,9 +14,6 @@ class TH1;
 namespace l1menu
 {
 	class TriggerMenu;
-	class L1TriggerDPGEvent;
-	class ReducedMenuSample;
-	class ReducedEvent;
 }
 
 

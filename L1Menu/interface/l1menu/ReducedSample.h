@@ -1,5 +1,5 @@
-#ifndef l1menu_ReducedMenuSample_h
-#define l1menu_ReducedMenuSample_h
+#ifndef l1menu_ReducedSample_h
+#define l1menu_ReducedSample_h
 
 #include <string>
 #include <memory>
@@ -11,7 +11,7 @@
 // Forward declarations
 namespace l1menu
 {
-	class MenuSample;
+	class FullSample;
 	class TriggerMenu;
 	class ITrigger;
 }
@@ -24,16 +24,16 @@ namespace l1menu
 	 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
 	 * @date 28/May/2013
 	 */
-	class ReducedMenuSample : public l1menu::ISample
+	class ReducedSample : public l1menu::ISample
 	{
 	public:
 		/** @brief Load from a file in protobuf format. */
-		ReducedMenuSample( const std::string& filename );
-		ReducedMenuSample( const l1menu::MenuSample& originalSample, const l1menu::TriggerMenu& triggerMenu );
-		ReducedMenuSample( const l1menu::TriggerMenu& triggerMenu );
-		virtual ~ReducedMenuSample();
+		ReducedSample( const std::string& filename );
+		ReducedSample( const l1menu::FullSample& originalSample, const l1menu::TriggerMenu& triggerMenu );
+		ReducedSample( const l1menu::TriggerMenu& triggerMenu );
+		virtual ~ReducedSample();
 
-		void addSample( const l1menu::MenuSample& originalSample );
+		void addSample( const l1menu::FullSample& originalSample );
 
 		/** @brief Save to a file in protobuf format (protobuf in src/protobuf/l1menu.proto). */
 		void saveToFile( const std::string& filename ) const;
@@ -54,8 +54,8 @@ namespace l1menu
 		virtual std::unique_ptr<const l1menu::IMenuRate> rate( const l1menu::TriggerMenu& menu ) const;
 
 	private:
-		std::unique_ptr<class ReducedMenuSamplePrivateMembers> pImple_;
-	}; // end of class ReducedMenuSample
+		std::unique_ptr<class ReducedSamplePrivateMembers> pImple_;
+	}; // end of class ReducedSample
 
 } // end of namespace l1menu
 

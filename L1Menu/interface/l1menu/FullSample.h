@@ -1,5 +1,5 @@
-#ifndef l1menu_MenuSample_h
-#define l1menu_MenuSample_h
+#ifndef l1menu_FullSample_h
+#define l1menu_FullSample_h
 
 #include <string>
 #include <memory>
@@ -15,15 +15,15 @@ namespace l1menu
 namespace l1menu
 {
 
-	class MenuSample : public l1menu::ISample
+	class FullSample : public l1menu::ISample
 	{
 	public:
-		MenuSample();
-		virtual ~MenuSample();
-		MenuSample( const MenuSample& otherMenuSample );
-		MenuSample( MenuSample&& otherMenuSample ) noexcept;
-		MenuSample& operator=( const MenuSample& otherMenuSample );
-		MenuSample& operator=( MenuSample&& otherMenuSample ) noexcept;
+		FullSample();
+		virtual ~FullSample();
+		FullSample( const FullSample& otherFullSample );
+		FullSample( FullSample&& otherFullSample ) noexcept;
+		FullSample& operator=( const FullSample& otherFullSample );
+		FullSample& operator=( FullSample&& otherFullSample ) noexcept;
 
 		void loadFile( const std::string& filename );
 		const l1menu::L1TriggerDPGEvent& getFullEvent( size_t eventNumber ) const;
@@ -36,8 +36,8 @@ namespace l1menu
 		virtual float sumOfWeights() const;
 		virtual std::unique_ptr<const l1menu::IMenuRate> rate( const l1menu::TriggerMenu& menu ) const;
 	private:
-		class MenuSamplePrivateMembers* pImple_;
-	}; // end of class MenuSample
+		class FullSamplePrivateMembers* pImple_;
+	}; // end of class FullSample
 
 } // end of namespace l1menu
 

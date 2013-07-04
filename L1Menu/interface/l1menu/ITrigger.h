@@ -8,8 +8,6 @@
 namespace l1menu
 {
 	class L1TriggerDPGEvent;
-	class ReducedEvent;
-	class ReducedMenuSample;
 }
 
 

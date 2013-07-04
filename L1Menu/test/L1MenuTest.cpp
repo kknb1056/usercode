@@ -1,11 +1,11 @@
 #include "TSystem.h"
 #include "FWCore/FWLite/interface/AutoLibraryLoader.h"
-#include "l1menu/MenuSample.h"
+#include "l1menu/FullSample.h"
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/TriggerTable.h"
 #include "l1menu/ITrigger.h"
 #include "l1menu/MenuRatePlots.h"
-#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/ReducedSample.h"
 #include "l1menu/ReducedEvent.h"
 #include <iostream>
 #include <iomanip>
@@ -59,12 +59,12 @@ int main( int argc, char* argv[] )
 		myMenu.loadMenuFromFile( menuFilename );
 
 		std::cout << "Loading ntuple from file " << ntupleFilename << std::endl;
-		l1menu::MenuSample mySample;
+		l1menu::FullSample mySample;
 		mySample.loadFile(ntupleFilename);
 		mySample.setEventRate( orbitsPerSecond*numberOfBunches*scaleToKiloHz );
 
 		std::cout << "Creating reduced sample" << std::endl;
-		l1menu::ReducedMenuSample myReducedSample( mySample, myMenu );
+		l1menu::ReducedSample myReducedSample( mySample, myMenu );
 		std::cout << "Done. Saving to file." << std::endl;
 		myReducedSample.saveToFile( "reducedSample.proto" );
 

@@ -13,9 +13,6 @@ namespace l1menu
 {
 	class IEvent;
 	class ITrigger;
-	class L1TriggerDPGEvent;
-	class ReducedMenuSample;
-	class ReducedEvent;
 	class ISample;
 }
 

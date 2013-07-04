@@ -4,9 +4,8 @@
 #include "l1menu/ICachedTrigger.h"
 #include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/IEvent.h"
+#include "l1menu/ISample.h"
 #include "l1menu/TriggerTable.h"
-#include "l1menu/ReducedMenuSample.h"
-#include "l1menu/ReducedEvent.h"
 #include <TH1F.h>
 #include <sstream>
 #include <algorithm>

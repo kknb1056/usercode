@@ -10,7 +10,7 @@
 namespace l1menu
 {
 	class ITrigger;
-	class ReducedMenuSample;
+	class ReducedSample;
 }
 namespace l1menuprotobuf
 {
@@ -27,11 +27,11 @@ namespace l1menu
 	 */
 	class ReducedEvent : public l1menu::IEvent
 	{
-		friend class l1menu::ReducedMenuSample;
+		friend class l1menu::ReducedSample;
 	public:
 		typedef size_t ParameterID;
 	public:
-		ReducedEvent( const l1menu::ReducedMenuSample& sample );
+		ReducedEvent( const l1menu::ReducedSample& sample );
 		virtual ~ReducedEvent();
 		virtual float parameterValue( ParameterID parameterNumber ) const;
 
@@ -43,7 +43,7 @@ namespace l1menu
 		virtual const l1menu::ISample& sample() const;
 	private:
 		l1menuprotobuf::Event* pProtobufEvent_;
-		const l1menu::ReducedMenuSample& sample_; ///< @brief The sample that this event is from
+		const l1menu::ReducedSample& sample_; ///< @brief The sample that this event is from
 	};
 
 } // end of namespace l1menu

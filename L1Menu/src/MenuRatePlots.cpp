@@ -5,8 +5,6 @@
 #include "l1menu/TriggerMenu.h"
 #include "l1menu/TriggerRatePlot.h"
 #include "l1menu/tools/tools.h"
-#include "l1menu/ReducedMenuSample.h"
-#include "l1menu/ReducedEvent.h"
 #include <TH1F.h>
 
 l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory )

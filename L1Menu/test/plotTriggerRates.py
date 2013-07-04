@@ -121,7 +121,7 @@ class TriggerRatePlot:
 			self.ratio.Draw()
 		
 		self.ratePad.cd()
-		self.legend=TLegend( 0.59, 0.72, 0.99, 0.95 )
+		self.legend=TLegend( 0.59, 0.72*0.9, 0.99, 0.95*0.9 )
 		self.legend.SetTextSize( 0.04 )
 		self.legend.AddEntry( self.numerator, title1 )
 		if self.denominator!=None : self.legend.AddEntry( self.denominator, title2 )
@@ -157,14 +157,9 @@ class TriggerRatePlot:
 
 
 
-#data_8TeV_45PU_full = ["Data - full detector",TFile.Open("/Users/phmag/Documents/L1Menus/forTalk/Scaling/L1RateHist_8TeV45PUData_1p1E34_Fallback_v16m20Thr1_rates.root")]
-#MC_8TeV_45PU_full = ["MC - full detector",TFile.Open("/Users/phmag/Documents/L1Menus/forTalk/Scaling/L1RateHist_8TeV45PU_NoOOTMC_Fallback_v16m20Thr1_rates.root")]
-#data_8TeV_45PU_barrel = ["Data - barrel only",TFile.Open("/Users/phmag/Documents/L1Menus/forTalk/Scaling/L1RateHist_8TeV45PUData_1p1E34_Fallback_v16m20_EtaRes_1p0Thr1_rates.root")]
-#MC_8TeV_45PU_barrel = ["MC - barrel only",TFile.Open("/Users/phmag/Documents/L1Menus/forTalk/Scaling/L1RateHist_8TeV45PU_NoOOTMC_Fallback_v16m20_EtaRes_1p0Thr1_rates.root")]
 
 newFile = ["New file",TFile.Open("/home/xtaldaq/CMSSWReleases/CMSSW_5_3_4/src/MarksStuff/MenuGeneration/reducedRateHistograms.root")]
 oldFile = ["Old file",TFile.Open("/home/xtaldaq/L1RateHist_14TeV100PU_25ns50bxMC_FallbackThr1_rates.root")]
-blank = ["dummy entry",None]
 plots = []
 
 #triggers = ["SingleEG"]

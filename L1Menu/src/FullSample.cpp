@@ -1,4 +1,4 @@
-#include "l1menu/MenuSample.h"
+#include "l1menu/FullSample.h"
 
 #include <stdexcept>
 #include <cmath>
@@ -38,7 +38,7 @@ namespace // Use the unnamed namespace for things only used in this file
 
 namespace l1menu
 {
-	class MenuSamplePrivateMembers
+	class FullSamplePrivateMembers
 	{
 	private:
 		static const size_t PHIBINS;
@@ -52,7 +52,7 @@ namespace l1menu
 		double calculateHTT( const L1Analysis::L1AnalysisDataFormat& event );
 		double calculateHTM( const L1Analysis::L1AnalysisDataFormat& event );
 	public:
-		MenuSamplePrivateMembers( MenuSample* pThisObject ) : currentEvent(*pThisObject), sumOfWeights(-1), eventRate(1) {}
+		FullSamplePrivateMembers( FullSample* pThisObject ) : currentEvent(*pThisObject), sumOfWeights(-1), eventRate(1) {}
 		void fillDataStructure( int selectDataInput );
 		void fillL1Bits();
 		L1UpgradeNtuple inputNtuple;
@@ -62,19 +62,19 @@ namespace l1menu
 	};
 }
 
-const size_t l1menu::MenuSamplePrivateMembers::PHIBINS=18;
-const double l1menu::MenuSamplePrivateMembers::PHIBIN[]={10,30,50,70,90,110,130,150,170,190,210,230,250,270,290,310,330,350};
-const size_t l1menu::MenuSamplePrivateMembers::ETABINS=23;
-const double l1menu::MenuSamplePrivateMembers::ETABIN[]={-5.,-4.5,-4.,-3.5,-3.,-2.172,-1.74,-1.392,-1.044,-0.696,-0.348,0,0.348,0.696,1.044,1.392,1.74,2.172,3.,3.5,4.,4.5,5.};
+const size_t l1menu::FullSamplePrivateMembers::PHIBINS=18;
+const double l1menu::FullSamplePrivateMembers::PHIBIN[]={10,30,50,70,90,110,130,150,170,190,210,230,250,270,290,310,330,350};
+const size_t l1menu::FullSamplePrivateMembers::ETABINS=23;
+const double l1menu::FullSamplePrivateMembers::ETABIN[]={-5.,-4.5,-4.,-3.5,-3.,-2.172,-1.74,-1.392,-1.044,-0.696,-0.348,0,0.348,0.696,1.044,1.392,1.74,2.172,3.,3.5,4.,4.5,5.};
 
 
-double l1menu::MenuSamplePrivateMembers::degree( double radian )
+double l1menu::FullSamplePrivateMembers::degree( double radian )
 {
 	if( radian<0 ) return 360.+(radian/M_PI*180.);
 	else return radian/M_PI*180.;
 }
 
-int l1menu::MenuSamplePrivateMembers::phiINjetCoord( double phi )
+int l1menu::FullSamplePrivateMembers::phiINjetCoord( double phi )
 {
 	size_t phiIdx=0;
 	double phidegree=degree( phi );
@@ -88,7 +88,7 @@ int l1menu::MenuSamplePrivateMembers::phiINjetCoord( double phi )
 	return int( phiIdx );
 }
 
-int l1menu::MenuSamplePrivateMembers::etaINjetCoord( double eta )
+int l1menu::FullSamplePrivateMembers::etaINjetCoord( double eta )
 {
 	size_t etaIdx=0.;
 	for( size_t idx=0; idx<ETABINS; idx++ )
@@ -98,7 +98,7 @@ int l1menu::MenuSamplePrivateMembers::etaINjetCoord( double eta )
 	return int( etaIdx );
 }
 
-double l1menu::MenuSamplePrivateMembers::calculateHTT( const L1Analysis::L1AnalysisDataFormat& event )
+double l1menu::FullSamplePrivateMembers::calculateHTT( const L1Analysis::L1AnalysisDataFormat& event )
 {
 	double httValue=0.;
 
@@ -117,7 +117,7 @@ double l1menu::MenuSamplePrivateMembers::calculateHTT( const L1Analysis::L1Analy
 	return httValue;
 }
 
-double l1menu::MenuSamplePrivateMembers::calculateHTM( const L1Analysis::L1AnalysisDataFormat& event )
+double l1menu::FullSamplePrivateMembers::calculateHTM( const L1Analysis::L1AnalysisDataFormat& event )
 {
 	double htmValue=0.;
 	double htmValueX=0.;
@@ -145,7 +145,7 @@ double l1menu::MenuSamplePrivateMembers::calculateHTM( const L1Analysis::L1Analy
 	return htmValue;
 }
 
-void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
+void l1menu::FullSamplePrivateMembers::fillDataStructure( int selectDataInput )
 {
 	// Use a reference for ease of use
 	L1Analysis::L1AnalysisDataFormat& analysisDataFormat=currentEvent.rawEvent();
@@ -351,7 +351,7 @@ void l1menu::MenuSamplePrivateMembers::fillDataStructure( int selectDataInput )
 	return;
 }
 
-void l1menu::MenuSamplePrivateMembers::fillL1Bits()
+void l1menu::FullSamplePrivateMembers::fillL1Bits()
 {
 	bool* PhysicsBits=currentEvent.physicsBits();
 
@@ -379,49 +379,49 @@ void l1menu::MenuSamplePrivateMembers::fillL1Bits()
 }
 
 
-l1menu::MenuSample::MenuSample()
-	: pImple_( new MenuSamplePrivateMembers( this ) )
+l1menu::FullSample::FullSample()
+	: pImple_( new FullSamplePrivateMembers( this ) )
 {
 	// No operation besides the initialiser list
 }
 
-l1menu::MenuSample::~MenuSample()
+l1menu::FullSample::~FullSample()
 {
 	delete pImple_;
 }
 
-l1menu::MenuSample::MenuSample( const l1menu::MenuSample& otherMenuSample )
-	: pImple_( new MenuSamplePrivateMembers(*otherMenuSample.pImple_) )
+l1menu::FullSample::FullSample( const l1menu::FullSample& otherFullSample )
+	: pImple_( new FullSamplePrivateMembers(*otherFullSample.pImple_) )
 {
 	// No operation besides the initialiser list
 }
 
-l1menu::MenuSample::MenuSample( l1menu::MenuSample&& otherMenuSample ) noexcept
-	: pImple_( otherMenuSample.pImple_ )
+l1menu::FullSample::FullSample( l1menu::FullSample&& otherFullSample ) noexcept
+	: pImple_( otherFullSample.pImple_ )
 {
-	otherMenuSample.pImple_=NULL;
+	otherFullSample.pImple_=NULL;
 }
 
-l1menu::MenuSample& l1menu::MenuSample::operator=( const l1menu::MenuSample& otherMenuSample )
+l1menu::FullSample& l1menu::FullSample::operator=( const l1menu::FullSample& otherFullSample )
 {
-	*pImple_=*otherMenuSample.pImple_;
+	*pImple_=*otherFullSample.pImple_;
 	return *this;
 }
 
-l1menu::MenuSample& l1menu::MenuSample::operator=( l1menu::MenuSample&& otherMenuSample ) noexcept
+l1menu::FullSample& l1menu::FullSample::operator=( l1menu::FullSample&& otherFullSample ) noexcept
 {
-	pImple_=otherMenuSample.pImple_;
-	otherMenuSample.pImple_=NULL;
+	pImple_=otherFullSample.pImple_;
+	otherFullSample.pImple_=NULL;
 	return *this;
 }
 
-void l1menu::MenuSample::loadFile( const std::string& filename )
+void l1menu::FullSample::loadFile( const std::string& filename )
 {
 	pImple_->sumOfWeights=-1;
 	pImple_->inputNtuple.Open( filename );
 }
 
-const l1menu::L1TriggerDPGEvent& l1menu::MenuSample::getFullEvent( size_t eventNumber ) const
+const l1menu::L1TriggerDPGEvent& l1menu::FullSample::getFullEvent( size_t eventNumber ) const
 {
 	// Make sure the event number requested is valid. Use static_cast to get rid
 	// of the "comparison between signed and unsigned" compiler warning.
@@ -436,33 +436,33 @@ const l1menu::L1TriggerDPGEvent& l1menu::MenuSample::getFullEvent( size_t eventN
 	return pImple_->currentEvent;
 }
 
-size_t l1menu::MenuSample::numberOfEvents() const
+size_t l1menu::FullSample::numberOfEvents() const
 {
 	return static_cast<size_t>( pImple_->inputNtuple.GetEntries() );
 }
 
-const l1menu::IEvent& l1menu::MenuSample::getEvent( size_t eventNumber ) const
+const l1menu::IEvent& l1menu::FullSample::getEvent( size_t eventNumber ) const
 {
 	// This returns a derived class so just delegate to that
 	return getFullEvent( eventNumber );
 }
 
-std::unique_ptr<l1menu::ICachedTrigger> l1menu::MenuSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
+std::unique_ptr<l1menu::ICachedTrigger> l1menu::FullSample::createCachedTrigger( const l1menu::ITrigger& trigger ) const
 {
 	return std::unique_ptr<l1menu::ICachedTrigger>( new CachedTriggerImplementation(trigger) );
 }
 
-float l1menu::MenuSample::eventRate() const
+float l1menu::FullSample::eventRate() const
 {
 	return pImple_->eventRate;
 }
 
-void l1menu::MenuSample::setEventRate( float rate )
+void l1menu::FullSample::setEventRate( float rate )
 {
 	pImple_->eventRate=rate;
 }
 
-float l1menu::MenuSample::sumOfWeights() const
+float l1menu::FullSample::sumOfWeights() const
 {
 	if( pImple_->sumOfWeights==-1 )
 	{
@@ -478,7 +478,7 @@ float l1menu::MenuSample::sumOfWeights() const
 	return pImple_->sumOfWeights;
 }
 
-std::unique_ptr<const l1menu::IMenuRate> l1menu::MenuSample::rate( const l1menu::TriggerMenu& menu ) const
+std::unique_ptr<const l1menu::IMenuRate> l1menu::FullSample::rate( const l1menu::TriggerMenu& menu ) const
 {
 	return std::unique_ptr<const l1menu::IMenuRate>();
 }

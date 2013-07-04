@@ -1,10 +1,10 @@
 #include "l1menu/ReducedEvent.h"
 
 #include "l1menu/ITrigger.h"
-#include "l1menu/ReducedMenuSample.h"
+#include "l1menu/ReducedSample.h"
 #include "protobuf/l1menu.pb.h"
 
-l1menu::ReducedEvent::ReducedEvent( const l1menu::ReducedMenuSample& sample )
+l1menu::ReducedEvent::ReducedEvent( const l1menu::ReducedSample& sample )
 	: sample_(sample)
 {
 	// No operation
