@@ -268,6 +268,7 @@ l1menu::ReducedSample::ReducedSample( const l1menu::FullSample& originalSample, 
 	: pImple_( new l1menu::ReducedSamplePrivateMembers( *this, triggerMenu ) )
 {
 	addSample( originalSample );
+	setEventRate( originalSample.eventRate() );
 }
 
 l1menu::ReducedSample::ReducedSample( const l1menu::TriggerMenu& triggerMenu )
