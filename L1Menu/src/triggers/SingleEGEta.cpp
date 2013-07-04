@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include "l1menu/RegisterTriggerMacro.h"
 #include "l1menu/L1TriggerDPGEvent.h"
-#include "l1menu/ReducedMenuSample.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 
 
@@ -70,20 +69,6 @@ bool l1menu::triggers::SingleEGEta_v0::apply( const l1menu::L1TriggerDPGEvent& e
 unsigned int l1menu::triggers::SingleEGEta_v0::version() const
 {
 	return 0;
-}
-
-void l1menu::triggers::SingleEGEta::initiateForReducedSample( const l1menu::ReducedMenuSample& sample )
-{
-	const auto& parameterIdentifiers=sample.getTriggerParameterIdentifiers( *this );
-
-	std::map<std::string,ReducedEvent::ParameterID>::const_iterator iFindResult=parameterIdentifiers.find("threshold1");
-	if( iFindResult==parameterIdentifiers.end() ) throw std::runtime_error( "SingleEGEta::initiateForReducedSample() - it appears this reduced sample wasn't created with this trigger. You can only run over a l1menu::ReducedMenuSample with triggers that were on when the sample was created." );
-	else reducedSampleParameterID_threshold1_=iFindResult->second;
-}
-
-bool l1menu::triggers::SingleEGEta::apply( const l1menu::ReducedEvent& event ) const
-{
-	return ( threshold1_<=event.parameterValue(reducedSampleParameterID_threshold1_) );
 }
 
 l1menu::triggers::SingleEGEta::SingleEGEta()

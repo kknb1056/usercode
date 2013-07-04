@@ -54,7 +54,7 @@ class TriggerRatePlot:
 		if self.ratioPad!=None:
 			self.ratioPad.SetTopMargin(0)
 			self.ratioPad.SetBottomMargin( self.ratePad.GetBottomMargin()*padRatio*1.1 ) # A little 10% extra because some is cut off
-		self.ratePad.SetBottomMargin(0)
+		self.ratePad.SetBottomMargin(0.1) # was zero before I wanted to see the axis
 		self.ratePad.Draw()
 		if self.ratioPad!=None: self.ratioPad.Draw()
 		self.ratePad.cd()

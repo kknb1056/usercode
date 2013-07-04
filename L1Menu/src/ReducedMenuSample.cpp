@@ -328,9 +328,9 @@ void l1menu::ReducedMenuSample::addSample( const l1menu::MenuSample& originalSam
 			catch( std::exception& error )
 			{
 				// setTriggerThresholdsAsTightAsPossible() couldn't find thresholds so record
-				// a default for everything.
+				// -1 for everything.
 				// Range based for loop gives me a warning because I don't use the thresholdName.
-				for( size_t index=0; index<thresholdNames.size(); ++index ) pProtobufEvent->add_threshold(100000);
+				for( size_t index=0; index<thresholdNames.size(); ++index ) pProtobufEvent->add_threshold(-1);
 			} // end of try block that sets the trigger thresholds
 
 		} // end of loop over triggers
