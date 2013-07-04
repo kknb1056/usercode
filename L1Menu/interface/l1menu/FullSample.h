@@ -26,6 +26,7 @@ namespace l1menu
 		FullSample& operator=( FullSample&& otherFullSample ) noexcept;
 
 		void loadFile( const std::string& filename );
+		void loadFilesFromList( const std::string& filenameOfList );
 		const l1menu::L1TriggerDPGEvent& getFullEvent( size_t eventNumber ) const;
 
 		virtual size_t numberOfEvents() const;

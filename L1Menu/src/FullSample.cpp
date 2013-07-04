@@ -421,6 +421,12 @@ void l1menu::FullSample::loadFile( const std::string& filename )
 	pImple_->inputNtuple.Open( filename );
 }
 
+void l1menu::FullSample::loadFilesFromList( const std::string& filenameOfList )
+{
+	pImple_->sumOfWeights=-1;
+	pImple_->inputNtuple.OpenWithList( filenameOfList );
+}
+
 const l1menu::L1TriggerDPGEvent& l1menu::FullSample::getFullEvent( size_t eventNumber ) const
 {
 	// Make sure the event number requested is valid. Use static_cast to get rid
