@@ -1,6 +1,6 @@
 #include "SingleIsoMuEta.h"
 
-#include "l1menu/RegisterTriggerMacro.h"
+#include "l1menu/implementation/RegisterTriggerMacro.h"
 
 namespace l1menu
 {

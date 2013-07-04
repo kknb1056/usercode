@@ -1,7 +1,7 @@
 #include "SingleTauJet.h"
 
 #include <stdexcept>
-#include "l1menu/RegisterTriggerMacro.h"
+#include "l1menu/implementation/RegisterTriggerMacro.h"
 #include "l1menu/L1TriggerDPGEvent.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 

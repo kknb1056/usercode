@@ -1,5 +1,5 @@
-#ifndef l1menu_RegisterTriggerMacro_h
-#define l1menu_RegisterTriggerMacro_h
+#ifndef l1menu_implementation_RegisterTriggerMacro_h
+#define l1menu_implementation_RegisterTriggerMacro_h
 
 #include "l1menu/TriggerTable.h"
 

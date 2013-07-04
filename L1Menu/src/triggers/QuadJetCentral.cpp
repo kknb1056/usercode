@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 #include <algorithm>
-#include "l1menu/RegisterTriggerMacro.h"
+#include "l1menu/implementation/RegisterTriggerMacro.h"
 
 
 namespace l1menu

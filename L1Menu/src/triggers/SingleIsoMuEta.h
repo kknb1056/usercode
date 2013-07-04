@@ -3,8 +3,6 @@
 
 #include "SingleMuEta.h"
 
-#include "l1menu/RegisterTriggerMacro.h"
-
 namespace l1menu
 {
 	namespace triggers
