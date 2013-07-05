@@ -69,6 +69,11 @@ const bool* l1menu::L1TriggerDPGEvent::physicsBits() const
 	return pImple_->physicsBits;
 }
 
+void l1menu::L1TriggerDPGEvent::setWeight( float weight )
+{
+	pImple_->weight=weight;
+}
+
 bool l1menu::L1TriggerDPGEvent::passesTrigger( const l1menu::ITrigger& trigger ) const
 {
 	// This is an IEvent method, but ITrigger has a method that can

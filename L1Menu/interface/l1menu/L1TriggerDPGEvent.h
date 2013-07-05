@@ -40,6 +40,8 @@ namespace l1menu
 		virtual bool* physicsBits(); ///< @brief A 128 element array of the physics bits
 		virtual const bool* physicsBits() const; ///< @brief Const access to the 128 element array of the physics bits.
 
+		virtual void setWeight( float weight );
+
 		//
 		// These are the methods required by the l1menu::IEvent interface.
 		//

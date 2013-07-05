@@ -153,6 +153,7 @@ void l1menu::FullSamplePrivateMembers::fillDataStructure( int selectDataInput )
 	analysisDataFormat.Reset();
 
 	// Grab standard event information
+	currentEvent.setWeight( inputNtuple.event_->puWeight );
 	analysisDataFormat.Run=inputNtuple.event_->run;
 	analysisDataFormat.LS=inputNtuple.event_->lumi;
 	analysisDataFormat.Event=inputNtuple.event_->event;
