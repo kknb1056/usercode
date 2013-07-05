@@ -34,6 +34,7 @@ namespace l1menu
 		protected:
 			float threshold1_;
 			float threshold2_;
+			float regionCut_;
 		}; // end of the DoubleJetCentral base class
 
 		/** @brief First version of the DoubleJetCentral trigger.
@@ -100,6 +101,10 @@ bool l1menu::triggers::DoubleJetCentral_v0::apply( const l1menu::L1TriggerDPGEve
 		if( isFwdJet ) continue;
 		bool isTauJet=analysisDataFormat.Taujet[ue];
 		if( isTauJet ) continue;
+
+		float eta = analysisDataFormat.Etajet[ue];
+		if (eta < regionCut_ || eta > 21.-regionCut_) continue;
+
 		float rank=analysisDataFormat.Etjet[ue];
 		float pt=rank; //CorrectedL1JetPtByGCTregions(analysisDataFormat.Etajet[ue],rank*4.,theL1JetCorrection);
 		if( pt>=threshold1_ ) n1++;
@@ -117,7 +122,7 @@ unsigned int l1menu::triggers::DoubleJetCentral_v0::version() const
 }
 
 l1menu::triggers::DoubleJetCentral::DoubleJetCentral()
-	: threshold1_(20), threshold2_(20)
+	: threshold1_(20), threshold2_(20), regionCut_(4.5)
 {
 	// No operation other than the initialiser list
 }
@@ -132,6 +137,7 @@ const std::vector<std::string> l1menu::triggers::DoubleJetCentral::parameterName
 	std::vector<std::string> returnValue;
 	returnValue.push_back("threshold1");
 	returnValue.push_back("threshold2");
+	returnValue.push_back("regionCut");
 	return returnValue;
 }
 
@@ -139,6 +145,7 @@ float& l1menu::triggers::DoubleJetCentral::parameter( const std::string& paramet
 {
 	if( parameterName=="threshold1" ) return threshold1_;
 	else if( parameterName=="threshold2" ) return threshold2_;
+	else if( parameterName=="regionCut" ) return regionCut_;
 	else throw std::logic_error( "Not a valid parameter name" );
 }
 
@@ -146,5 +153,6 @@ const float& l1menu::triggers::DoubleJetCentral::parameter( const std::string& p
 {
 	if( parameterName=="threshold1" ) return threshold1_;
 	else if( parameterName=="threshold2" ) return threshold2_;
+	else if( parameterName=="regionCut" ) return regionCut_;
 	else throw std::logic_error( "Not a valid parameter name" );
 }
