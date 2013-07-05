@@ -108,26 +108,12 @@ void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event )
 	float weightPerEvent=sample.eventRate()/sample.sumOfWeights();
 
 	// For some implementations of ISample, it is significantly faster to
-	// create ICachedTriggers and then loop over those.
+	// create ICachedTriggers and then loop over those. The addEvent overload
+	// I'm about to delegate to loops over the histogram bins, so even for
+	// one event this trigger can be called multiple times.
 	std::unique_ptr<l1menu::ICachedTrigger> pCachedTrigger=sample.createCachedTrigger( *pTrigger_ );
 
-	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
-	{
-		(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
-
-		// Scale accordingly any other parameters that should be scaled.
-		for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
-
-		if( pCachedTrigger->apply(event) )
-		{
-			pHistogram_->Fill( (*pParameter_), event.weight()*weightPerEvent );
-		}
-		else break;
-		// Not sure if this "else break" is a good idea. I don't know if triggers
-		// will run their thresholds the other way. E.g. a trigger could require
-		// a minimum amount of energy in the event, in which case the higher
-		// bins will pass.
-	}
+	addEvent( event, pCachedTrigger, weightPerEvent );
 }
 
 void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
@@ -140,26 +126,36 @@ void l1menu::TriggerRatePlot::addSample( const l1menu::ISample& sample )
 
 	for( size_t eventNumber=0; eventNumber<sample.numberOfEvents(); ++eventNumber )
 	{
-		const l1menu::IEvent& event=sample.getEvent( eventNumber );
-
-		for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
-		{
-			(*pParameter_)=pHistogram_->GetBinCenter(binNumber);
-
-			// Scale accordingly any other parameters that should be scaled.
-			for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
-
-			if( pCachedTrigger->apply(event) ) // If the event passes the trigger
-			{
-				pHistogram_->Fill( (*pParameter_), event.weight()*weightPerEvent );
-			}
-			else break;
-			// Not sure if this "else break" is a good idea. I don't know if triggers
-			// will run their thresholds the other way. E.g. a trigger could require
-			// a minimum amount of energy in the event, in which case the higher
-			// bins will pass.
-		} // end of loop over histogram bins
+		addEvent( sample.getEvent(eventNumber), pCachedTrigger, weightPerEvent );
 	} // end of loop over events
+
+}
+
+void l1menu::TriggerRatePlot::addEvent( const l1menu::IEvent& event, const std::unique_ptr<l1menu::ICachedTrigger>& pCachedTrigger, float weightPerEvent )
+{
+	//
+	// Loop over all of the bins and fill it if that threshold would
+	// have passed the trigger.
+	//
+	for( int binNumber=1; binNumber<pHistogram_->GetNbinsX(); ++binNumber )
+	{
+		(*pParameter_)=pHistogram_->GetBinLowEdge(binNumber);
+
+		// Scale accordingly any other parameters that should be scaled. Remember that
+		// in parameterScalingPair, 'first' is a pointer to the threshold to be changed
+		// and 'second' is the ratio of the first threshold it should be.
+		for( const auto& parameterScalingPair : otherParameterScalings_ ) *(parameterScalingPair.first)=parameterScalingPair.second*(*pParameter_);
+
+		if( pCachedTrigger->apply(event) ) // If the event passes the trigger
+		{
+			pHistogram_->Fill( pHistogram_->GetBinCenter(binNumber), event.weight()*weightPerEvent );
+		}
+		else break;
+		// Not sure if this "else break" is a good idea. I don't know if triggers
+		// will run their thresholds the other way. E.g. a trigger could require
+		// a minimum amount of energy in the event, in which case the higher
+		// bins will pass.
+	} // end of loop over histogram bins
 
 }
 

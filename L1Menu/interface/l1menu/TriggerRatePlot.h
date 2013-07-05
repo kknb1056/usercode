@@ -13,6 +13,7 @@ namespace l1menu
 {
 	class IEvent;
 	class ITrigger;
+	class ICachedTrigger;
 	class ISample;
 }
 
@@ -80,6 +81,8 @@ namespace l1menu
 		std::vector< std::pair<float*,float> > otherParameterScalings_;
 		/// Flag to say whether the histogram should be deleted when this instance goes out of scope.
 		bool histogramOwnedByMe_;
+		/// The implementation that the public methods delegate to
+		void addEvent( const l1menu::IEvent& event, const std::unique_ptr<l1menu::ICachedTrigger>& pCachedTrigger, float weightPerEvent );
 	};
 }
 #endif
