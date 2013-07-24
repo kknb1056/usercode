@@ -8,6 +8,7 @@
 #include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/ICachedTrigger.h"
 #include "l1menu/IMenuRate.h"
+#include "l1menu/implementation/MenuRateImplementation.h"
 #include "L1UpgradeNtuple.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisDataFormat.h"
 #include "UserCode/L1TriggerUpgrade/interface/L1AnalysisL1ExtraUpgradeDataFormat.h"
@@ -487,5 +488,5 @@ float l1menu::FullSample::sumOfWeights() const
 
 std::unique_ptr<const l1menu::IMenuRate> l1menu::FullSample::rate( const l1menu::TriggerMenu& menu ) const
 {
-	return std::unique_ptr<const l1menu::IMenuRate>();
+	return std::unique_ptr<const l1menu::IMenuRate>( new l1menu::implementation::MenuRateImplementation( menu, *this ) );
 }

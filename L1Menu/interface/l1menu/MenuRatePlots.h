@@ -43,6 +43,8 @@ namespace l1menu
 		 */
 		MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory=NULL );
 
+		explicit MenuRatePlots( const TDirectory* pPreExistingPlotDirectory );
+
 		void addEvent( const l1menu::IEvent& event );
 
 		void addSample( const l1menu::ISample& sample );

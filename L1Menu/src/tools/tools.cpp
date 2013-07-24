@@ -5,9 +5,16 @@
 #include <map>
 #include <stdexcept>
 #include <algorithm>
+#include <ostream>
+#include <fstream>
+#include <iomanip>
 #include "l1menu/ITrigger.h"
 #include "l1menu/L1TriggerDPGEvent.h"
 #include "l1menu/TriggerTable.h"
+#include "l1menu/IMenuRate.h"
+#include "l1menu/ITriggerRate.h"
+#include "l1menu/FullSample.h"
+#include "l1menu/ReducedSample.h"
 
 std::vector<std::string> l1menu::tools::getThresholdNames( const l1menu::ITrigger& trigger )
 {
@@ -136,6 +143,122 @@ void l1menu::tools::setTriggerThresholdsAsTightAsPossible( const l1menu::L1Trigg
 	}
 }
 
+void l1menu::tools::dumpTriggerRates( std::ostream& output, const std::unique_ptr<const l1menu::IMenuRate>& pMenuRates )
+{
+	// I want to print the triggers in the same order as the old code does to make results
+	// easier to compare between the old and new code. Otherwise the new code will print
+	// the results alphabetically. I need to hard code that order with this vector.
+	std::vector<std::string> triggerNames;
+	triggerNames.push_back("L1_SingleEG");
+	triggerNames.push_back("L1_SingleIsoEG");
+	triggerNames.push_back("L1_SingleMu");
+	triggerNames.push_back("L1_SingleIsoMu");
+	triggerNames.push_back("L1_SingleTau");
+	triggerNames.push_back("L1_SingleIsoTau");
+	triggerNames.push_back("L1_DoubleEG");
+	triggerNames.push_back("L1_isoEG_EG");
+	triggerNames.push_back("L1_DoubleIsoEG");
+	triggerNames.push_back("L1_DoubleMu");
+	triggerNames.push_back("L1_isoMu_Mu");
+	triggerNames.push_back("L1_DoubleIsoMu");
+	triggerNames.push_back("L1_DoubleTau");
+	triggerNames.push_back("L1_isoTau_Tau");
+	triggerNames.push_back("L1_DoubleIsoTau");
+	triggerNames.push_back("L1_EG_Mu");
+	triggerNames.push_back("L1_isoEG_Mu");
+	triggerNames.push_back("L1_isoEG_isoMu");
+	triggerNames.push_back("L1_Mu_EG");
+	triggerNames.push_back("L1_isoMu_EG");
+	triggerNames.push_back("L1_isoMu_isoEG");
+	triggerNames.push_back("L1_EG_Tau");
+	triggerNames.push_back("L1_isoEG_Tau");
+	triggerNames.push_back("L1_isoEG_isoTau");
+	triggerNames.push_back("L1_Mu_Tau");
+	triggerNames.push_back("L1_isoMu_Tau");
+	triggerNames.push_back("L1_isoMu_isoTau");
+	triggerNames.push_back("L1_SingleJet");
+	triggerNames.push_back("L1_SingleJetC");
+	triggerNames.push_back("L1_DoubleJet");
+	triggerNames.push_back("L1_QuadJetC");
+	triggerNames.push_back("L1_SixJet");
+	triggerNames.push_back("L1_SingleEG_CJet");
+	triggerNames.push_back("L1_SingleIsoEG_CJet");
+	triggerNames.push_back("L1_SingleMu_CJet");
+	triggerNames.push_back("L1_SingleIsoMu_CJet");
+	triggerNames.push_back("L1_SingleTau_TwoFJet");
+	triggerNames.push_back("L1_DoubleFwdJet");
+	triggerNames.push_back("L1_SingleEG_ETM");
+	triggerNames.push_back("L1_SingleIsoEG_ETM");
+	triggerNames.push_back("L1_SingleMu_ETM");
+	triggerNames.push_back("L1_SingleIsoMu_ETM");
+	triggerNames.push_back("L1_SingleTau_ETM");
+	triggerNames.push_back("L1_SingleIsoTau_ETM");
+	triggerNames.push_back("L1_SingleEG_HTM");
+	triggerNames.push_back("L1_SingleIsoEG_HTM");
+	triggerNames.push_back("L1_SingleMu_HTM");
+	triggerNames.push_back("L1_SingleIsoMu_HTM");
+	triggerNames.push_back("L1_SingleTau_HTM");
+	triggerNames.push_back("L1_SingleIsoTau_HTM");
+	triggerNames.push_back("L1_HTM");
+	triggerNames.push_back("L1_ETM");
+	triggerNames.push_back("L1_HTT");
+
+	// Take a copy of the results so that I can resort them.
+	auto triggerRates=pMenuRates->triggerRates();
+	//
+	// Use a lambda function to sort the ITriggerRates into the same
+	// order as the standard list above.
+	//
+	std::sort( triggerRates.begin(), triggerRates.end(), [&](const l1menu::ITriggerRate* pFirst,const l1menu::ITriggerRate* pSecond)->bool
+		{
+			auto iFirstPosition=std::find( triggerNames.begin(), triggerNames.end(), pFirst->trigger().name() );
+			auto iSecondPosition=std::find( triggerNames.begin(), triggerNames.end(), pSecond->trigger().name() );
+			// If both these trigger names aren't in the standard list, sort
+			// them by their name which I guess means alphabetically.
+			if( iFirstPosition==triggerNames.end() && iSecondPosition==triggerNames.end() ) return pFirst->trigger().name()<pSecond->trigger().name();
+			// If only one of them is in the list then that one needs to be first.
+			else if( iFirstPosition==triggerNames.end() ) return false;
+			else if( iSecondPosition==triggerNames.end() ) return true;
+			// If they're both in the standard list sort by their position in the list
+			else return iFirstPosition<iSecondPosition;
+		} );
+
+	float totalNoOverlaps=0;
+	float totalPure=0;
+	for( const auto& pRate : triggerRates )
+	{
+		const auto& trigger=pRate->trigger();
+		//output << "Trigger " << pRate->trigger().name() << " has fraction " << pRate->fraction() << " and rate " << pRate->rate() << "kHz, pure " << pRate->pureRate() << "kHz" << std::endl;
+		// Print the name
+		output << std::setw(23) << pRate->trigger().name();
+
+		// Print the thresholds
+		std::vector<std::string> thresholdNames=l1menu::tools::getThresholdNames( trigger );
+		for( size_t thresholdNumber=0; thresholdNumber<4; ++thresholdNumber )
+		{
+			float threshold;
+			if( thresholdNames.size()>thresholdNumber ) threshold=trigger.parameter(thresholdNames[thresholdNumber]);
+			else threshold=-1;
+
+			output << std::setw(8) << threshold;
+		}
+
+		// Print the rates
+		output << std::setw(16) << pRate->rate();
+		output << std::setw(12) << pRate->pureRate();
+
+		totalNoOverlaps+=pRate->rate();
+		totalPure+=pRate->pureRate();
+
+		output << "\n";
+	}
+
+	output << "---------------------------------------------------------------------------------------------------------------" << "\n"
+			<< " Total L1 Rate (with overlaps)    = " << std::setw(8) << pMenuRates->totalRate() << "kHz" << "\n"
+			<< " Total L1 Rate (without overlaps) = " << std::setw(8) << totalNoOverlaps << "kHz" << "\n"
+			<< " Total L1 Rate (pure triggers)    = " << std::setw(8) << totalPure << "kHz" << std::endl;
+}
+
 std::pair<float,float> l1menu::tools::calorimeterRegionEtaBounds( size_t calorimeterRegion )
 {
 	if( calorimeterRegion==0 ) return std::make_pair( -5.0, -4.5 );
@@ -194,3 +317,43 @@ float l1menu::tools::convertRegionCutToEtaCut( float regionCut )
 	return std::fabs(regionBounds.second);
 }
 
+std::unique_ptr<l1menu::ISample> l1menu::tools::loadSample( const std::string& filename )
+{
+	std::unique_ptr<l1menu::ISample> pReturnValue;
+
+	// Open the file, read enough of the start to determine what kind of file
+	// it is, then close it.
+	std::ifstream inputFile( filename );
+	if( !inputFile.is_open() ) throw std::runtime_error( "The file does not exist or could not be opened" );
+	// TODO - The checking of what file type it is
+	inputFile.close();
+
+	pReturnValue.reset( new l1menu::ReducedSample(filename) );
+
+	return pReturnValue;
+}
+
+std::pair<float,float> l1menu::tools::simpleLinearFit( const std::vector< std::pair<float,float> >& dataPoints )
+{
+	float xyBar=0;
+	float xBar=0;
+	float yBar=0;
+	float xSquaredBar=0;
+
+	for( const auto& coords : dataPoints )
+	{
+		xyBar+=(coords.first*coords.second);
+		xBar+=coords.first;
+		yBar+=coords.second;
+		xSquaredBar+=(coords.first*coords.first);
+	}
+	xyBar/=dataPoints.size();
+	xBar/=dataPoints.size();
+	yBar/=dataPoints.size();
+	xSquaredBar/=dataPoints.size();
+
+	float slope=(xyBar-xBar*yBar)/(xSquaredBar-xBar*xBar);
+	float intercept=yBar-slope*xBar;
+
+	return std::make_pair( slope, intercept );
+}

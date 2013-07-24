@@ -6,6 +6,9 @@
 #include "l1menu/TriggerRatePlot.h"
 #include "l1menu/tools/tools.h"
 #include <TH1F.h>
+#include <TDirectory.h>
+#include <TKey.h>
+#include <iostream>
 
 l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TDirectory* pDirectory )
 {
@@ -76,6 +79,41 @@ l1menu::MenuRatePlots::MenuRatePlots( const l1menu::TriggerMenu& triggerMenu, TD
 		}
 
 	} // end of loop over the triggers in the menu
+}
+
+l1menu::MenuRatePlots::MenuRatePlots( const TDirectory* pPreExistingPlotDirectory )
+{
+	// Before making any histograms make sure errors are done properly
+	TH1::SetDefaultSumw2();
+
+	// Loop over all of the histograms in the directory.
+	TList* pListOfKeys=pPreExistingPlotDirectory->GetListOfKeys();
+	std::string oldKeyName;
+
+	for( int index=0; index<pListOfKeys->GetEntries(); ++index )
+	{
+		TKey* pKey=dynamic_cast<TKey*>( pListOfKeys->At(index) );
+		// Only use the highest cycle number for each key
+		if( oldKeyName==pKey->GetName() ) continue;
+		oldKeyName=pKey->GetName();
+
+		TH1* pHistogram=dynamic_cast<TH1*>( pKey->ReadObj() );
+
+		if( pHistogram!=NULL )
+		{
+			try
+			{
+				l1menu::TriggerRatePlot ratePlotFromHistogram( pHistogram );
+				triggerPlots_.push_back( std::move(ratePlotFromHistogram) );
+			}
+			catch( std::exception& error )
+			{
+				std::cerr << "Couldn't create TriggerRatePlot for " << pHistogram->GetName() << " because: " << error.what() << std::endl;
+			}
+
+		} // end of "if( dynamic_cast to TH1* successful )"
+
+	} // end of loop over the keys in the file
 }
 
 void l1menu::MenuRatePlots::addEvent( const l1menu::IEvent& event )

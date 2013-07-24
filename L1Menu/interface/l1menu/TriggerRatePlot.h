@@ -45,6 +45,21 @@ namespace l1menu
 		 *                              changed. A check is made to ensure the versusParameter is taken out of the list if it is present.
 		 */
 		TriggerRatePlot( const l1menu::ITrigger& trigger, std::unique_ptr<TH1> pHistogram, const std::string& versusParameter="threshold1", const std::vector<std::string> scaledParameters=std::vector<std::string>() );
+		/** @brief Constructor that creates the histogram itself.
+		 *
+		 * Similar to the other constructor, except that instead of taking a previously created histogram takes the information required
+		 * to create a histogram itself (number of bins etcetera).
+		 */
+		TriggerRatePlot( const l1menu::ITrigger& trigger, const std::string& name, size_t numberOfBins, float lowEdge, float highEdge, const std::string& versusParameter="threshold1", const std::vector<std::string> scaledParameters=std::vector<std::string>() );
+		/** @brief Constructor that takes a histogram previously created by TriggerRatePlot, e.g. to load from disk.
+		 *
+		 * Tries to tell from the information in the title all of the information required to recreate the TriggerRateObject
+		 * instance. If anything goes wrong a runtime_error is thrown. Probably advisable to only use this to load a fully
+		 * filled plot from disk for use with other classes (e.g. MenuFitter), rather than adding anything else on to it.
+		 *
+		 * Note that a copy is made of the histogram.
+		 */
+		explicit TriggerRatePlot( const TH1* pPreExisitingHistogram );
 		TriggerRatePlot( l1menu::TriggerRatePlot& otherTriggerRatePlot ) = delete;
 		TriggerRatePlot& operator=( l1menu::TriggerRatePlot& otherTriggerRatePlot ) = delete;
 
@@ -61,6 +76,13 @@ namespace l1menu
 		/** @brief Returns the trigger being used to create the plot. */
 		const l1menu::ITrigger& getTrigger() const;
 
+		/** @brief Returns the threshold that will will provide a given rate.
+		 *
+		 * Interpolates between the bins using a simple linear fit of the two bins
+		 * before and the two bins after the point.
+		 */
+		float findThreshold( float targetRate ) const;
+
 		/** @brief Returns the internal pointer to the root histogram. Ownership is retained by TriggerRatePlot. */
 		TH1* getPlot();
 
@@ -71,6 +93,7 @@ namespace l1menu
 		 * just that the TH1 won't be deleted when the instance goes out of scope. */
 		TH1* relinquishOwnershipOfPlot();
 	protected:
+		void initiate( const l1menu::ITrigger& trigger, const std::vector<std::string>& scaledParameters );
 		std::unique_ptr<l1menu::ITrigger> pTrigger_;
 		std::unique_ptr<TH1> pHistogram_;
 		/// The parameter to plot against, usually "threshold1";

@@ -10,12 +10,14 @@ namespace l1menu
 {
 	class ITrigger;
 	class L1TriggerDPGEvent;
+	class MenuFitter;
 }
 
 namespace l1menu
 {
 	class TriggerMenu
 	{
+		friend class l1menu::MenuFitter;
 	public:
 		TriggerMenu();
 		virtual ~TriggerMenu();
@@ -45,6 +47,8 @@ namespace l1menu
 		void loadMenuFromFile( const std::string& filename );
 	private:
 		void loadMenuInOldFormat( std::ifstream& file );
+		/** This takes a single line from the old format file, but split into the different columns. */
+		bool addTriggerFromOldFormat( const std::vector<std::string>& columns );
 
 		TriggerTable& triggerTable_;
 		std::vector< std::unique_ptr<l1menu::ITrigger> > triggers_;

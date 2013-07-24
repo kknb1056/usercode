@@ -6,7 +6,9 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include <utility>
+#include <iosfwd>
 
 //
 // Forward declarations
@@ -15,6 +17,8 @@ namespace l1menu
 {
 	class ITrigger;
 	class L1TriggerDPGEvent;
+	class IMenuRate;
+	class ISample;
 }
 
 
@@ -69,6 +73,27 @@ namespace l1menu
 		 */
 		void setTriggerThresholdsAsTightAsPossible( const l1menu::L1TriggerDPGEvent& event, l1menu::ITrigger& trigger, float tolerance=0.01 );
 
+		/** @brief Prints out the trigger rates in the same format as the old L1Menu2015 to the given ostream
+		 *
+		 * @param[out] output       The stream to dump the information to.
+		 * @param[in]  pMenuRates   The object containing the information to be dumped.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 05/Jul/2013
+		 */
+		void dumpTriggerRates( std::ostream& output, const std::unique_ptr<const l1menu::IMenuRate>& pMenuRates );
+
+		/** @brief Gives the eta bounds of the requested calorimeter region.
+		 *
+		 * @param[in]  calorimeterRegion   The calorimeter region. Must be between 0 and 21 inclusive or a
+		 *                                 std::runtime_error is thrown.
+		 * @return                         A std::pair where 'first' is the lower eta bound and 'second' is the higher. Note that
+		 *                                 the values are not absolute and first is always less than second. Values also overlap,
+		 *                                 e.g. calorimeterRegionEtaBounds(6).second==calorimeterRegionEtaBounds(7).first.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 10/Jun/2013
+		 */
 		std::pair<float,float> calorimeterRegionEtaBounds( size_t calorimeterRegion );
 
 		/** @brief Converts a value in absolute eta to the calorimeter region. */
@@ -77,6 +102,33 @@ namespace l1menu
 		/** @brief Converts a value in calorimeter region to absolute eta. */
 		float convertRegionCutToEtaCut( float regionCut );
 
+		/** @brief Examines the file and creates the appropriate concrete implementation of ISample for it.
+		 *
+		 * Currently only works for ReducedSample, which makes this function a bit pointless. I'll add
+		 * support for FullSample soon.
+		 *
+		 * @param[in]  filename     The filename of the file to open. If the file doesn't exist a std::runtime_error
+		 *                          is thrown.
+		 * @return                  A pointer to the ISample created.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk)
+		 * @date 07/Jul/2013
+		 */
+		std::unique_ptr<l1menu::ISample> loadSample( const std::string& filename );
+
+		/** @brief Takes a number of (x,y) points and calculates the line of best fit.
+		 *
+		 * I couldn't be bothered working this out for myself so just copied the formulae
+		 * from http://en.wikipedia.org/wiki/Simple_linear_regression
+		 *
+		 * @param[in]  dataPoints     A vector of pairs, where 'first' is the x coordinate and 'second' the y.
+		 * @return                    A pair where 'first' is the slope and 'second' the intercept of the line
+		 *                            of best fit.
+		 *
+		 * @author Mark Grimes (mark.grimes@bristol.ac.uk) although I can't really take credit for it.
+		 * @date 08/Jul/2013
+		 */
+		std::pair<float,float> simpleLinearFit( const std::vector< std::pair<float,float> >& dataPoints );
 	} // end of the tools namespace
 } // end of the l1menu namespace
 #endif

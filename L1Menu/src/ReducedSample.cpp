@@ -532,51 +532,5 @@ float l1menu::ReducedSample::sumOfWeights() const
 std::unique_ptr<const l1menu::IMenuRate> l1menu::ReducedSample::rate( const l1menu::TriggerMenu& menu ) const
 {
 	// TODO make sure the TriggerMenu is valid for this sample
-
-	// The number of events that pass each trigger
-	std::vector<size_t> numberOfEventsPassed( menu.numberOfTriggers() );
-	float numberOfEventsPassingAnyTrigger;
-
-	// Using cached triggers significantly increases speed for ReducedSample
-	// because it cuts out expensive string comparisons when querying the trigger
-	// parameters.
-	std::vector< std::unique_ptr<l1menu::ICachedTrigger> > cachedTriggers;
-	for( size_t triggerNumber=0; triggerNumber<menu.numberOfTriggers(); ++triggerNumber )
-	{
-		cachedTriggers.push_back( createCachedTrigger( menu.getTrigger( triggerNumber ) ) );
-	}
-
-	for( size_t eventNumber=0; eventNumber<numberOfEvents(); ++eventNumber )
-	{
-		const l1menu::IEvent& event=getEvent(eventNumber);
-		bool anyTriggerPassed=false;
-
-		for( size_t triggerNumber=0; triggerNumber<cachedTriggers.size(); ++triggerNumber )
-		{
-			if( cachedTriggers[triggerNumber]->apply(event) )
-			{
-				// If the event passes the trigger, increment the counter
-				++numberOfEventsPassed[triggerNumber];
-				anyTriggerPassed=true;
-			}
-		}
-
-		if( anyTriggerPassed ) ++numberOfEventsPassingAnyTrigger;
-	}
-
-	l1menu::implementation::MenuRateImplementation* pRates=new l1menu::implementation::MenuRateImplementation;
-	// This is the value I want to return, but I still need access to the extended attributes of the subclass
-	std::unique_ptr<const l1menu::IMenuRate> pReturnValue( pRates );
-
-	pRates->setScaling( pImple_->eventRate );
-
-	pRates->setTotalFraction( static_cast<float>(numberOfEventsPassingAnyTrigger)/static_cast<float>(numberOfEvents()) );
-
-	for( size_t triggerNumber=0; triggerNumber<numberOfEventsPassed.size(); ++triggerNumber )
-	{
-		float fraction=static_cast<float>(numberOfEventsPassed[triggerNumber])/static_cast<float>(numberOfEvents());
-		pRates->addTriggerRate( menu.getTrigger(triggerNumber), fraction );
-	}
-
-	return pReturnValue;
+	return std::unique_ptr<const l1menu::IMenuRate>( new l1menu::implementation::MenuRateImplementation( menu, *this ) );
 }

@@ -4,8 +4,8 @@
 #include "l1menu/TriggerTable.h"
 #include "l1menu/ITrigger.h"
 
-l1menu::implementation::TriggerRateImplementation::TriggerRateImplementation( const l1menu::ITrigger& trigger, float fraction, const MenuRateImplementation& menuRate )
-	: fraction_(fraction), menuRate_(menuRate)
+l1menu::implementation::TriggerRateImplementation::TriggerRateImplementation( const l1menu::ITrigger& trigger, float weightOfEventsPassingThisTrigger, float weightOfEventsOnlyPassingThisTrigger, const MenuRateImplementation& menuRate )
+	: weightOfEventsPassingThisTrigger_(weightOfEventsPassingThisTrigger), weightOfEventsOnlyPassingThisTrigger_(weightOfEventsOnlyPassingThisTrigger), menuRate_(menuRate)
 {
 	pTrigger_=std::move( l1menu::TriggerTable::instance().copyTrigger(trigger) );
 }
@@ -13,7 +13,8 @@ l1menu::implementation::TriggerRateImplementation::TriggerRateImplementation( co
 l1menu::implementation::TriggerRateImplementation& l1menu::implementation::TriggerRateImplementation::operator=( TriggerRateImplementation&& otherTriggerRate )
 {
 	pTrigger_=std::move( otherTriggerRate.pTrigger_ );
-	fraction_=otherTriggerRate.fraction_;
+	weightOfEventsPassingThisTrigger_=otherTriggerRate.weightOfEventsPassingThisTrigger_;
+	weightOfEventsOnlyPassingThisTrigger_=otherTriggerRate.weightOfEventsOnlyPassingThisTrigger_;
 	// I can't change the menuRate_ reference, but that should already be set to the right one anyway.
 	return *this;
 }
@@ -30,10 +31,20 @@ const l1menu::ITrigger& l1menu::implementation::TriggerRateImplementation::trigg
 
 float l1menu::implementation::TriggerRateImplementation::fraction() const
 {
-	return fraction_;
+	return weightOfEventsPassingThisTrigger_/menuRate_.weightOfAllEvents();
 }
 
 float l1menu::implementation::TriggerRateImplementation::rate() const
 {
-	return fraction_*menuRate_.scaling();
+	return fraction()*menuRate_.scaling();
+}
+
+float l1menu::implementation::TriggerRateImplementation::pureFraction() const
+{
+	return weightOfEventsOnlyPassingThisTrigger_/menuRate_.weightOfAllEvents();
+}
+
+float l1menu::implementation::TriggerRateImplementation::pureRate() const
+{
+	return pureFraction()*menuRate_.scaling();
 }

@@ -23,6 +23,10 @@ namespace l1menu
 	public:
 		virtual ~ITriggerRate() {}
 
+		/** @brief The trigger that gives the rate, which can be queiried for thresholds etcetera
+		 * N.B. This trigger is a copy of whatever was used to calculate the rate. Changing one will
+		 * have no affect on the other.
+		 */
 		virtual const l1menu::ITrigger& trigger() const = 0;
 
 		/** @brief The fraction of events that this trigger passed, so before applying any scaling. */
@@ -30,6 +34,12 @@ namespace l1menu
 
 		/** @brief The rate, so fraction multiplied by the scaling. */
 		virtual float rate() const = 0;
+
+		/** @brief The fraction of events that pass only this trigger, with no scaling. */
+		virtual float pureFraction() const = 0;
+
+		/** @brief The pure rate, so pureFraction multiplied by the scaling. */
+		virtual float pureRate() const = 0;
 	};
 
 } // end of namespace l1menu

@@ -61,7 +61,7 @@ namespace l1menu
 			{
 				l1menu::TriggerTable& triggerTable=l1menu::TriggerTable::instance();
 				SingleIsoTauJet_v0 tempTriggerInstance;
-				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold1", 100, 0, 100 );
+				triggerTable.registerSuggestedBinning( tempTriggerInstance.name(), "threshold1", 100, 0, 120 );
 			} // End of customisation lambda function
 		) // End of REGISTER_TRIGGER_AND_CUSTOMISE macro call
 
